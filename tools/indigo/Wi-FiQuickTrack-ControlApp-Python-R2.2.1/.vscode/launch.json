@@ -1,0 +1,54 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: APP SUT",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--interface",
+                "wlan0"
+            ],
+            "windows": {
+            "env": {
+                "CC35XX_PORT": "COM13", 
+                "IS_RUN_ACTIVE_MODE": "FALSE",
+                }
+            },
+            "linux": {
+                "env": {
+                    "CC35XX_PORT": "/dev/ttyACM1",
+                    "IS_RUN_ACTIVE_MODE": "FALSE",
+                }
+            }
+        },
+        {
+            "name": "Python: APP APUT",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--interface",
+                "wlan1"
+            ],
+            "windows": {
+            "env": {
+                    "CC35XX_PORT": "COM13",
+                }
+            },
+            "linux": {
+                "env": {
+                    "CC35XX_PORT": "/dev/ttyACM1",
+                }
+            }
+        }
+    ]
+}

@@ -34,6 +34,7 @@
 
 #include "stdio.h"
 #include "osi_type.h"
+#include "control_cmd_fw.h"
 
 /******************************************************************************
                       LOCAL FUNCTION PROTOTYPES
@@ -43,6 +44,7 @@ int32_t DeInitHostDriver(void);
 void host_resetCounters(WlanRole_e role, dbg_cntr_trnspt_t *counters);
 void host_getCounters(WlanRole_e role, dbg_cntr_trnspt_t *counters);
 
+void InitIniParamsHost(cmd_ini_params_download_t *cmd);
 /******************************************************************************
                       EXTERN GLOBAL
 ******************************************************************************/

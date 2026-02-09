@@ -115,7 +115,9 @@ uint32_t WlanError_GetType(int32_t error)
 */
 uint32_t WlanError_GetModule(int32_t error)
 {
-    return (uint32_t)((wlanError_u) error).module;
+    wlanError_u err;
+    err.word = (uint32_t)error;
+    return err.module;
 }
 
 
@@ -132,7 +134,9 @@ uint32_t WlanError_GetModule(int32_t error)
 */
 uint32_t WlanError_GetSeverity(int32_t error)
 {
-    return (uint32_t)((wlanError_u) error).severity;
+    wlanError_u err;
+    err.word = (uint32_t)error;
+    return err.severity;
 }
 
 /*!
@@ -146,7 +150,7 @@ uint32_t WlanError_GetSeverity(int32_t error)
     \note
     \warning
 */
-uint32_t WlanError_ConvertWsocError(int error)
+wlanErrorType_e WlanError_ConvertWsocError(int error)
 {
     switch (error)
     {

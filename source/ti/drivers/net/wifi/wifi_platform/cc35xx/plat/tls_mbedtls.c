@@ -654,7 +654,7 @@ static int tls_pull_func(void *ptr, unsigned char *buf, size_t len)
 	return (int)len;
 }
 
-
+//send  data from the mbedtls queue to the AP
 static int tls_push_func(void *ptr, const unsigned char *buf, size_t len)
 {
 	struct tls_connection *conn = (struct tls_connection *) ptr;
@@ -1032,7 +1032,7 @@ MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256,
 MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA,
 MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256,
 MBEDTLS_TLS_RSA_WITH_AES_128_CCM,
-MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256 };
+MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256};
 
 
 
@@ -1183,6 +1183,7 @@ static const int suite_HIGH[] = {
     //MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8,
     //MBEDTLS_TLS_PSK_WITH_ARIA_128_GCM_SHA256
 };
+
 
 
 __attribute_noinline__

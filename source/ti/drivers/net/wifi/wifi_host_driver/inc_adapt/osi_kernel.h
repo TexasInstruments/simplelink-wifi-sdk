@@ -48,7 +48,9 @@ extern "C" {
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#if defined(__clang__) || (__GNUC__)
 #include <sys/types.h>
+#endif
 #include "user_errno.h"
 #include <osi_type.h>
 
@@ -204,8 +206,6 @@ typedef signed   short  INT16;
 typedef signed   long   INT64;
 #endif
 
-typedef float           FLOAT;
-typedef double          DOUBLE;
 
 #ifdef _BOOLEAN
 #else
@@ -213,7 +213,6 @@ typedef double          DOUBLE;
 typedef unsigned char   BOOLEAN;
 #endif
 
-typedef unsigned char   UBYTE;
 
 #ifdef __arm
 #define PACKED  __packed
@@ -245,6 +244,8 @@ uint32_t osi_ExitCritical(uint32_t ulKey);
 /************************** GET LR HELPER FUNCTION ************************/
 #define __ASM __asm /*!< asm keyword for GNU Compiler */
 #define __INLINE inline /*!< inline keyword for GNU Compiler */
+
+#if defined(__clang__) || (__GNUC__)
 #define __STATIC_INLINE static inline
 
 /**
@@ -259,6 +260,8 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_LR(void)
     __ASM volatile ("MOV %0, LR\n" : "=r" (result) );
     return(result);
 }
+#endif
+
 /************************************************************************/
 
 /*******************************************************************************

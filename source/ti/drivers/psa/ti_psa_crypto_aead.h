@@ -31,9 +31,41 @@
     #include <third_party/mbedtls/include/psa/crypto.h>
 #endif
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
+#include <ti/devices/DeviceFamily.h>
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+    #include <ti/drivers/aesccm/AESCCMXXF3.h>
+    #include <ti/drivers/aesgcm/AESGCMXXF3HSM.h>
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
+       (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
+    #include <ti/drivers/aesccm/AESCCMCC26XX.h>
+    #include <ti/drivers/aesgcm/AESGCMCC26XX.h>
+#endif
 
 struct ti_psa_aead_operation_s
 {
+    union
+    {
+        struct
+        {
+            AESCCM_Config aesccmConfig;
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+            AESCCMXXF3_Object aesccmObject;
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
+       (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
+            AESCCMCC26XX_Object aesccmObject;
+#endif
+        } aesccm;
+        struct
+        {
+            AESGCM_Config aesgcmConfig;
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+            AESGCMXXF3HSM_Object aesgcmObject;
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
+       (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
+            AESGCMCC26XX_Object aesgcmObject;
+#endif
+        } aesgcm;
+    } driver;
     /* Used to mark the operation struct as ready.*/
     unsigned int id;
     psa_algorithm_t alg;

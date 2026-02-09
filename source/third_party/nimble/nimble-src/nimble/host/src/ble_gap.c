@@ -1269,7 +1269,7 @@ ble_gap_conn_broken(uint16_t conn_handle, int reason)
     ble_sm_connection_broken(conn_handle);
     ble_gatts_connection_broken(conn_handle);
     ble_gattc_connection_broken(conn_handle);
-    ble_hs_flow_connection_broken(conn_handle);;
+    ble_hs_flow_connection_broken(conn_handle);
 
     ble_hs_atomic_conn_delete(conn_handle);
 
@@ -1972,6 +1972,7 @@ ble_gap_rx_subrate_change(const struct ble_hci_ev_le_subev_subrate_change *ev)
     event.subrate_change.supervision_tmo = le16toh(ev->supervision_tmo);
 
     ble_gap_event_listener_call(&event);
+    ble_gap_call_conn_event_cb(&event, ev->conn_handle);
 }
 #endif
 
@@ -2071,6 +2072,9 @@ ble_gap_rx_conn_complete(struct ble_gap_conn_complete *evt, uint8_t instance)
     /* We verified that there is a free connection when the procedure began. */
     conn = ble_hs_conn_alloc(evt->connection_handle);
     BLE_HS_DBG_ASSERT(conn != NULL);
+    if (conn == NULL) {
+        return BLE_HS_ENOMEM;
+    }
 
     conn->bhc_itvl = evt->conn_itvl;
     conn->bhc_latency = evt->conn_latency;
@@ -2155,13 +2159,17 @@ ble_gap_rx_l2cap_update_req(uint16_t conn_handle,
                             struct ble_gap_upd_params *params)
 {
 #if NIMBLE_BLE_CONNECT
+    struct ble_gap_upd_params peer_params;
     struct ble_gap_event event;
     int rc;
+
+    peer_params = *params;
 
     memset(&event, 0, sizeof event);
     event.type = BLE_GAP_EVENT_L2CAP_UPDATE_REQ;
     event.conn_update_req.conn_handle = conn_handle;
-    event.conn_update_req.peer_params = params;
+    event.conn_update_req.peer_params = &peer_params;
+    event.conn_update_req.self_params = params;
 
     rc = ble_gap_call_conn_event_cb(&event, conn_handle);
     return rc;
@@ -6665,7 +6673,7 @@ ble_gap_preempt_done(void)
     disc_preempted = 0;
 
     /* Protects slaves from accessing by multiple threads */
-    ble_npl_mutex_pend(&preempt_done_mutex, 0xFFFFFFFF);
+    ble_npl_mutex_pend(&preempt_done_mutex, BLE_NPL_TIME_FOREVER);
     memset(slaves, 0, sizeof(slaves));
 
     ble_hs_lock();

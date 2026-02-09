@@ -961,10 +961,12 @@ ble_gattc_proc_matches_conn_rx_entry(struct ble_gattc_proc *proc, void *arg)
 
     criteria = arg;
 
-    if (criteria->conn_handle != BLE_HS_CONN_HANDLE_NONE &&
-        criteria->conn_handle != proc->conn_handle &&
-        criteria->cid != proc->cid) {
+    if ((criteria->conn_handle != BLE_HS_CONN_HANDLE_NONE) &&
+        (criteria->conn_handle != proc->conn_handle)) {
+        return 0;
+    }
 
+    if (criteria->cid != proc->cid) {
         return 0;
     }
 
@@ -3345,7 +3347,7 @@ ble_gattc_read_mult_cb_var(struct ble_gattc_proc *proc, int status,
         return 0;
     }
 
-    memset(attr, 0, sizeof(*attr));
+    memset(attr, 0, sizeof(attr));
 
     for (i = 0; i < proc->read_mult.num_handles; i++) {
         attr[i].handle = proc->read_mult.handles[i];

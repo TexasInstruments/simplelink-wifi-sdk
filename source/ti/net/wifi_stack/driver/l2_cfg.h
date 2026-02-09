@@ -1051,4 +1051,19 @@ Return: negative value on error, 0 otherwise
 int8_t l2_cfg_get5GhzSupport(uint8_t *is5GhzSupported);
 
 
+/* ----------------------------------------------------------------------------
+ cfgSetApSaeAntiCloggingThreshold
+      Sets AP SAE anti-clogging threshold
+
+Return: none
+---------------------------------------------------------------------------- */
+void cfgSetApSaeAntiCloggingThreshold(uint8_t apSaeAntiCloggingThreshold);
+
+/* ----------------------------------------------------------------------------
+ cfgGetApSaeAntiCloggingThreshold
+      Gets AP SAE anti-clogging threshold
+
+Return: AP SAE anti-clogging threshold
+---------------------------------------------------------------------------- */
+uint8_t cfgGetApSaeAntiCloggingThreshold(void);
 #endif // _L2_CFG_H_

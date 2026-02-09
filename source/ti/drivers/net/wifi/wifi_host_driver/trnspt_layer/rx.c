@@ -206,13 +206,23 @@ int rx_GetDesc(uint8_t *rawBuffer, uint32_t *rawBufferLen)
         //desc length  = desc + padding + packetLen + extraBytes
         if((gRx->rxStateMachine.desc->length==0) || (gRx->rxStateMachine.desc->length < (gRx->rxStateMachine.desc->extraBytes + padding + sizeof(RxIfDescriptor_t))))
         {
-            ASSERT_GENERAL(0);
+            WlanEventError_t  error_event;
+            RX_PRINT_ERROR("\n\r rx_GetDesc: Fail in getting RX Descriptor\n\r");
+            error_event.error_num = WlanError(WLAN_ERROR_SEVERITY__MID, WLAN_ERROR_MODULE__RX, WLAN_ERROR_TYPE__RX_SM_LENGTH_OF_FRAME_IS_INVALID_FROM_FW);
+            error_event.module = WLAN_MODULE_RX;
+            error_event.severity = WLAN_SEVERITY_MID;
+            Wlan_HostSendEvent(WLAN_EVENT_ERROR, (uint8_t*)&error_event, sizeof(WlanEventError_t));
+
             gRx->rxStateMachine.state = RX_IDLE;
             if(NULL != gRx->rxStateMachine.desc)
             {
                 os_free(gRx->rxStateMachine.desc);
                 gRx->rxStateMachine.desc = NULL;
             }
+
+            ret = *rawBufferLen;
+            *rawBufferLen = reminder;
+            return ret;
         }
         gRx->rxStateMachine.frameSizeNeto = gRx->rxStateMachine.desc->length - gRx->rxStateMachine.desc->extraBytes - padding - sizeof(RxIfDescriptor_t);
     }

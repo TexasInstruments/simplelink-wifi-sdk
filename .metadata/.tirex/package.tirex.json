@@ -3,12 +3,15 @@
         "metadataVersion": "3.1.0",
         "id": "com.ti.SIMPLELINK_WIFI_SDK",
         "name": "SimpleLink™ Wi-Fi SDK",
-        "version": "9.21.00.15",
+        "version": "9.22.00.12",
         "type": "software",
         "devices": [
-            "CC35x0"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
-        "image": "wff3-tirex.png",
+        "image": "./wff3-tirex.png",
         "description": "Welcome to the SimpleLink™ Wi-Fi SDK",
         "dependencies": [
             {

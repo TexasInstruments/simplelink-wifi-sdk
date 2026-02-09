@@ -7,71 +7,23 @@ comprehensive software package for developing 2.4 GHz applications.
 The WIFI SDK delivers components that enable engineers to develop applications
 on the Texas Instruments CC35xx Wi-Fi and BLE combo MCU devices. 
 
-This is version 9.21.00.15 of the SimpleLink Wi-Fi SDK.
+This is version 9.22.00.12 of the SimpleLink Wi-Fi SDK.
 
 ## What's New
 
-  - Wi-Fi
-      - IEEE802.11 a,b,g,n,ac,ax
-      - 2.4GHz & 5GHz bands
-      - Supported roles: Station role, AP role (up to 4 connections,
-        Wi-Fi4 only) , MultiRole (STA-AP), P2P (Client and Go)
-      - Support Security types
-          - Personal - WPA3 (STA role only), WPA2/WPA3 (Transition
-            mode), WPA2 Personal, WPA/WPA2 (mixed mode, STA role only),
-            WPS, OPEN
-          - Enterprise - WPA3, WPA2 (TLS,TTLS, PEAP0)
-      - Supported Profiles and connection policies
-      - Support OTA lib
-      - Date and time module
-      - Agile Multiband
-      - DFS support and channel switch
-      - Option to disable WI-Fi6 via eFuse / INI
-  - BLE
-      - Implementing BLE 5.4 specification
-      - Roles: Broadcaster, Peripheral, Observer, Central, Multirole
-      - Legacy & Extended Advertisement
-      - Legacy & Extended Scan
-      - Multiple BLE Connections (up to 16)
-      - Supported PHYs: 1M, 2M, Coded
-      - Privacy
-      - Secured connection
-      - BLE store bond information support
-  - Support Drivers - I2C Controller, DMA, GPIO, GPTIMER, PWM, SPI,
-    UART2, SHA2, AES, POWER, ADC, Watchdog, SDIO, I2S, SDMMC, TRNG, ECC
-    (for ecdsa/ecdh/eddsa)
-  - SDK content
-      - FreeRTOS
-      - WPA Supplicant
-      - lwIP
-      - NimBLE
-      - Driver examples
-      - MbedTLS
-      - Support OTA lib
-      - CC35xx network terminal example
-      - CC35xx BLE Wi-Fi provisioning example
-      - CC35xx Mqtt client example
-      - CC35xx AT-Commands example
-      - CC35XX Indigo example
-      - NVOCMP package
-      - Dynamic support for different flash types
-          - IS25WJ032F
-          - IS25WJ064F
-          - W25Q64JW
-          - W25Q32JW
-          - PY25Q32LB
-          - PY25Q64LB
-          - PY25Q128LA
-          - PY25Q256LC
-          - GD25LF32ETJGY
-          - GD25LF64ETJGY
-          - MX25U3235F\_EXPERIMENTAL
-          - MX25U6435F\_EXPERIMENTAL
-          - IS25WJ128F\_EXPERIMENTAL
-      - Power management
-      - PSA APIs for selected Crypto drivers
-      - PSRAM support
-          - APS6404L-SQH - 8MB - Stacked
+  - OTA - incrementing major version will update the related OTP fuse
+    during OTA process thereby preventing rollback to images with lower
+    major-versions
+  - Winbond W25Q12PWxxxM 128Mbit SDR flash support
+  - INI file can now be modified and programed via sysconfig
+  - Support flash map option for 8MB flash with NO OTA
+  - mbedTLS package support for TLS1.3
+  - Crypto drivers support for multiple context usage: AES-CBC driver,
+    AES-CCM driver, Elliptic-Curve (EC) drivers
+  - New sysconfig default:
+      - Default flash size is now defined as 8MB
+      - Default OTA configuration is now enabled
+  - Bug Fixes
 ## About this Repository
 
 Although TI also offers this SDK via [a classic
@@ -91,7 +43,7 @@ it available as a Git repository to cater to various use cases:
 * **Simplified workflow for rebasing**: Git makes it simpler for you to rebase
   your changes to new releases.
 
-One temporary, notable difference in this WIFI 9.21.00.15 SDK GitHub
+One temporary, notable difference in this WIFI 9.22.00.12 SDK GitHub
 distribution when compared to the classic installer above, is the exclusion of
 the **tools/ble/ble_agent/ble_toolbox/** directory. This has been temporarily
 done as the ble_toolbox executable currently exceeds GitHub's file size limit.
@@ -158,8 +110,8 @@ Dependency download locations:
 
 Please consider creating a post on [TI's E2E forum](https://e2e.ti.com).
 
-[sdk release notes]: https://software-dl.ti.com/simplelink/esd/simplelink_wifi_sdk/9.21.00.15/exports/release_notes_simplelink_wifi_sdk_9_21_00_15.html
-[sdk docs]: https://software-dl.ti.com/simplelink/esd/simplelink_wifi_sdk/9.21.00.15/exports/docs/Documentation_Overview.html
+[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_WIFI_SDK__58mgN04__9.22.00.12
+[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_WIFI_SDK__58mgN04__9.22.00.12
 [sysconfig download]: https://www.ti.com/tool/SYSCONFIG
 [ticlang download]: https://www.ti.com/tool/download/ARM-CGT-CLANG
 [gcc download]: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads

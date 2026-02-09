@@ -523,6 +523,10 @@ ETxnStatus FwEvent_CallHandlers(TFwEvent *pFwEvent)
                     core_status_idle = TRUE;
                 }
             }
+            else
+            {
+                core_status_idle = TRUE;// get out from the loop if there are no events to handle unless there are RX to handle
+            }
 
             wlan_FW_tsf = core_status->tsf;
 
@@ -549,7 +553,7 @@ ETxnStatus FwEvent_CallHandlers(TFwEvent *pFwEvent)
                 read_data_len = bus_AlignLength(read_data_len);
                 FW_EVENT_HANDLE_PRINT("\n\rRx_status count: %d, headers_len:%d, next read total length : %d read-unaligned size:%d!!!\n\r", rx_byte_count,read_headers_len,read_data_len-sizeof(FwStatus_t), rx_byte_count + read_headers_len);//FwStatus_t is read directly by lower layers and no from the nab
 
-                //the maximum read is 4092 which is RX_TX_BUFFER
+                //the maximum read is RX_TX_BUFFER
                 //if the length exceeds that, we should do another read round so mark
                 //the core idle status as false
                 if (read_data_len > pFwEvent->rxTxBufSize)

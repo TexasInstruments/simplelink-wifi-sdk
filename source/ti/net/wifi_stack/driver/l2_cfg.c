@@ -99,8 +99,8 @@
 #define IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991			0x00000001
 #define IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_SHIFT	23
 
-// Static default configurations
-const l2CfgCommon_t gL2CommonCfg =
+// default configurations
+l2CfgCommon_t gL2CommonCfg =
 {
     .supportedBandsBM = BIT_x(RADIO_BAND_2_4GHZ)| BIT_x(RADIO_BAND_5GHZ) ,       // A band isn't supported
     .band40MHzEnabled = FALSE,                          // No 40MHz support
@@ -282,6 +282,8 @@ l2CfgCommon_t *gpL2CommonCfg  ;
 
 Bool32 gL2SupportHe = FALSE;
 Bool32 gL2Support5Ghz = FALSE;
+
+uint8_t gCfgApSaeAntiCloggingThreshold = SAE_ANTI_CLOGGING_DEFAULT;
 
 const cfgSta_t gL2StaBasedCfg =
 {
@@ -939,6 +941,25 @@ int8_t l2_cfg_get5GhzSupport(uint8_t *is5GhzSupported)
     }
 
     return 0;
+}
+
+// ----------------------------------------------------------------------------
+void cfgSetApSaeAntiCloggingThreshold(uint8_t apSaeAntiCloggingThreshold)
+{
+
+    if ((apSaeAntiCloggingThreshold == SAE_ANTI_CLOGGING_ALWAYS) ||
+        (apSaeAntiCloggingThreshold == SAE_ANTI_CLOGGING_LOW) || 
+        (apSaeAntiCloggingThreshold == SAE_ANTI_CLOGGING_DEFAULT))
+    {
+        gCfgApSaeAntiCloggingThreshold = apSaeAntiCloggingThreshold;
+    }
+       
+}
+
+// ----------------------------------------------------------------------------
+uint8_t cfgGetApSaeAntiCloggingThreshold(void)
+{
+    return gCfgApSaeAntiCloggingThreshold;
 }
 
 // ============================================================================

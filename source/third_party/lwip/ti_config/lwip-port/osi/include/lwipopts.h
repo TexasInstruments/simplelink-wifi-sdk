@@ -128,7 +128,7 @@
 
 /* MEM_SIZE: the size of the heap memory. If the application will send
 a lot of data that needs to be copied, this should be set high. */
-#define MEM_SIZE              32768
+#define MEM_SIZE              40000
 
 /* Debug checks - will impact throughput if enabled */
 #define MEM_OVERFLOW_CHECK       (0)
@@ -188,7 +188,7 @@ a lot of data that needs to be copied, this should be set high. */
  * for certain critical regions during buffer allocation, deallocation and memory
  * allocation and deallocation.
  */
-#define SYS_LIGHTWEIGHT_PROT    (NO_SYS==0)
+#define SYS_LIGHTWEIGHT_PROT     0 //(NO_SYS==0)
 
 
 /* ---------- TCP options ---------- */
@@ -229,6 +229,8 @@ a lot of data that needs to be copied, this should be set high. */
 
 /* TCP receive window. */
 #define TCP_WND                 (32 * TCP_MSS)
+#define LWIP_WND_SCALE          1
+#define TCP_RCV_SCALE           4
 
 /* Maximum number of retransmissions of data segments. */
 #define TCP_MAXRTX              12
@@ -376,7 +378,7 @@ void sys_unlock_tcpip_core(void);
 #define DEFAULT_THREAD_PRIO				1
 
 /* Prevents pbuf chain from getting created thus disabling scatter-gather*/
-#define LWIP_NETIF_TX_SINGLE_PBUF       0
+#define LWIP_NETIF_TX_SINGLE_PBUF       1
 
 #define DEFAULT_ACCEPTMBOX_SIZE			(TCPIP_MBOX_SIZE)
 

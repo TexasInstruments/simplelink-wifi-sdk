@@ -106,10 +106,10 @@ ETxnStatus FwEvent_SmReadIntrInfo (TFwEvent *pFwEvent)
 {
     ETxnStatus eStatus;
 
-
+#ifdef TWIF_FW_NEED_WAKE_UP
     /* Indicate that the chip is awake (since it interrupted us) */
     twIf_HwAvailable();
-
+#endif
     /*
      * Read FW-Status structure from HW ==> Special mapping, see note!!
      *

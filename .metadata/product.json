@@ -1,13 +1,14 @@
 {
     "name": "simplelink_wifi_sdk",
     "displayName": "SimpleLink WiFi SDK",
-    "version": "9.21.00.15",
+    "version": "9.22.00.12",
     "documentationPath": "../docs",
     "includePaths": [
         "../source",
         "../kernel"
     ],
     "components": [
+        "/ti/common/common.component.js",
         "/ti/devices/devices.component.js",
         "/ti/drivers/drivers.component.js",
         "/ti/drivers/secure_drivers.component.js",
@@ -27,5 +28,5 @@
         "none",
         "nortos"
     ],
-    "minToolVersion": "1.26.0"
+    "minToolVersion": "1.26.1"
 }

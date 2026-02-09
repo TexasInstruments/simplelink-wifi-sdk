@@ -67,7 +67,7 @@ set(${TARGET_NAME}_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/crypto/sha1-tprf.c
     ${CMAKE_CURRENT_LIST_DIR}/src/crypto/
     ${CMAKE_CURRENT_LIST_DIR}/src/crypto/ms_funcs.c
-    ${CMAKE_CURRENT_LIST_DIR}/src/drivers/driver_common.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/drivers/driver_common.c 
     ${CMAKE_CURRENT_LIST_DIR}/src/drivers/drivers.c
     ${CMAKE_CURRENT_LIST_DIR}/src/eap_common/chap.c
     ${CMAKE_CURRENT_LIST_DIR}/src/eap_common/eap_common.c

@@ -334,7 +334,8 @@ int32_t setApSecurityParams (WlanSecParams_t*  pWlanSecConfig, int saePwe, struc
                 os_memcpy(pCmeSsid->passphrase, pWlanSecConfig->Key, pWlanSecConfig->KeyLen);
             }
             pCmeSsid->key_mgmt = WPA_KEY_MGMT_SAE;
-            pCmeSsid->auth_alg = WPA_AUTH_ALG_SAE;
+            //pCmeSsid->auth_alg = WPA_AUTH_ALG_SAE;
+            pCmeSsid->auth_alg = WPA_AUTH_ALG_OPEN;
             pCmeSsid->pairwise_cipher = CME_AP_WPA_DEFAULT_CIPHER;
             pCmeSsid->group_cipher = CME_AP_WPA_DEFAULT_CIPHER;
             //pCmeSsid->sae_pwe = CME_AP_WPA_SAE_PWE_H2E_AND_HUNTING_AND_PECKING;
@@ -353,11 +354,11 @@ int32_t setApSecurityParams (WlanSecParams_t*  pWlanSecConfig, int saePwe, struc
                 os_memcpy(pCmeSsid->passphrase, pWlanSecConfig->Key, pWlanSecConfig->KeyLen);
             }
 
-            pCmeSsid->key_mgmt = WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_PSK_SHA256;
+            pCmeSsid->key_mgmt = WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK;
             pCmeSsid->auth_alg = WPA_AUTH_ALG_OPEN;
             pCmeSsid->pairwise_cipher = CME_AP_WPA_DEFAULT_CIPHER;
             pCmeSsid->group_cipher = CME_AP_WPA_DEFAULT_CIPHER;
-            //pCmeSsid->sae_pwe = CME_AP_WPA_SAE_PWE_H2E_AND_HUNTING_AND_PECKING;
+            pCmeSsid->sae_pwe = CME_AP_WPA_SAE_PWE_H2E_AND_HUNTING_AND_PECKING;
             pCmeSsid->ieee80211w = MGMT_FRAME_PROTECTION_OPTIONAL;
             pCmeSsid->proto = WPA_PROTO_RSN;
             pCmeSsid->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
@@ -432,6 +433,8 @@ void CmeSetApParams(void *apParams)
         gCmeSsid.wps_disabled = 0;
         cfgSetWpsParameters(&(pParams->wpsParams));
     }
+
+    //Set AP SAE related configurations
     
     if ((pParams->sae_pwe != 0) && (pParams->sae_pwe != 1) && (pParams->sae_pwe != 2))
     {
@@ -441,6 +444,14 @@ void CmeSetApParams(void *apParams)
     {
         sae_pwe = pParams->sae_pwe;
     }
+
+    gCmeSsid.transition_disable = !!pParams->transitionDisable;
+
+    CME_PRINT_REPORT("\n\r Transition_disable=%d sae_anticlogging_threshold=%d\n\r",
+                        gCmeSsid.transition_disable, 
+                        pParams->sae_anticlogging_threshold);
+
+    cfgSetApSaeAntiCloggingThreshold(pParams->sae_anticlogging_threshold);
 
     // Set security Params
     if(setApSecurityParams(&pParams->secParams, sae_pwe, &gCmeSsid) < 0)

@@ -49,7 +49,7 @@ typedef void (*TTransportCbFunc)(void* hCbHndl);
 /* transport thread DEFINITIONS                                                        */
 /*****************************************************************************/
 /* Transport module structure */
-#define MAX_CLIENTS     8   /* Maximum number of clients using Transport services */
+#define MAX_CLIENTS     9   /* Maximum number of clients using Transport services */
 #define MAX_NAME_SIZE   16  /* Maximum client's name string size */
 
 typedef struct

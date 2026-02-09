@@ -1,6 +1,6 @@
 /*
  *  Copyright The Mbed TLS Contributors
- *  Copyright (c) 2025, Texas Instruments Incorporated
+ *  Copyright (c) 2025-2026, Texas Instruments Incorporated
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -1919,8 +1919,7 @@ psa_status_t psa_mac_abort(psa_mac_operation_t *operation)
 #if (TI_SW_CRYPTO_ENABLED == 1)
     else
     {
-        return PSA_ERROR_NOT_SUPPORTED;
-        // return mbedtls_psa_mac_abort(&operation->MBEDTLS_PRIVATE(ctx).mbedtls_ctx);
+        return mbedtls_psa_mac_abort(&operation->MBEDTLS_PRIVATE(ctx).mbedtls_ctx);
     }
 #else
     return PSA_ERROR_NOT_SUPPORTED;

@@ -1,6 +1,6 @@
 /*
  *  Copyright The Mbed TLS Contributors
- *  Copyright 2022-2025, Texas Instruments Incorporated
+ *  Copyright 2022-2026, Texas Instruments Incorporated
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -178,47 +178,6 @@ typedef enum
 /* Global data, support functions and library management */
 /******************************************************************************/
 
-/* These globals are required to support operations with callback return
- * behavior since locally defined operation structs may get removed from the
- * stack before the SL driver has finished using them. A union was not used
- * for the operational structs to avoid violating MISRA rule 19.2.
- */
-#if defined(ENABLE_TI_CRYPTO_AESCBC) || defined(ENABLE_TI_CRYPTO_AESCTR) || defined(ENABLE_TI_CRYPTO_AESECB)
-static uint8_t iv_array[16];
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESCBC
-static AESCBC_Operation aescbcOp;
-static CryptoKey aescbcCryptoKey;
-static AESCBC_SegmentedOperation aescbcSegmentedOp;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESCCM
-static AESCCM_OneStepOperation aesccmOneStepOp;
-static CryptoKey aesccmCryptoKey;
-static AESCCM_SegmentedAADOperation aesccmSegmentedAadOp;
-static AESCCM_SegmentedDataOperation aesccmSegmentedDataOp;
-static AESCCM_SegmentedFinalizeOperation aesccmSegmentedFinalizeOp;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESCMAC
-static AESCMAC_Operation aescmacOp;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESCTR
-static AESCTR_Operation aesctrOp;
-static CryptoKey aesctrCryptoKey;
-static AESCTR_SegmentedOperation aesctrSegmentedOp;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESGCM
-static AESGCM_OneStepOperation aesgcmOneStepOp;
-static CryptoKey aesgcmCryptoKey;
-static AESGCM_SegmentedAADOperation aesgcmSegmentedAadOp;
-static AESGCM_SegmentedDataOperation aesgcmSegmentedDataOp;
-static AESGCM_SegmentedFinalizeOperation aesgcmSegmentedFinalizeOp;
-#endif
-
 /* Device-specific crypto object mapping */
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
      (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
@@ -263,39 +222,6 @@ static AESGCM_SegmentedFinalizeOperation aesgcmSegmentedFinalizeOp;
 /* SimpleLink crypto driver config structs and their associated device-specific
  * object and HW attributes structs.
  */
-#ifdef ENABLE_TI_CRYPTO_AESCBC
-static AESCBC_Handle aescbcHandle = NULL;
-static AESCBC_Config aescbcConfig;
-static AESCBC_Object aescbcObject;
-#endif
-#ifdef ENABLE_TI_CRYPTO_AESCCM
-static AESCCM_Handle aesccmHandle = NULL;
-static AESCCM_Config aesccmConfig;
-static AESCCM_Object aesccmObject;
-#endif
-#ifdef ENABLE_TI_CRYPTO_AESCMAC
-static AESCMAC_Handle aescmacHandle   = NULL;
-static AESCMAC_Handle aescbcmacHandle = NULL;
-static AESCMAC_Config aescmacConfig;
-static AESCMAC_Config aescbcmacConfig;
-static AESCMAC_Object aescmacObject;
-static AESCMAC_Object aescbcmacObject;
-#endif
-#ifdef ENABLE_TI_CRYPTO_AESCTR
-static AESCTR_Handle aesctrHandle = NULL;
-static AESCTR_Config aesctrConfig;
-static AESCTR_Object aesctrObject;
-#endif
-#ifdef ENABLE_TI_CRYPTO_AESGCM
-static AESGCM_Handle aesgcmHandle = NULL;
-static AESGCM_Config aesgcmConfig;
-static AESGCM_Object aesgcmObject;
-#endif
-#ifdef ENABLE_TI_CRYPTO_EDDSA
-static EDDSA_Handle eddsaHandle = NULL;
-static EDDSA_Config eddsaConfig;
-static EDDSA_Object eddsaObject;
-#endif
 #if defined(ENABLE_TI_CRYPTO_TRNG)
 static TRNG_Handle trngHandle = NULL;
 static TRNG_Config trngConfig;
@@ -600,9 +526,18 @@ static void psa_set_aes_return_behavior(AESCommonXXF3_Object *object, psa_return
 /*
  *  ======== psa_aescbc_construct ========
  */
-static void psa_aescbc_construct(psa_return_behavior_t returnBehavior)
+static AESCBC_Handle psa_aescbc_construct(AESCBC_Config *aescbcConfig, AESCBC_Object *aescbcObject)
 {
     AESCBC_Params aescbcParams;
+    psa_return_behavior_t returnBehavior;
+
+    #ifdef TFM_BUILD
+    /* Secure callers require the driver to be in polling mode. */
+    returnBehavior = psa_crypto_ns_caller ? PSA_CALLBACK_MODE : PSA_POLLING_MODE;
+    #else
+    returnBehavior = PSA_BLOCKING_MODE;
+    #endif
+
     AESCBC_Params_init(&aescbcParams);
 
     if (returnBehavior == PSA_POLLING_MODE)
@@ -621,18 +556,18 @@ static void psa_aescbc_construct(psa_return_behavior_t returnBehavior)
     #endif
     }
 
-    memset(&aescbcObject, 0x0, sizeof(aescbcObject));
-    aescbcConfig.object  = &aescbcObject;
-    aescbcConfig.hwAttrs = &aescbcHWAttrs;
+    memset(aescbcObject, 0x0, sizeof(AESCBC_Object));
+    aescbcConfig->object  = aescbcObject;
+    aescbcConfig->hwAttrs = &aescbcHWAttrs;
 
-    aescbcHandle = AESCBC_construct(&aescbcConfig, &aescbcParams);
+    return AESCBC_construct(aescbcConfig, &aescbcParams);
 }
 
     #if defined(TFM_BUILD) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== psa_aescbc_set_return_behavior ========
  */
-static void psa_aescbc_set_return_behavior(psa_return_behavior_t returnBehavior)
+static void psa_aescbc_set_return_behavior(AESCBC_Handle aescbcHandle, psa_return_behavior_t returnBehavior)
 {
     AESCBC_Object *object = (AESCBC_Object *)aescbcHandle->object;
 
@@ -645,9 +580,17 @@ static void psa_aescbc_set_return_behavior(psa_return_behavior_t returnBehavior)
 /*
  *  ======== psa_aesccm_construct ========
  */
-static void psa_aesccm_construct(psa_return_behavior_t returnBehavior)
+static AESCCM_Handle psa_aesccm_construct(AESCCM_Config *aesccmConfig, AESCCM_Object *aesccmObject)
 {
     AESCCM_Params aesccmParams;
+    psa_return_behavior_t returnBehavior;
+    #ifdef TFM_BUILD
+    /* Secure callers require the driver to be in polling mode. */
+    returnBehavior = psa_crypto_ns_caller ? PSA_CALLBACK_MODE : PSA_POLLING_MODE;
+    #else
+    returnBehavior = PSA_BLOCKING_MODE;
+    #endif
+
     AESCCM_Params_init(&aesccmParams);
 
     if (returnBehavior == PSA_POLLING_MODE)
@@ -666,17 +609,17 @@ static void psa_aesccm_construct(psa_return_behavior_t returnBehavior)
     #endif
     }
 
-    memset(&aesccmObject, 0x0, sizeof(aesccmObject));
-    aesccmConfig.object  = &aesccmObject;
-    aesccmConfig.hwAttrs = &aesccmHWAttrs;
+    memset(aesccmObject, 0x0, sizeof(AESCCM_Object));
+    aesccmConfig->object  = aesccmObject;
+    aesccmConfig->hwAttrs = &aesccmHWAttrs;
 
-    aesccmHandle = AESCCM_construct(&aesccmConfig, &aesccmParams);
+    return AESCCM_construct(aesccmConfig, &aesccmParams);
 }
     #if defined(TFM_BUILD) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== psa_aesccm_set_return_behavior ========
  */
-static void psa_aesccm_set_return_behavior(psa_return_behavior_t returnBehavior)
+static void psa_aesccm_set_return_behavior(AESCCM_Handle aesccmHandle, psa_return_behavior_t returnBehavior)
 {
     AESCCM_Object *object = (AESCCM_Object *)aesccmHandle->object;
 
@@ -686,9 +629,17 @@ static void psa_aesccm_set_return_behavior(psa_return_behavior_t returnBehavior)
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESCMAC
-static void psa_aescmac_construct(psa_return_behavior_t returnBehavior)
+static AESCMAC_Handle psa_aescmac_construct(AESCMAC_Config *aescmacConfig, AESCMAC_Object *aescmacObject)
 {
     AESCMAC_Params aescmacParams;
+    psa_return_behavior_t returnBehavior;
+    #ifdef TFM_BUILD
+    /* Secure callers require the driver to be in polling mode. */
+    returnBehavior = psa_crypto_ns_caller ? PSA_CALLBACK_MODE : PSA_POLLING_MODE;
+    #else
+    returnBehavior = PSA_BLOCKING_MODE;
+    #endif
+
     AESCMAC_Params_init(&aescmacParams);
 
     if (returnBehavior == PSA_POLLING_MODE)
@@ -707,11 +658,11 @@ static void psa_aescmac_construct(psa_return_behavior_t returnBehavior)
     #endif
     }
 
-    memset(&aescmacObject, 0x0, sizeof(aescmacObject));
-    aescmacConfig.object  = &aescmacObject;
-    aescmacConfig.hwAttrs = &aescmacHWAttrs;
+    memset(aescmacObject, 0x0, sizeof(AESCMAC_Object));
+    aescmacConfig->object  = aescmacObject;
+    aescmacConfig->hwAttrs = &aescmacHWAttrs;
 
-    aescmacHandle = AESCMAC_construct(&aescmacConfig, &aescmacParams);
+    return AESCMAC_construct(aescmacConfig, &aescmacParams);
 }
 
     #if defined(TFM_BUILD) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
@@ -730,9 +681,17 @@ static void psa_aescmac_set_return_behavior(AESCMAC_Handle handle, psa_return_be
 /*
  *  ======== psa_aescbcmac_construct ========
  */
-static void psa_aescbcmac_construct(psa_return_behavior_t returnBehavior)
+static AESCMAC_Handle psa_aescbcmac_construct(AESCMAC_Config *aescbcmacConfig, AESCMAC_Object *aescbcmacObject)
 {
     AESCMAC_Params aescbcmacParams;
+    psa_return_behavior_t returnBehavior;
+    #ifdef TFM_BUILD
+    /* Secure callers require the driver to be in polling mode. */
+    returnBehavior = psa_crypto_ns_caller ? PSA_CALLBACK_MODE : PSA_POLLING_MODE;
+    #else
+    returnBehavior = PSA_BLOCKING_MODE;
+    #endif
+
     AESCMAC_Params_init(&aescbcmacParams);
 
     aescbcmacParams.operationalMode = AESCMAC_OPMODE_CBCMAC;
@@ -753,24 +712,24 @@ static void psa_aescbcmac_construct(psa_return_behavior_t returnBehavior)
     #endif
     }
 
-    memset(&aescbcmacObject, 0x0, sizeof(aescbcmacObject));
-    aescbcmacConfig.object  = &aescbcmacObject;
-    aescbcmacConfig.hwAttrs = &aescbcmacHWAttrs;
+    memset(aescbcmacObject, 0x0, sizeof(AESCMAC_Object));
+    aescbcmacConfig->object  = aescbcmacObject;
+    aescbcmacConfig->hwAttrs = &aescbcmacHWAttrs;
 
-    aescbcmacHandle = AESCMAC_construct(&aescbcmacConfig, &aescbcmacParams);
+    return AESCMAC_construct(aescbcmacConfig, &aescbcmacParams);
 }
 
-static AESCMAC_Handle psa_aescmac_get_handle(psa_algorithm_t alg)
+static AESCMAC_Handle psa_aescmac_get_handle(ti_psa_mac_operation_t *operation, psa_algorithm_t alg)
 {
     AESCMAC_Handle handle;
 
     if (alg == PSA_ALG_CMAC)
     {
-        handle = aescmacHandle;
+        handle = (AESCMAC_Handle)&operation->driver.aescmac.aescmacConfig;
     }
     else
     {
-        handle = aescbcmacHandle;
+        handle = (AESCMAC_Handle)&operation->driver.aescbcmac.aescbcmacConfig;
     }
 
     return handle;
@@ -781,9 +740,18 @@ static AESCMAC_Handle psa_aescmac_get_handle(psa_algorithm_t alg)
 /*
  *  ======== psa_aesctr_construct ========
  */
-static void psa_aesctr_construct(psa_return_behavior_t returnBehavior)
+static AESCTR_Handle psa_aesctr_construct(AESCTR_Config *aesctrConfig, AESCTR_Object *aesctrObject)
 {
     AESCTR_Params aesctrParams;
+    psa_return_behavior_t returnBehavior;
+
+    #ifdef TFM_BUILD
+    /* Secure callers require the driver to be in polling mode. */
+    returnBehavior = psa_crypto_ns_caller ? PSA_CALLBACK_MODE : PSA_POLLING_MODE;
+    #else
+    returnBehavior = PSA_BLOCKING_MODE;
+    #endif
+
     AESCTR_Params_init(&aesctrParams);
 
     if (returnBehavior == PSA_POLLING_MODE)
@@ -802,18 +770,18 @@ static void psa_aesctr_construct(psa_return_behavior_t returnBehavior)
     #endif
     }
 
-    memset(&aesctrObject, 0x0, sizeof(aesctrObject));
-    aesctrConfig.object  = &aesctrObject;
-    aesctrConfig.hwAttrs = &aesctrHWAttrs;
+    memset(aesctrObject, 0x0, sizeof(AESCTR_Object));
+    aesctrConfig->object  = aesctrObject;
+    aesctrConfig->hwAttrs = &aesctrHWAttrs;
 
-    aesctrHandle = AESCTR_construct(&aesctrConfig, &aesctrParams);
+    return AESCTR_construct(aesctrConfig, &aesctrParams);
 }
 
     #if defined(TFM_BUILD) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== psa_aesctr_set_return_behavior ========
  */
-static void psa_aesctr_set_return_behavior(psa_return_behavior_t returnBehavior)
+static void psa_aesctr_set_return_behavior(AESCTR_Handle aesctrHandle, psa_return_behavior_t returnBehavior)
 {
     AESCTR_Object *object = (AESCTR_Object *)aesctrHandle->object;
 
@@ -880,9 +848,17 @@ static void psa_aesecb_set_return_behavior(AESECB_Handle aesecbHandle, psa_retur
 /*
  *  ======== psa_aesgcm_construct ========
  */
-static void psa_aesgcm_construct(psa_return_behavior_t returnBehavior)
+static AESGCM_Handle psa_aesgcm_construct(AESGCM_Config *aesgcmConfig, AESGCM_Object *aesgcmObject)
 {
     AESGCM_Params aesgcmParams;
+    psa_return_behavior_t returnBehavior;
+    #ifdef TFM_BUILD
+    /* Secure callers require the driver to be in polling mode. */
+    returnBehavior = psa_crypto_ns_caller ? PSA_CALLBACK_MODE : PSA_POLLING_MODE;
+    #else
+    returnBehavior = PSA_BLOCKING_MODE;
+    #endif
+
     AESGCM_Params_init(&aesgcmParams);
 
     if (returnBehavior == PSA_POLLING_MODE)
@@ -901,18 +877,18 @@ static void psa_aesgcm_construct(psa_return_behavior_t returnBehavior)
     #endif
     }
 
-    memset(&aesgcmObject, 0x0, sizeof(aesgcmObject));
-    aesgcmConfig.object  = &aesgcmObject;
-    aesgcmConfig.hwAttrs = &aesgcmHWAttrs;
+    memset(aesgcmObject, 0x0, sizeof(AESGCM_Object));
+    aesgcmConfig->object  = aesgcmObject;
+    aesgcmConfig->hwAttrs = &aesgcmHWAttrs;
 
-    aesgcmHandle = AESGCM_construct(&aesgcmConfig, &aesgcmParams);
+    return AESGCM_construct(aesgcmConfig, &aesgcmParams);
 }
 
     #if defined(TFM_BUILD) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== psa_aesgcm_set_return_behavior ========
  */
-static void psa_aesgcm_set_return_behavior(psa_return_behavior_t returnBehavior)
+static void psa_aesgcm_set_return_behavior(AESGCM_Handle aesgcmHandle, psa_return_behavior_t returnBehavior)
 {
     AESGCM_Object *object = (AESGCM_Object *)aesgcmHandle->object;
 
@@ -1011,9 +987,18 @@ static ECDSA_Handle psa_ecdsa_construct(ECDSA_Config *ecdsaConfig, ECDSA_Object 
 /*
  *  ======== psa_eddsa_construct ========
  */
-static void psa_eddsa_construct(psa_return_behavior_t returnBehavior)
+static EDDSA_Handle psa_eddsa_construct(EDDSA_Config *eddsaConfig, EDDSA_Object *eddsaObject)
 {
     EDDSA_Params eddsaParams;
+    psa_return_behavior_t returnBehavior;
+
+    #ifdef TFM_BUILD
+    /* Secure callers require the driver to be in polling mode. */
+    returnBehavior = psa_crypto_ns_caller ? PSA_CALLBACK_MODE : PSA_POLLING_MODE;
+    #else
+    returnBehavior = PSA_BLOCKING_MODE;
+    #endif
+
     EDDSA_Params_init(&eddsaParams);
 
     if (returnBehavior == PSA_POLLING_MODE)
@@ -1032,18 +1017,18 @@ static void psa_eddsa_construct(psa_return_behavior_t returnBehavior)
     #endif
     }
 
-    memset(&eddsaObject, 0x0, sizeof(eddsaObject));
-    eddsaConfig.object  = &eddsaObject;
-    eddsaConfig.hwAttrs = &eddsaHWAttrs;
+    memset(eddsaObject, 0x0, sizeof(EDDSA_Object));
+    eddsaConfig->object  = eddsaObject;
+    eddsaConfig->hwAttrs = &eddsaHWAttrs;
 
-    eddsaHandle = EDDSA_construct(&eddsaConfig, &eddsaParams);
+    return EDDSA_construct(eddsaConfig, &eddsaParams);
 }
 
     #if defined(TFM_BUILD) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== psa_eddsa_set_return_behavior ========
  */
-static void psa_eddsa_set_return_behavior(psa_return_behavior_t returnBehavior)
+static void psa_eddsa_set_return_behavior(EDDSA_Handle eddsaHandle, psa_return_behavior_t returnBehavior)
 {
     EDDSA_Object *object = (EDDSA_Object *)eddsaHandle->object;
 
@@ -1193,57 +1178,12 @@ void psa_setup_return_behavior(bool ns_caller)
 
     if (ns_caller)
     {
-    #ifdef ENABLE_TI_CRYPTO_AESCBC
-        psa_aescbc_set_return_behavior(PSA_CALLBACK_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_AESCMAC
-        psa_aescmac_set_return_behavior(aescmacHandle, PSA_CALLBACK_MODE);
-        psa_aescmac_set_return_behavior(aescbcmacHandle, PSA_CALLBACK_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_AESCCM
-        psa_aesccm_set_return_behavior(PSA_CALLBACK_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_AESCTR
-        psa_aesctr_set_return_behavior(PSA_CALLBACK_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_AESGCM
-        psa_aesgcm_set_return_behavior(PSA_CALLBACK_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_EDDSA
-        psa_eddsa_set_return_behavior(PSA_CALLBACK_MODE);
-    #endif
         /* Note: For XXF3 devices, the return behavior for RNG is fixed in
          * SysConfig and not configurable.
          */
     #ifdef ENABLE_TI_CRYPTO_TRNG
         #error "psa_setup_return_behavior does not support TRNG"
     #endif
-    }
-    else
-    {
-        /* For secure callers, all operations must be completed in polling mode */
-    #ifdef ENABLE_TI_CRYPTO_AESCBC
-        psa_aescbc_set_return_behavior(PSA_POLLING_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_AESCMAC
-        psa_aescmac_set_return_behavior(aescmacHandle, PSA_POLLING_MODE);
-        psa_aescmac_set_return_behavior(aescbcmacHandle, PSA_POLLING_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_AESCCM
-        psa_aesccm_set_return_behavior(PSA_POLLING_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_AESCTR
-        psa_aesctr_set_return_behavior(PSA_POLLING_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_AESGCM
-        psa_aesgcm_set_return_behavior(PSA_POLLING_MODE);
-    #endif
-    #ifdef ENABLE_TI_CRYPTO_EDDSA
-        psa_eddsa_set_return_behavior(PSA_POLLING_MODE);
-    #endif
-        /* Note: For XXF3 devices, the return behavior for RNG is fixed in
-         * SysConfig and not configurable.
-         */
     }
 }
 
@@ -1283,81 +1223,6 @@ static psa_status_t psa_validate_gcm_tag_length(size_t tagLength)
     return status;
 }
 #endif
-
-/*
- *  ======== psa_check_aes_handle ========
- */
-static psa_status_t psa_check_aes_handle(psa_algorithm_t alg)
-{
-    psa_status_t status = PSA_ERROR_BAD_STATE;
-
-    switch (alg)
-    {
-#ifdef ENABLE_TI_CRYPTO_AESCBC
-        case PSA_ALG_CBC_NO_PADDING:
-            if (aescbcHandle != NULL)
-            {
-                status = PSA_SUCCESS;
-            }
-            break;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESCCM
-        case PSA_ALG_CCM:
-            if (aesccmHandle != NULL)
-            {
-                status = PSA_SUCCESS;
-            }
-            break;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESCMAC
-        case PSA_ALG_CMAC:
-            if (aescmacHandle != NULL)
-            {
-                status = PSA_SUCCESS;
-            }
-            break;
-
-        case PSA_ALG_CBC_MAC:
-            if (aescbcmacHandle != NULL)
-            {
-                status = PSA_SUCCESS;
-            }
-            break;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESCTR
-        case PSA_ALG_CTR:
-            if (aesctrHandle != NULL)
-            {
-                status = PSA_SUCCESS;
-            }
-            break;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESECB
-        case PSA_ALG_ECB_NO_PADDING:
-            status = PSA_SUCCESS;
-            break;
-#endif
-
-#ifdef ENABLE_TI_CRYPTO_AESGCM
-        case PSA_ALG_GCM:
-            if (aesgcmHandle != NULL)
-            {
-                status = PSA_SUCCESS;
-            }
-            break;
-#endif
-
-        default:
-            status = PSA_ERROR_NOT_SUPPORTED;
-            break;
-    }
-
-    return status;
-}
 
 #ifdef ENABLE_TI_CRYPTO_SHA2
 /*
@@ -3198,7 +3063,7 @@ static psa_status_t ti_psa_mac_setup(ti_psa_mac_operation_t *operation,
     {
 #ifdef ENABLE_TI_CRYPTO_AESCMAC
 
-        AESCMAC_Handle handle = psa_aescmac_get_handle(macAlg);
+        AESCMAC_Handle handle = psa_aescmac_get_handle(operation, macAlg);
 
         if (handle == NULL)
         {
@@ -3296,9 +3161,9 @@ psa_status_t ti_psa_mac_verify_setup(psa_mac_operation_t *psa_operation, mbedtls
 /*
  *  ======== ti_psa_mac_cancel_internal ========
  */
-static void ti_psa_mac_cancel_internal(psa_algorithm_t alg)
+static void ti_psa_mac_cancel_internal(ti_psa_mac_operation_t *operation)
 {
-    AESCMAC_Handle handle = psa_aescmac_get_handle(alg);
+    AESCMAC_Handle handle = psa_aescmac_get_handle(operation, operation->alg);
 
     #ifdef TFM_BUILD
     if (psa_crypto_ns_caller)
@@ -3321,7 +3186,8 @@ static void ti_psa_mac_cancel_internal(psa_algorithm_t alg)
 /*
  *  ======== ti_psa_mac_update_internal ========
  */
-static psa_status_t ti_psa_mac_update_internal(psa_algorithm_t alg,
+static psa_status_t ti_psa_mac_update_internal(ti_psa_mac_operation_t *operation,
+                                               psa_algorithm_t alg,
                                                const uint8_t *input,
                                                size_t input_length,
                                                bool isFinalOp)
@@ -3332,12 +3198,14 @@ static psa_status_t ti_psa_mac_update_internal(psa_algorithm_t alg,
     int_fast16_t ret;
     psa_status_t status;
 
-    AESCMAC_Handle handle = psa_aescmac_get_handle(alg);
+    AESCMAC_Handle handle = psa_aescmac_get_handle(operation, alg);
 
     if (handle == NULL)
     {
         return PSA_ERROR_BAD_STATE;
     }
+
+    AESCMAC_Operation aescmacOp;
 
     AESCMAC_Operation_init(&aescmacOp);
     aescmacOp.input       = (uint8_t *)input;
@@ -3384,7 +3252,7 @@ psa_status_t ti_psa_mac_abort(psa_mac_operation_t *psa_operation)
     if ((operation->alg == PSA_ALG_CMAC) || (operation->alg == PSA_ALG_CBC_MAC))
     {
 #ifdef ENABLE_TI_CRYPTO_AESCMAC
-        ti_psa_mac_cancel_internal(operation->alg);
+        ti_psa_mac_cancel_internal(operation);
         status = PSA_SUCCESS;
 #endif
     }
@@ -3502,7 +3370,8 @@ psa_status_t ti_psa_mac_update(psa_mac_operation_t *psa_operation, const uint8_t
             isFinalOp = false;
         }
 
-        status = ti_psa_mac_update_internal(operation->alg,
+        status = ti_psa_mac_update_internal(operation,
+                                            operation->alg,
                                             operation->curr_unprocessed_data,
                                             PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE,
                                             isFinalOp);
@@ -3546,7 +3415,7 @@ psa_status_t ti_psa_mac_update(psa_mac_operation_t *psa_operation, const uint8_t
             (void)memcpy(operation->curr_unprocessed_data, (input + amountToAdd), (totalUnprocessedLen - amountToAdd));
             operation->unprocessed_len = totalUnprocessedLen - amountToAdd;
 
-            status = ti_psa_mac_update_internal(operation->alg, input, amountToAdd, isFinalOp);
+            status = ti_psa_mac_update_internal(operation, operation->alg, input, amountToAdd, isFinalOp);
         }
         else
         {
@@ -3631,12 +3500,13 @@ psa_status_t ti_psa_mac_sign_finish(psa_mac_operation_t *psa_operation,
     if ((operation->alg == PSA_ALG_CMAC) || (operation->alg == PSA_ALG_CBC_MAC))
     {
 #ifdef ENABLE_TI_CRYPTO_AESCMAC
-        AESCMAC_Handle handle = psa_aescmac_get_handle(operation->alg);
+        AESCMAC_Handle handle = psa_aescmac_get_handle(operation, operation->alg);
 
         if (handle == NULL)
         {
             return PSA_ERROR_BAD_STATE;
         }
+        AESCMAC_Operation aescmacOp;
 
         AESCMAC_Operation_init(&aescmacOp);
         aescmacOp.input       = operation->curr_unprocessed_data;
@@ -3649,7 +3519,7 @@ psa_status_t ti_psa_mac_sign_finish(psa_mac_operation_t *psa_operation,
          */
         if (operation->unprocessed_len == 0)
         {
-            ti_psa_mac_cancel_internal(operation->alg);
+            ti_psa_mac_cancel_internal(operation);
 
             ret = AESCMAC_oneStepSign(handle, &aescmacOp, &operation->cryptoKey);
         }
@@ -3763,13 +3633,14 @@ psa_status_t ti_psa_mac_verify_finish(psa_mac_operation_t *psa_operation, const 
     if ((operation->alg == PSA_ALG_CMAC) || (operation->alg == PSA_ALG_CBC_MAC))
     {
 #ifdef ENABLE_TI_CRYPTO_AESCMAC
-        AESCMAC_Handle handle = psa_aescmac_get_handle(operation->alg);
+        AESCMAC_Handle handle = psa_aescmac_get_handle(operation, operation->alg);
 
         if (handle == NULL)
         {
             status = PSA_ERROR_BAD_STATE;
             goto exit;
         }
+        AESCMAC_Operation aescmacOp;
 
         AESCMAC_Operation_init(&aescmacOp);
         aescmacOp.input       = operation->curr_unprocessed_data;
@@ -3782,7 +3653,7 @@ psa_status_t ti_psa_mac_verify_finish(psa_mac_operation_t *psa_operation, const 
          */
         if (operation->unprocessed_len == 0)
         {
-            ti_psa_mac_cancel_internal(operation->alg);
+            ti_psa_mac_cancel_internal(operation);
 
             ret = AESCMAC_oneStepVerify(handle, &aescmacOp, &operation->cryptoKey);
         }
@@ -3920,7 +3791,18 @@ psa_status_t ti_psa_mac_compute(mbedtls_svc_key_id_t key,
     if ((algBase == PSA_ALG_CMAC) || (algBase == PSA_ALG_CBC_MAC))
     {
 #ifdef ENABLE_TI_CRYPTO_AESCMAC
-        AESCMAC_Handle handle = psa_aescmac_get_handle(algBase);
+        AESCMAC_Config aescmacConfig;
+        AESCMAC_Object aescmacObject;
+        AESCMAC_Handle handle;
+
+        if (algBase == PSA_ALG_CMAC)
+        {
+            handle = psa_aescmac_construct(&aescmacConfig, &aescmacObject);
+        }
+        else
+        {
+            handle = psa_aescbcmac_construct(&aescmacConfig, &aescmacObject);
+        }
 
         if (handle == NULL)
         {
@@ -3928,6 +3810,7 @@ psa_status_t ti_psa_mac_compute(mbedtls_svc_key_id_t key,
         }
         else
         {
+            AESCMAC_Operation aescmacOp;
             AESCMAC_Operation_init(&aescmacOp);
             aescmacOp.input       = (uint8_t *)input;
             aescmacOp.inputLength = input_length;
@@ -3936,6 +3819,18 @@ psa_status_t ti_psa_mac_compute(mbedtls_svc_key_id_t key,
 
             ret    = AESCMAC_oneStepSign(handle, &aescmacOp, &cryptoKey);
             status = map_AES_status(ret);
+
+            if (((AESCMAC_Object *)handle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+            {
+                /* Set a marker so that the secure callback knows that the handle can be closed, since
+                 * this is a one-shot operation.
+                 */
+                ((AESCMAC_Object *)handle->object)->common.isOpen = false;
+            }
+            else
+            {
+                AESCMAC_close(handle);
+            }
         }
 #endif
     }
@@ -4047,12 +3942,24 @@ psa_status_t ti_psa_mac_verify(mbedtls_svc_key_id_t key,
     if ((algBase == PSA_ALG_CMAC) || (algBase == PSA_ALG_CBC_MAC))
     {
 #ifdef ENABLE_TI_CRYPTO_AESCMAC
-        AESCMAC_Handle handle = psa_aescmac_get_handle(algBase);
+        AESCMAC_Config aescmacConfig;
+        AESCMAC_Object aescmacObject;
+        AESCMAC_Handle handle;
+
+        if (algBase == PSA_ALG_CMAC)
+        {
+            handle = psa_aescmac_construct(&aescmacConfig, &aescmacObject);
+        }
+        else
+        {
+            handle = psa_aescbcmac_construct(&aescmacConfig, &aescmacObject);
+        }
 
         if (handle == NULL)
         {
             return PSA_ERROR_BAD_STATE;
         }
+        AESCMAC_Operation aescmacOp;
 
         AESCMAC_Operation_init(&aescmacOp);
         aescmacOp.input       = (uint8_t *)input;
@@ -4062,6 +3969,18 @@ psa_status_t ti_psa_mac_verify(mbedtls_svc_key_id_t key,
 
         ret    = AESCMAC_oneStepVerify(handle, &aescmacOp, &cryptoKey);
         status = map_AES_status(ret);
+
+        if (((AESCMAC_Object *)handle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+        {
+            /* Set a marker so that the secure callback knows that the handle can be closed, since
+             * this is a one-shot operation.
+             */
+            ((AESCMAC_Object *)handle->object)->common.isOpen = false;
+        }
+        else
+        {
+            AESCMAC_close(handle);
+        }
 #endif /* ENABLE_TI_CRYPTO_AESCMAC */
     }
     else if (PSA_ALG_IS_HMAC(alg))
@@ -4287,11 +4206,6 @@ psa_status_t ti_psa_sign_message(mbedtls_svc_key_id_t key,
     {
 #ifdef ENABLE_TI_CRYPTO_EDDSA
         /* The twisted Edwards curves Ed25519 */
-        if (eddsaHandle == NULL)
-        {
-            return PSA_ERROR_BAD_STATE;
-        }
-
         uint8_t *myPublicKeyMaterial;
 
         /* First generate public key */
@@ -4302,6 +4216,16 @@ psa_status_t ti_psa_sign_message(mbedtls_svc_key_id_t key,
         else
         {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
+        }
+
+        /* Construct EDDSA handle */
+        EDDSA_Config eddsaConfig;
+        EDDSA_Object eddsaObject;
+        EDDSA_Handle eddsaHandle = psa_eddsa_construct(&eddsaConfig, &eddsaObject);
+
+        if (eddsaHandle == NULL)
+        {
+            return PSA_ERROR_BAD_STATE;
         }
 
         CryptoKeyPlaintext_initBlankKey(&publicKey, myPublicKeyMaterial, ECCParams_CURVE25519_LENGTH);
@@ -4319,7 +4243,7 @@ psa_status_t ti_psa_sign_message(mbedtls_svc_key_id_t key,
         if (psa_crypto_ns_caller)
         {
             /* Set EDDSA driver to use polling mode since an additional SL API call is needed */
-            psa_eddsa_set_return_behavior(PSA_POLLING_MODE);
+            psa_eddsa_set_return_behavior(eddsaHandle, PSA_POLLING_MODE);
         }
     #endif
 
@@ -4329,7 +4253,7 @@ psa_status_t ti_psa_sign_message(mbedtls_svc_key_id_t key,
         if (psa_crypto_ns_caller)
         {
             /* Set EDDSA driver to use callback mode for the final SL API call */
-            psa_eddsa_set_return_behavior(PSA_CALLBACK_MODE);
+            psa_eddsa_set_return_behavior(eddsaHandle, PSA_CALLBACK_MODE);
         }
     #endif
 
@@ -4358,9 +4282,16 @@ psa_status_t ti_psa_sign_message(mbedtls_svc_key_id_t key,
         ret    = EDDSA_sign(eddsaHandle, &eddsaSignOp);
         status = map_EDDSA_status(ret, false);
 
-        if (status != PSA_SUCCESS)
+        if (eddsaObject.returnBehavior == EDDSA_RETURN_BEHAVIOR_CALLBACK)
         {
-            return status;
+            /* Set a marker so that the secure callback knows that the EDDSA_Handle can be closed, since
+             * this is a one-shot operation.
+             */
+            eddsaObject.isOpen = false;
+        }
+        else
+        {
+            EDDSA_close(eddsaHandle);
         }
 #endif /* ENABLE_TI_CRYPTO_EDDSA */
     }
@@ -4448,6 +4379,7 @@ psa_status_t ti_psa_sign_message(mbedtls_svc_key_id_t key,
 
         ecdsaSignOp.myPrivateKey = &privateKey;
         ecdsaSignOp.hash         = hash;
+        ecdsaSignOp.hashLength   = hash_length;
         ecdsaSignOp.r            = signature;
         ecdsaSignOp.s            = signature + (*signature_length / 2);
 
@@ -4483,7 +4415,7 @@ psa_status_t ti_psa_sign_message(mbedtls_svc_key_id_t key,
         (void)ret;
         /* Do nothing */
     }
-    /* Supported Curve Types are listed in the ECDSACC26X2.h. Montgomery and
+    /* Supported Curve Types are listed in ECDSACC26X2.h. Montgomery and
      * Edwards curve types are not currently supported.
      */
 
@@ -4565,10 +4497,16 @@ psa_status_t ti_psa_verify_message(mbedtls_svc_key_id_t key,
     if (alg == PSA_ALG_PURE_EDDSA)
     {
 #ifdef ENABLE_TI_CRYPTO_EDDSA
+        /* Construct EDDSA handle */
+        EDDSA_Config eddsaConfig;
+        EDDSA_Object eddsaObject;
+        EDDSA_Handle eddsaHandle = psa_eddsa_construct(&eddsaConfig, &eddsaObject);
+
         if (eddsaHandle == NULL)
         {
             return PSA_ERROR_BAD_STATE;
         }
+
         EDDSA_OperationVerify eddsaVerifyOp;
 
         EDDSA_OperationVerify_init(&eddsaVerifyOp);
@@ -4585,6 +4523,18 @@ psa_status_t ti_psa_verify_message(mbedtls_svc_key_id_t key,
 
         ret    = EDDSA_verify(eddsaHandle, &eddsaVerifyOp);
         status = map_EDDSA_status(ret, true);
+
+        if (eddsaObject.returnBehavior == EDDSA_RETURN_BEHAVIOR_CALLBACK)
+        {
+            /* Set a marker so that the secure callback knows that the EDDSA_Handle can be closed, since
+             * this is a one-shot operation.
+             */
+            eddsaObject.isOpen = false;
+        }
+        else
+        {
+            EDDSA_close(eddsaHandle);
+        }
 #endif /* ENABLE_TI_CRYPTO_EDDSA */
     }
     else if (PSA_ALG_IS_RANDOMIZED_ECDSA(alg) && PSA_KEY_TYPE_IS_ECC(keyType))
@@ -4671,6 +4621,7 @@ psa_status_t ti_psa_verify_message(mbedtls_svc_key_id_t key,
 
         ecdsaVerifyOp.theirPublicKey = &publicKey;
         ecdsaVerifyOp.hash           = hash;
+        ecdsaVerifyOp.hashLength     = hash_length;
         ecdsaVerifyOp.r              = signature;
         ecdsaVerifyOp.s              = signature + (signature_length / 2);
 
@@ -4840,6 +4791,7 @@ psa_status_t ti_psa_sign_hash(mbedtls_svc_key_id_t key,
 
     ecdsaSignOp.myPrivateKey = &privateKey;
     ecdsaSignOp.hash         = hash;
+    ecdsaSignOp.hashLength   = hash_length;
     ecdsaSignOp.r            = signature;
     ecdsaSignOp.s            = signature + curveBytes;
 
@@ -4988,6 +4940,7 @@ psa_status_t ti_psa_verify_hash(mbedtls_svc_key_id_t key,
 
     ecdsaVerifyOp.theirPublicKey = &publicKey;
     ecdsaVerifyOp.hash           = hash;
+    ecdsaVerifyOp.hashLength     = hash_length;
     ecdsaVerifyOp.r              = signature;
     ecdsaVerifyOp.s              = signature + (signature_length / 2);
 
@@ -5101,10 +5054,10 @@ psa_status_t ti_psa_cipher_encrypt(mbedtls_svc_key_id_t key,
     #if defined(PSA_DEBUG)
     uint8_t tempArray[16] = {0};
     uint8_t *iv_array2    = tempArray;
+    #else
+    uint8_t iv_array[16] = {0};
     #endif
 #endif
-
-    memset(iv_array, 0, sizeof(iv_array));
 
     *output_length = 0;
 
@@ -5153,12 +5106,6 @@ psa_status_t ti_psa_cipher_encrypt(mbedtls_svc_key_id_t key,
     }
 
     keyBits = psa_get_key_bits(&attributes);
-
-    status = psa_check_aes_handle(alg);
-    if (status != PSA_SUCCESS)
-    {
-        return status;
-    }
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     if (!IS_WORD_ALIGNED(output))
@@ -5219,6 +5166,23 @@ psa_status_t ti_psa_cipher_encrypt(mbedtls_svc_key_id_t key,
     else if (alg == PSA_ALG_CTR)
     {
 #ifdef ENABLE_TI_CRYPTO_AESCTR
+        AESCTR_Config aesctrConfig;
+        AESCTR_Object aesctrObject;
+
+        /* Construct temporary handle for one-shot operation */
+        AESCTR_Handle aesctrHandle = psa_aesctr_construct(&aesctrConfig, &aesctrObject);
+        if (aesctrHandle == NULL)
+        {
+            if (output_aligned != output)
+            {
+                free(output_free_address);
+            }
+            return PSA_ERROR_BAD_STATE;
+        }
+
+        AESCTR_Operation aesctrOp;
+        CryptoKey aesctrCryptoKey;
+
         AESCTR_Operation_init(&aesctrOp);
         KeyStore_PSA_initKey(&aesctrCryptoKey, key, PSA_BITS_TO_BYTES(keyBits), NULL);
         aesctrOp.key         = &aesctrCryptoKey;
@@ -5265,11 +5229,28 @@ psa_status_t ti_psa_cipher_encrypt(mbedtls_svc_key_id_t key,
         (void)memcpy(output_aligned, iv_array, ivSize);
     #endif
 
+        if (((AESCTR_Object *)aesctrHandle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+        {
+            /* Set a marker so that the secure callback knows that the driver handle can be closed, since
+             * this is a one-shot operation.
+             */
+            ((AESCTR_Object *)aesctrHandle->object)->common.isOpen = false;
+        }
+        else
+        {
+            AESCTR_close(aesctrHandle);
+        }
+
 #endif /* ENABLE_TI_CRYPTO_AESCTR */
     }
     else if (alg == PSA_ALG_CBC_NO_PADDING)
     {
 #ifdef ENABLE_TI_CRYPTO_AESCBC
+        AESCBC_Config aescbcConfig;
+        AESCBC_Object aescbcObject;
+        AESCBC_Operation aescbcOp;
+        CryptoKey aescbcCryptoKey;
+
         AESCBC_Operation_init(&aescbcOp);
         KeyStore_PSA_initKey(&aescbcCryptoKey, key, PSA_BITS_TO_BYTES(keyBits), NULL);
         aescbcOp.key         = &aescbcCryptoKey;
@@ -5307,6 +5288,17 @@ psa_status_t ti_psa_cipher_encrypt(mbedtls_svc_key_id_t key,
         aescbcOp.iv = iv_array;
     #endif
 
+        AESCBC_Handle aescbcHandle = psa_aescbc_construct(&aescbcConfig, &aescbcObject);
+
+        if (aescbcHandle == NULL)
+        {
+            if (output_aligned != output)
+            {
+                free(output_free_address);
+            }
+            return PSA_ERROR_BAD_STATE;
+        }
+
         ret    = AESCBC_oneStepEncrypt(aescbcHandle, &aescbcOp);
         status = map_AES_status(ret);
 
@@ -5316,6 +5308,18 @@ psa_status_t ti_psa_cipher_encrypt(mbedtls_svc_key_id_t key,
     #else
         (void)memcpy(output_aligned, iv_array, ivSize);
     #endif
+
+        if (((AESCBC_Object *)aescbcHandle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+        {
+            /* Set a marker so that the secure callback knows that the driver handle can be closed, since
+             * this is a one-shot operation.
+             */
+            ((AESCBC_Object *)aescbcHandle->object)->common.isOpen = false;
+        }
+        else
+        {
+            AESCBC_close(aescbcHandle);
+        }
 
 #endif /* ENABLE_TI_CRYPTO_AESCBC */
     }
@@ -5416,12 +5420,6 @@ psa_status_t ti_psa_cipher_decrypt(mbedtls_svc_key_id_t key,
 
     keyBits = psa_get_key_bits(&attributes);
 
-    status = psa_check_aes_handle(alg);
-    if (status != PSA_SUCCESS)
-    {
-        return status;
-    }
-
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     if (!IS_WORD_ALIGNED(output))
     {
@@ -5480,6 +5478,23 @@ psa_status_t ti_psa_cipher_decrypt(mbedtls_svc_key_id_t key,
     else if (alg == PSA_ALG_CTR)
     {
 #ifdef ENABLE_TI_CRYPTO_AESCTR
+        AESCTR_Config aesctrConfig;
+        AESCTR_Object aesctrObject;
+
+        /* Construct temporary handle for one-shot operation */
+        AESCTR_Handle aesctrHandle = psa_aesctr_construct(&aesctrConfig, &aesctrObject);
+        if (aesctrHandle == NULL)
+        {
+            if (output_aligned != output)
+            {
+                free(output_free_address);
+            }
+            return PSA_ERROR_BAD_STATE;
+        }
+
+        AESCTR_Operation aesctrOp;
+        CryptoKey aesctrCryptoKey;
+
         AESCTR_Operation_init(&aesctrOp);
         KeyStore_PSA_initKey(&aesctrCryptoKey, key, PSA_BITS_TO_BYTES(keyBits), NULL);
         aesctrOp.key            = &aesctrCryptoKey;
@@ -5490,11 +5505,41 @@ psa_status_t ti_psa_cipher_decrypt(mbedtls_svc_key_id_t key,
 
         ret    = AESCTR_oneStepDecrypt(aesctrHandle, &aesctrOp);
         status = map_AES_status(ret);
+
+        if (((AESCTR_Object *)aesctrHandle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+        {
+            /* Set a marker so that the secure callback knows that the driver handle can be closed, since
+             * this is a one-shot operation.
+             */
+            ((AESCTR_Object *)aesctrHandle->object)->common.isOpen = false;
+        }
+        else
+        {
+            AESCTR_close(aesctrHandle);
+        }
 #endif
     }
     else if (alg == PSA_ALG_CBC_NO_PADDING)
     {
 #ifdef ENABLE_TI_CRYPTO_AESCBC
+        AESCBC_Config aescbcConfig;
+        AESCBC_Object aescbcObject;
+
+        /* Construct temporary handle for one-shot operation */
+        AESCBC_Handle aescbcHandle = psa_aescbc_construct(&aescbcConfig, &aescbcObject);
+
+        if (aescbcHandle == NULL)
+        {
+            if (output_aligned != output)
+            {
+                free(output_free_address);
+            }
+            return PSA_ERROR_BAD_STATE;
+        }
+
+        AESCBC_Operation aescbcOp;
+        CryptoKey aescbcCryptoKey;
+
         AESCBC_Operation_init(&aescbcOp);
         KeyStore_PSA_initKey(&aescbcCryptoKey, key, PSA_BITS_TO_BYTES(keyBits), NULL);
         aescbcOp.key         = &aescbcCryptoKey;
@@ -5505,6 +5550,18 @@ psa_status_t ti_psa_cipher_decrypt(mbedtls_svc_key_id_t key,
 
         ret    = AESCBC_oneStepDecrypt(aescbcHandle, &aescbcOp);
         status = map_AES_status(ret);
+
+        if (((AESCBC_Object *)aescbcHandle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+        {
+            /* Set a marker so that the secure callback knows that the AESCBC_Handle can be closed, since
+             * this is a one-shot operation.
+             */
+            ((AESCBC_Object *)aescbcHandle->object)->common.isOpen = false;
+        }
+        else
+        {
+            AESCBC_close(aescbcHandle);
+        }
 #endif
     }
     else
@@ -5539,15 +5596,6 @@ static psa_status_t ti_psa_cipher_setup(ti_psa_cipher_operation_t *operation,
     psa_status_t status;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_usage_t usage           = (cipher_operation == AES_ENCRYPT ? PSA_KEY_USAGE_ENCRYPT : PSA_KEY_USAGE_DECRYPT);
-#ifdef ENABLE_TI_CRYPTO_AESECB
-    AESECB_Handle aesecbHandle;
-#endif
-
-    status = psa_check_aes_handle(alg);
-    if (status != PSA_SUCCESS)
-    {
-        return status;
-    }
 
     /* A context must be freshly initialized before it can be set up */
     if ((operation->id != 0U) || (operation->in_error_state == 1U))
@@ -5613,31 +5661,56 @@ static psa_status_t ti_psa_cipher_setup(ti_psa_cipher_operation_t *operation,
         {
 #ifdef ENABLE_TI_CRYPTO_AESECB
             case PSA_ALG_ECB_NO_PADDING:
-                aesecbHandle = psa_aesecb_construct(&operation->driver.aesecb.aesecbConfig,
-                                                    &operation->driver.aesecb.aesecbObject);
-
-                if (aesecbHandle == NULL)
                 {
-                    return PSA_ERROR_BAD_STATE;
-                }
+                    AESECB_Handle aesecbHandle;
+                    aesecbHandle = psa_aesecb_construct(&operation->driver.aesecb.aesecbConfig,
+                                                        &operation->driver.aesecb.aesecbObject);
 
-                ret    = AESECB_setupEncrypt(aesecbHandle, &operation->cryptoKey);
-                status = map_AES_status(ret);
-                break;
+                    if (aesecbHandle == NULL)
+                    {
+                        return PSA_ERROR_BAD_STATE;
+                    }
+
+                    ret    = AESECB_setupEncrypt(aesecbHandle, &operation->cryptoKey);
+                    status = map_AES_status(ret);
+                    break;
+                }
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESCBC
             case PSA_ALG_CBC_NO_PADDING:
-                ret    = AESCBC_setupEncrypt(aescbcHandle, &operation->cryptoKey);
-                status = map_AES_status(ret);
-                break;
+                {
+                    AESCBC_Handle aescbcHandle;
+                    aescbcHandle = psa_aescbc_construct(&operation->driver.aescbc.aescbcConfig,
+                                                        &operation->driver.aescbc.aescbcObject);
+
+                    if (aescbcHandle == NULL)
+                    {
+                        return PSA_ERROR_BAD_STATE;
+                    }
+
+                    ret    = AESCBC_setupEncrypt(aescbcHandle, &operation->cryptoKey);
+                    status = map_AES_status(ret);
+                    break;
+                }
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESCTR
             case PSA_ALG_CTR:
-                ret    = AESCTR_setupEncrypt(aesctrHandle, &operation->cryptoKey, NULL);
-                status = map_AES_status(ret);
-                break;
+                {
+                    AESCTR_Handle aesctrHandle;
+                    aesctrHandle = psa_aesctr_construct(&operation->driver.aesctr.aesctrConfig,
+                                                        &operation->driver.aesctr.aesctrObject);
+
+                    if (aesctrHandle == NULL)
+                    {
+                        return PSA_ERROR_BAD_STATE;
+                    }
+
+                    ret    = AESCTR_setupEncrypt(aesctrHandle, &operation->cryptoKey, NULL);
+                    status = map_AES_status(ret);
+                    break;
+                }
 #endif
 
             default:
@@ -5651,31 +5724,56 @@ static psa_status_t ti_psa_cipher_setup(ti_psa_cipher_operation_t *operation,
         {
 #ifdef ENABLE_TI_CRYPTO_AESECB
             case PSA_ALG_ECB_NO_PADDING:
-                aesecbHandle = psa_aesecb_construct(&operation->driver.aesecb.aesecbConfig,
-                                                    &operation->driver.aesecb.aesecbObject);
-
-                if (aesecbHandle == NULL)
                 {
-                    return PSA_ERROR_BAD_STATE;
-                }
+                    AESECB_Handle aesecbHandle;
+                    aesecbHandle = psa_aesecb_construct(&operation->driver.aesecb.aesecbConfig,
+                                                        &operation->driver.aesecb.aesecbObject);
 
-                ret    = AESECB_setupDecrypt(aesecbHandle, &operation->cryptoKey);
-                status = map_AES_status(ret);
-                break;
+                    if (aesecbHandle == NULL)
+                    {
+                        return PSA_ERROR_BAD_STATE;
+                    }
+
+                    ret    = AESECB_setupDecrypt(aesecbHandle, &operation->cryptoKey);
+                    status = map_AES_status(ret);
+                    break;
+                }
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESCBC
             case PSA_ALG_CBC_NO_PADDING:
-                ret    = AESCBC_setupDecrypt(aescbcHandle, &operation->cryptoKey);
-                status = map_AES_status(ret);
-                break;
+                {
+                    AESCBC_Handle aescbcHandle;
+                    aescbcHandle = psa_aescbc_construct(&operation->driver.aescbc.aescbcConfig,
+                                                        &operation->driver.aescbc.aescbcObject);
+
+                    if (aescbcHandle == NULL)
+                    {
+                        return PSA_ERROR_BAD_STATE;
+                    }
+
+                    ret    = AESCBC_setupDecrypt(aescbcHandle, &operation->cryptoKey);
+                    status = map_AES_status(ret);
+                    break;
+                }
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESCTR
             case PSA_ALG_CTR:
-                ret    = AESCTR_setupDecrypt(aesctrHandle, &operation->cryptoKey, NULL);
-                status = map_AES_status(ret);
-                break;
+                {
+                    AESCTR_Handle aesctrHandle;
+                    aesctrHandle = psa_aesctr_construct(&operation->driver.aesctr.aesctrConfig,
+                                                        &operation->driver.aesctr.aesctrObject);
+
+                    if (aesctrHandle == NULL)
+                    {
+                        return PSA_ERROR_BAD_STATE;
+                    }
+
+                    ret    = AESCTR_setupDecrypt(aesctrHandle, &operation->cryptoKey, NULL);
+                    status = map_AES_status(ret);
+                    break;
+                }
 #endif
 
             default:
@@ -5779,12 +5877,6 @@ psa_status_t ti_psa_cipher_set_iv(psa_cipher_operation_t *psa_operation, const u
     psa_status_t status;
     ti_psa_cipher_operation_t *operation = &psa_operation->MBEDTLS_PRIVATE(ctx).ti_ctx;
 
-    status = psa_check_aes_handle(operation->alg);
-    if (status != PSA_SUCCESS)
-    {
-        return psa_cipher_error(operation, status, NULL);
-    }
-
     if ((operation->id == 0U) || (operation->in_error_state == 1U))
     {
         return psa_cipher_error(operation, PSA_ERROR_BAD_STATE, NULL);
@@ -5809,7 +5901,7 @@ psa_status_t ti_psa_cipher_set_iv(psa_cipher_operation_t *psa_operation, const u
     {
 #ifdef ENABLE_TI_CRYPTO_AESCBC
         case PSA_ALG_CBC_NO_PADDING:
-            ret    = AESCBC_setIV(aescbcHandle, iv, iv_length);
+            ret    = AESCBC_setIV((AESCBC_Handle)&operation->driver.aescbc.aescbcConfig, iv, iv_length);
             status = map_AES_status(ret);
             break;
 #endif
@@ -5819,16 +5911,17 @@ psa_status_t ti_psa_cipher_set_iv(psa_cipher_operation_t *psa_operation, const u
     #ifdef TFM_BUILD
             if (psa_crypto_ns_caller)
             {
-                psa_aesctr_set_return_behavior(PSA_POLLING_MODE);
+                psa_aesctr_set_return_behavior((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig, PSA_POLLING_MODE);
             }
     #endif
-            ret    = AESCTR_cancelOperation(aesctrHandle);
+            ret    = AESCTR_cancelOperation((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig);
             status = map_AES_status(ret);
 
     #ifdef TFM_BUILD
             if (psa_crypto_ns_caller)
             {
-                psa_aesctr_set_return_behavior(PSA_CALLBACK_MODE);
+                psa_aesctr_set_return_behavior((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig,
+                                               PSA_CALLBACK_MODE);
             }
     #endif
 
@@ -5839,11 +5932,15 @@ psa_status_t ti_psa_cipher_set_iv(psa_cipher_operation_t *psa_operation, const u
                  */
                 if (operation->is_encrypt == 1U)
                 {
-                    ret = AESCTR_setupEncrypt(aesctrHandle, &operation->cryptoKey, iv);
+                    ret = AESCTR_setupEncrypt((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig,
+                                              &operation->cryptoKey,
+                                              iv);
                 }
                 else
                 {
-                    ret = AESCTR_setupDecrypt(aesctrHandle, &operation->cryptoKey, iv);
+                    ret = AESCTR_setupDecrypt((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig,
+                                              &operation->cryptoKey,
+                                              iv);
                 }
 
                 status = map_AES_status(ret);
@@ -5927,23 +6024,30 @@ static psa_status_t psa_aesAddBlock(ti_psa_cipher_operation_t *operation,
         case PSA_ALG_CTR:
             {
     #ifdef TFM_BUILD
-                if (!isFinalOp && psa_crypto_ns_caller)
+                /* Polling mode is required for NS callers on non-final operations, or always for
+                 * S callers. This call should be redundant for S callers, since polling mode
+                 * was set upon handle construction, which is stored in the psa operation.
+                 */
+                if ((!isFinalOp && psa_crypto_ns_caller) || (!psa_crypto_ns_caller))
                 {
-                    psa_aesctr_set_return_behavior(PSA_POLLING_MODE);
+                    psa_aesctr_set_return_behavior((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig,
+                                                   PSA_POLLING_MODE);
                 }
     #endif
+                AESCTR_SegmentedOperation aesctrSegmentedOp;
 
                 AESCTR_SegmentedOperation_init(&aesctrSegmentedOp);
                 aesctrSegmentedOp.input       = (uint8_t *)input;
                 aesctrSegmentedOp.inputLength = PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE * numBlocks;
                 aesctrSegmentedOp.output      = output;
-                ret                           = AESCTR_addData(aesctrHandle, &aesctrSegmentedOp);
-                status                        = map_AES_status(ret);
+                ret    = AESCTR_addData((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig, &aesctrSegmentedOp);
+                status = map_AES_status(ret);
 
     #ifdef TFM_BUILD
                 if (!isFinalOp && psa_crypto_ns_caller)
                 {
-                    psa_aesctr_set_return_behavior(PSA_CALLBACK_MODE);
+                    psa_aesctr_set_return_behavior((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig,
+                                                   PSA_CALLBACK_MODE);
                 }
     #endif
                 break;
@@ -5954,23 +6058,33 @@ static psa_status_t psa_aesAddBlock(ti_psa_cipher_operation_t *operation,
         case PSA_ALG_CBC_NO_PADDING:
             {
     #ifdef TFM_BUILD
-                if (!isFinalOp && psa_crypto_ns_caller)
+                /* Polling mode is required for NS callers on non-final operations, or always for
+                 * S callers. This call should be redundant for S callers, since polling mode
+                 * was set upon handle construction, which is stored in the psa operation.
+                 */
+                if ((!isFinalOp && psa_crypto_ns_caller) || (!psa_crypto_ns_caller))
                 {
-                    psa_aescbc_set_return_behavior(PSA_POLLING_MODE);
+                    psa_aescbc_set_return_behavior((AESCBC_Handle)&operation->driver.aescbc.aescbcConfig,
+                                                   PSA_POLLING_MODE);
                 }
     #endif
-
+                AESCBC_SegmentedOperation aescbcSegmentedOp;
                 AESCBC_SegmentedOperation_init(&aescbcSegmentedOp);
                 aescbcSegmentedOp.input       = (uint8_t *)input;
                 aescbcSegmentedOp.inputLength = PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE * numBlocks;
                 aescbcSegmentedOp.output      = output;
-                ret                           = AESCBC_addData(aescbcHandle, &aescbcSegmentedOp);
-                status                        = map_AES_status(ret);
+                ret    = AESCBC_addData((AESCBC_Handle)&operation->driver.aescbc.aescbcConfig, &aescbcSegmentedOp);
+                status = map_AES_status(ret);
 
     #ifdef TFM_BUILD
                 if (!isFinalOp && psa_crypto_ns_caller)
                 {
-                    psa_aescbc_set_return_behavior(PSA_CALLBACK_MODE);
+                    /* Only restore to callback mode for NS callers that changed this temporarily.
+                     * S callers want to remain in polling mode (which should be retained from
+                     * the handle construction, anyways).
+                     */
+                    psa_aescbc_set_return_behavior((AESCBC_Handle)&operation->driver.aescbc.aescbcConfig,
+                                                   PSA_CALLBACK_MODE);
                 }
     #endif
                 break;
@@ -6197,12 +6311,6 @@ psa_status_t ti_psa_cipher_finish(psa_cipher_operation_t *psa_operation,
     uint8_t *output_aligned              = output;
     void *output_free_address            = NULL;
 
-    status = psa_check_aes_handle(operation->alg);
-    if (status != PSA_SUCCESS)
-    {
-        return psa_cipher_error(operation, status, NULL);
-    }
-
     if ((operation->id == 0U) || (operation->in_error_state == 1U))
     {
         return psa_cipher_error(operation, PSA_ERROR_BAD_STATE, NULL);
@@ -6291,13 +6399,15 @@ psa_status_t ti_psa_cipher_finish(psa_cipher_operation_t *psa_operation,
                 /* CTR input length does not need to be a multiple of the block
                  * size, so there may be more input data left to process
                  */
+                AESCTR_SegmentedOperation aesctrSegmentedOp;
+
                 AESCTR_SegmentedOperation_init(&aesctrSegmentedOp);
                 aesctrSegmentedOp.output      = output_aligned;
                 aesctrSegmentedOp.input       = operation->curr_unprocessed_data;
                 aesctrSegmentedOp.inputLength = operation->unprocessed_len;
 
-                ret            = AESCTR_finalize(aesctrHandle, &aesctrSegmentedOp);
-                status         = map_AES_status(ret);
+                ret    = AESCTR_finalize((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig, &aesctrSegmentedOp);
+                status = map_AES_status(ret);
                 *output_length = operation->unprocessed_len;
                 break;
             }
@@ -6306,12 +6416,30 @@ psa_status_t ti_psa_cipher_finish(psa_cipher_operation_t *psa_operation,
 #ifdef ENABLE_TI_CRYPTO_AESCBC
         case PSA_ALG_CBC_NO_PADDING:
             {
+                AESCBC_SegmentedOperation aescbcSegmentedOp;
                 AESCBC_SegmentedOperation_init(&aescbcSegmentedOp);
                 aescbcSegmentedOp.inputLength = 0;
                 aescbcSegmentedOp.output      = output_aligned;
 
-                ret    = AESCBC_finalize(aescbcHandle, &aescbcSegmentedOp);
+                ret    = AESCBC_finalize((AESCBC_Handle)&operation->driver.aescbc.aescbcConfig, &aescbcSegmentedOp);
                 status = map_AES_status(ret);
+    #ifdef TFM_BUILD
+                if (psa_crypto_ns_caller)
+                {
+                    /* Set a marker so that the secure callback knows that the AESCBC_Handle can be closed, since
+                     * this is a segmented finish operation. Ideally, the psa operation should be aborted,
+                     * but at least closing the handle will have to suffice for TFM_enabled for now.
+                     */
+                    ((AESCBC_Object *)&operation->driver.aescbc.aescbcObject)->common.isOpen = false;
+                }
+                else
+    #endif
+                {
+                    /* Close the handle here, since there is no callback for secure callers nor
+                     * S-only configurations. Abort the operation to allow it to be setup again.
+                     */
+                    ti_psa_cipher_abort(psa_operation);
+                }
                 break;
             }
 #endif
@@ -6368,12 +6496,6 @@ psa_status_t ti_psa_cipher_abort(psa_cipher_operation_t *psa_operation)
         return PSA_SUCCESS;
     }
 
-    status = psa_check_aes_handle(operation->alg);
-    if (status != PSA_SUCCESS)
-    {
-        return psa_cipher_error(operation, status, NULL);
-    }
-
     switch (operation->alg)
     {
 #ifdef ENABLE_TI_CRYPTO_AESECB
@@ -6393,16 +6515,18 @@ psa_status_t ti_psa_cipher_abort(psa_cipher_operation_t *psa_operation)
     #ifdef TFM_BUILD
                 if (psa_crypto_ns_caller)
                 {
-                    psa_aesctr_set_return_behavior(PSA_POLLING_MODE);
+                    psa_aesctr_set_return_behavior((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig,
+                                                   PSA_POLLING_MODE);
                 }
     #endif
-                ret    = AESCTR_cancelOperation(aesctrHandle);
+                ret    = AESCTR_cancelOperation((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig);
                 status = map_AES_status(ret);
 
     #ifdef TFM_BUILD
                 if (psa_crypto_ns_caller)
                 {
-                    psa_aesctr_set_return_behavior(PSA_CALLBACK_MODE);
+                    psa_aesctr_set_return_behavior((AESCTR_Handle)&operation->driver.aesctr.aesctrConfig,
+                                                   PSA_CALLBACK_MODE);
                 }
     #endif
                 break;
@@ -6412,16 +6536,9 @@ psa_status_t ti_psa_cipher_abort(psa_cipher_operation_t *psa_operation)
 #ifdef ENABLE_TI_CRYPTO_AESCBC
         case PSA_ALG_CBC_NO_PADDING:
             /* Cancel operation is not supported in polling mode for AESCBC,
-             * workaround is to close and reopen the driver instance.
+             * workaround is to close the driver instance.
              */
-            AESCBC_close(aescbcHandle);
-
-    #ifdef TFM_BUILD
-            psa_aescbc_construct(PSA_CALLBACK_MODE);
-    #else
-            psa_aescbc_construct(PSA_BLOCKING_MODE);
-    #endif
-
+            AESCBC_close((AESCBC_Handle)&operation->driver.aescbc.aescbcConfig);
             break;
 #endif
 
@@ -6477,14 +6594,17 @@ static psa_status_t ti_psa_aead_set_lengths_internal(ti_psa_aead_operation_t *op
     {
 #ifdef ENABLE_TI_CRYPTO_AESCCM
         case PSA_ALG_CCM:
-            ret    = AESCCM_setLengths(aesccmHandle, ad_length, plaintext_length, operation->tagSize);
+            ret    = AESCCM_setLengths((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig,
+                                    ad_length,
+                                    plaintext_length,
+                                    operation->tagSize);
             status = map_AES_status(ret);
             break;
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESGCM
         case PSA_ALG_GCM:
-            ret    = AESGCM_setLengths(aesgcmHandle, ad_length, plaintext_length);
+            ret = AESGCM_setLengths((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, ad_length, plaintext_length);
             status = map_AES_status(ret);
             break;
 #endif
@@ -6538,12 +6658,6 @@ psa_status_t ti_psa_aead_encrypt_setup(psa_aead_operation_t *psa_operation,
     psa_key_attributes_t attributes    = PSA_KEY_ATTRIBUTES_INIT;
     ti_psa_aead_operation_t *operation = &psa_operation->MBEDTLS_PRIVATE(ctx).ti_ctx;
 
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg));
-    if (status != PSA_SUCCESS)
-    {
-        return ti_psa_aead_error(operation, status, NULL);
-    }
-
     if ((operation->id != 0) || (operation->in_error_state == 1U))
     {
         return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
@@ -6593,6 +6707,15 @@ psa_status_t ti_psa_aead_encrypt_setup(psa_aead_operation_t *psa_operation,
 
         if (status == PSA_SUCCESS)
         {
+            AESCCM_Handle aesccmHandle;
+            aesccmHandle = psa_aesccm_construct(&operation->driver.aesccm.aesccmConfig,
+                                                &operation->driver.aesccm.aesccmObject);
+
+            if (aesccmHandle == NULL)
+            {
+                return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
+            }
+
             ret    = AESCCM_setupEncrypt(aesccmHandle, &operation->cryptoKey, 0, 0, tagLength);
             status = map_AES_status(ret);
         }
@@ -6606,6 +6729,14 @@ psa_status_t ti_psa_aead_encrypt_setup(psa_aead_operation_t *psa_operation,
 
         if (status == PSA_SUCCESS)
         {
+            AESGCM_Handle aesgcmHandle;
+            aesgcmHandle = psa_aesgcm_construct(&operation->driver.aesgcm.aesgcmConfig,
+                                                &operation->driver.aesgcm.aesgcmObject);
+            if (aesgcmHandle == NULL)
+            {
+                return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
+            }
+
             ret    = AESGCM_setupEncrypt(aesgcmHandle, &operation->cryptoKey, 0, tagLength);
             status = map_AES_status(ret);
         }
@@ -6641,12 +6772,6 @@ psa_status_t ti_psa_aead_decrypt_setup(psa_aead_operation_t *psa_operation,
     psa_status_t status;
     psa_key_attributes_t attributes    = PSA_KEY_ATTRIBUTES_INIT;
     ti_psa_aead_operation_t *operation = &psa_operation->MBEDTLS_PRIVATE(ctx).ti_ctx;
-
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg));
-    if (status != PSA_SUCCESS)
-    {
-        return ti_psa_aead_error(operation, status, NULL);
-    }
 
     if ((operation->id != 0) || (operation->in_error_state == 1U))
     {
@@ -6697,6 +6822,15 @@ psa_status_t ti_psa_aead_decrypt_setup(psa_aead_operation_t *psa_operation,
 
         if (status == PSA_SUCCESS)
         {
+            AESCCM_Handle aesccmHandle;
+            aesccmHandle = psa_aesccm_construct(&operation->driver.aesccm.aesccmConfig,
+                                                &operation->driver.aesccm.aesccmObject);
+
+            if (aesccmHandle == NULL)
+            {
+                return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
+            }
+
             ret    = AESCCM_setupDecrypt(aesccmHandle, &operation->cryptoKey, 0, 0, tagLength);
             status = map_AES_status(ret);
         }
@@ -6710,6 +6844,14 @@ psa_status_t ti_psa_aead_decrypt_setup(psa_aead_operation_t *psa_operation,
 
         if (status == PSA_SUCCESS)
         {
+            AESGCM_Handle aesgcmHandle;
+            aesgcmHandle = psa_aesgcm_construct(&operation->driver.aesgcm.aesgcmConfig,
+                                                &operation->driver.aesgcm.aesgcmObject);
+            if (aesgcmHandle == NULL)
+            {
+                return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
+            }
+
             ret    = AESGCM_setupDecrypt(aesgcmHandle, &operation->cryptoKey, 0, 0);
             status = map_AES_status(ret);
         }
@@ -6740,7 +6882,8 @@ psa_status_t ti_psa_aead_decrypt_setup(psa_aead_operation_t *psa_operation,
  *  data. Unless it is the final call to this function for the operation,
  *  input_length must be a multiple of the block size.
  */
-static psa_status_t ti_psa_aead_update_ad_internal(psa_algorithm_t alg,
+static psa_status_t ti_psa_aead_update_ad_internal(ti_psa_aead_operation_t *operation,
+                                                   psa_algorithm_t alg,
                                                    const uint8_t *input,
                                                    size_t input_length,
                                                    bool isFinalOp)
@@ -6761,23 +6904,32 @@ static psa_status_t ti_psa_aead_update_ad_internal(psa_algorithm_t alg,
 #ifdef ENABLE_TI_CRYPTO_AESCCM
 
     #ifdef TFM_BUILD
-        if (!isFinalOp && psa_crypto_ns_caller)
+        /* Polling mode is required for NS callers on non-final operations, or always for
+         * S callers. This call should be redundant for S callers, since polling mode
+         * was set upon handle construction, which is stored in the psa operation.
+         */
+        if ((!isFinalOp && psa_crypto_ns_caller) || (!psa_crypto_ns_caller))
         {
-            psa_aesccm_set_return_behavior(PSA_POLLING_MODE);
+            psa_aesccm_set_return_behavior((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, PSA_POLLING_MODE);
         }
     #endif
+        AESCCM_SegmentedAADOperation aesccmSegmentedAadOp;
 
         AESCCM_SegmentedAADOperation_init(&aesccmSegmentedAadOp);
         aesccmSegmentedAadOp.aad       = (uint8_t *)input;
         aesccmSegmentedAadOp.aadLength = input_length;
 
-        ret    = AESCCM_addAAD(aesccmHandle, &aesccmSegmentedAadOp);
+        ret    = AESCCM_addAAD((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, &aesccmSegmentedAadOp);
         status = map_AES_status(ret);
 
     #ifdef TFM_BUILD
         if (!isFinalOp && psa_crypto_ns_caller)
         {
-            psa_aesccm_set_return_behavior(PSA_CALLBACK_MODE);
+            /* Only restore to callback mode for NS callers that changed this temporarily.
+             * S callers want to remain in polling mode (which should be retained from
+             * the handle construction, anyways).
+             */
+            psa_aesccm_set_return_behavior((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, PSA_CALLBACK_MODE);
         }
     #endif
 #endif
@@ -6787,23 +6939,32 @@ static psa_status_t ti_psa_aead_update_ad_internal(psa_algorithm_t alg,
 #ifdef ENABLE_TI_CRYPTO_AESGCM
 
     #ifdef TFM_BUILD
-        if (!isFinalOp && psa_crypto_ns_caller)
+        /* Polling mode is required for NS callers on non-final operations, or always for
+         * S callers. This call should be redundant for S callers, since polling mode
+         * was set upon handle construction, which is stored in the psa operation.
+         */
+        if ((!isFinalOp && psa_crypto_ns_caller) || (!psa_crypto_ns_caller))
         {
-            psa_aesgcm_set_return_behavior(PSA_POLLING_MODE);
+            psa_aesgcm_set_return_behavior((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, PSA_POLLING_MODE);
         }
     #endif
+        AESGCM_SegmentedAADOperation aesgcmSegmentedAadOp;
 
         AESGCM_SegmentedAADOperation_init(&aesgcmSegmentedAadOp);
         aesgcmSegmentedAadOp.aad       = (uint8_t *)input;
         aesgcmSegmentedAadOp.aadLength = input_length;
 
-        ret    = AESGCM_addAAD(aesgcmHandle, &aesgcmSegmentedAadOp);
+        ret    = AESGCM_addAAD((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, &aesgcmSegmentedAadOp);
         status = map_AES_status(ret);
 
     #ifdef TFM_BUILD
         if (!isFinalOp && psa_crypto_ns_caller)
         {
-            psa_aesgcm_set_return_behavior(PSA_CALLBACK_MODE);
+            /* Only restore to callback mode for NS callers that changed this temporarily.
+             * S callers want to remain in polling mode (which should be retained from
+             * the handle construction, anyways).
+             */
+            psa_aesgcm_set_return_behavior((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, PSA_CALLBACK_MODE);
         }
     #endif
 #endif
@@ -6823,7 +6984,8 @@ static psa_status_t ti_psa_aead_update_ad_internal(psa_algorithm_t alg,
  *  the operation. Unless it is the final call to this function for the
  *  operation, input_length must be a multiple of the block size.
  */
-static psa_status_t ti_psa_aead_update_internal(psa_algorithm_t alg,
+static psa_status_t ti_psa_aead_update_internal(ti_psa_aead_operation_t *operation,
+                                                psa_algorithm_t alg,
                                                 const uint8_t *input,
                                                 size_t input_length,
                                                 uint8_t *output,
@@ -6845,25 +7007,33 @@ static psa_status_t ti_psa_aead_update_internal(psa_algorithm_t alg,
 #ifdef ENABLE_TI_CRYPTO_AESCCM
 
     #ifdef TFM_BUILD
-        if (!isFinalOp && psa_crypto_ns_caller)
+        /* Polling mode is required for NS callers on non-final operations, or always for
+         * S callers. This call should be redundant for S callers, since polling mode
+         * was set upon handle construction, which is stored in the psa operation.
+         */
+        if ((!isFinalOp && psa_crypto_ns_caller) || (!psa_crypto_ns_caller))
         {
-            psa_aesccm_set_return_behavior(PSA_POLLING_MODE);
+            psa_aesccm_set_return_behavior((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, PSA_POLLING_MODE);
         }
     #endif
-
+        AESCCM_SegmentedDataOperation aesccmSegmentedDataOp;
         AESCCM_SegmentedDataOperation_init(&aesccmSegmentedDataOp);
 
         aesccmSegmentedDataOp.input       = (uint8_t *)input;
         aesccmSegmentedDataOp.output      = output;
         aesccmSegmentedDataOp.inputLength = input_length;
 
-        ret    = AESCCM_addData(aesccmHandle, &aesccmSegmentedDataOp);
+        ret    = AESCCM_addData((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, &aesccmSegmentedDataOp);
         status = map_AES_status(ret);
 
     #ifdef TFM_BUILD
         if (!isFinalOp && psa_crypto_ns_caller)
         {
-            psa_aesccm_set_return_behavior(PSA_CALLBACK_MODE);
+            /* Only restore to callback mode for NS callers that changed this temporarily.
+             * S callers want to remain in polling mode (which should be retained from
+             * the handle construction, anyways).
+             */
+            psa_aesccm_set_return_behavior((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, PSA_CALLBACK_MODE);
         }
     #endif
 #endif
@@ -6873,24 +7043,33 @@ static psa_status_t ti_psa_aead_update_internal(psa_algorithm_t alg,
 #ifdef ENABLE_TI_CRYPTO_AESGCM
 
     #ifdef TFM_BUILD
-        if (!isFinalOp && psa_crypto_ns_caller)
+        /* Polling mode is required for NS callers on non-final operations, or always for
+         * S callers. This call should be redundant for S callers, since polling mode
+         * was set upon handle construction, which is stored in the psa operation.
+         */
+        if ((!isFinalOp && psa_crypto_ns_caller) || (!psa_crypto_ns_caller))
         {
-            psa_aesgcm_set_return_behavior(PSA_POLLING_MODE);
+            psa_aesgcm_set_return_behavior((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, PSA_POLLING_MODE);
         }
     #endif
+        AESGCM_SegmentedDataOperation aesgcmSegmentedDataOp;
 
         AESGCM_SegmentedDataOperation_init(&aesgcmSegmentedDataOp);
         aesgcmSegmentedDataOp.input       = (uint8_t *)input;
         aesgcmSegmentedDataOp.output      = output;
         aesgcmSegmentedDataOp.inputLength = input_length;
 
-        ret    = AESGCM_addData(aesgcmHandle, &aesgcmSegmentedDataOp);
+        ret    = AESGCM_addData((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, &aesgcmSegmentedDataOp);
         status = map_AES_status(ret);
 
     #ifdef TFM_BUILD
         if (!isFinalOp && psa_crypto_ns_caller)
         {
-            psa_aesgcm_set_return_behavior(PSA_CALLBACK_MODE);
+            /* Only restore to callback mode for NS callers that changed this temporarily.
+             * S callers want to remain in polling mode (which should be retained from
+             * the handle construction, anyways).
+             */
+            psa_aesgcm_set_return_behavior((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, PSA_CALLBACK_MODE);
         }
     #endif
 #endif
@@ -6937,12 +7116,6 @@ psa_status_t ti_psa_aead_update(psa_aead_operation_t *psa_operation,
         return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
     }
 
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg));
-    if (status != PSA_SUCCESS)
-    {
-        return ti_psa_aead_error(operation, status, NULL);
-    }
-
     operation->runningPlaintextLength += input_length;
 
     if (operation->length_set && ((operation->runningADLength < operation->adLength) ||
@@ -6954,7 +7127,8 @@ psa_status_t ti_psa_aead_update(psa_aead_operation_t *psa_operation,
     if (!operation->done_updating_ad)
     {
         /* Add any remaining additional data */
-        status = ti_psa_aead_update_ad_internal(operation->alg,
+        status = ti_psa_aead_update_ad_internal(operation,
+                                                operation->alg,
                                                 operation->curr_unprocessed_data,
                                                 operation->unprocessed_len,
                                                 isFinalOp);
@@ -7022,7 +7196,8 @@ psa_status_t ti_psa_aead_update(psa_aead_operation_t *psa_operation,
             isFinalOp = true;
         }
 
-        status = ti_psa_aead_update_internal(operation->alg,
+        status = ti_psa_aead_update_internal(operation,
+                                             operation->alg,
                                              operation->curr_unprocessed_data,
                                              PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE,
                                              output_aligned,
@@ -7064,7 +7239,7 @@ psa_status_t ti_psa_aead_update(psa_aead_operation_t *psa_operation,
     {
         isFinalOp = true;
 
-        status = ti_psa_aead_update_internal(operation->alg, input, amountToAdd, output_aligned, isFinalOp);
+        status = ti_psa_aead_update_internal(operation, operation->alg, input, amountToAdd, output_aligned, isFinalOp);
         if (status != PSA_SUCCESS)
         {
             if (output_aligned != output)
@@ -7115,12 +7290,6 @@ psa_status_t ti_psa_aead_update_ad(psa_aead_operation_t *psa_operation, const ui
         return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
     }
 
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg));
-    if (status != PSA_SUCCESS)
-    {
-        return ti_psa_aead_error(operation, status, NULL);
-    }
-
     if ((operation->id == 0U) || (operation->in_error_state == 1U) || (operation->iv_set == 0U) ||
         operation->done_updating_ad)
     {
@@ -7159,7 +7328,8 @@ psa_status_t ti_psa_aead_update_ad(psa_aead_operation_t *psa_operation, const ui
             isFinalOp = true;
         }
 
-        status = ti_psa_aead_update_ad_internal(operation->alg,
+        status = ti_psa_aead_update_ad_internal(operation,
+                                                operation->alg,
                                                 operation->curr_unprocessed_data,
                                                 PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE,
                                                 isFinalOp);
@@ -7197,7 +7367,7 @@ psa_status_t ti_psa_aead_update_ad(psa_aead_operation_t *psa_operation, const ui
     {
         isFinalOp = true;
 
-        status = ti_psa_aead_update_ad_internal(operation->alg, input, amountToAdd, isFinalOp);
+        status = ti_psa_aead_update_ad_internal(operation, operation->alg, input, amountToAdd, isFinalOp);
         if (status != PSA_SUCCESS)
         {
             return ti_psa_aead_error(operation, status, NULL);
@@ -7225,12 +7395,6 @@ psa_status_t ti_psa_aead_set_nonce(psa_aead_operation_t *psa_operation, const ui
     psa_status_t status;
     ti_psa_aead_operation_t *operation = &psa_operation->MBEDTLS_PRIVATE(ctx).ti_ctx;
 
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg));
-    if (status != PSA_SUCCESS)
-    {
-        return ti_psa_aead_error(operation, status, NULL);
-    }
-
     if ((operation->id == 0U) || (operation->iv_set == 1U) || (operation->in_error_state == 1U))
     {
         return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
@@ -7256,7 +7420,7 @@ psa_status_t ti_psa_aead_set_nonce(psa_aead_operation_t *psa_operation, const ui
             }
             else
             {
-                ret    = AESCCM_setNonce(aesccmHandle, nonce, nonce_length);
+                ret    = AESCCM_setNonce((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, nonce, nonce_length);
                 status = map_AES_status(ret);
             }
         }
@@ -7273,7 +7437,7 @@ psa_status_t ti_psa_aead_set_nonce(psa_aead_operation_t *psa_operation, const ui
         else
         {
             /* Currently the AESGCM driver only supports nonce lengths of 12 */
-            ret    = AESGCM_setIV(aesgcmHandle, nonce, nonce_length);
+            ret    = AESGCM_setIV((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, nonce, nonce_length);
             status = map_AES_status(ret);
         }
 #endif
@@ -7372,12 +7536,6 @@ psa_status_t ti_psa_aead_finish(psa_aead_operation_t *psa_operation,
 
     *ciphertext_length = 0;
 
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg));
-    if (status != PSA_SUCCESS)
-    {
-        return ti_psa_aead_error(operation, status, NULL);
-    }
-
     if ((operation->id == 0U) || (operation->iv_set == 0U) || (operation->in_error_state == 1U))
     {
         return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
@@ -7405,7 +7563,8 @@ psa_status_t ti_psa_aead_finish(psa_aead_operation_t *psa_operation,
      */
     if (!operation->done_updating_ad)
     {
-        status = ti_psa_aead_update_ad_internal(operation->alg,
+        status = ti_psa_aead_update_ad_internal(operation,
+                                                operation->alg,
                                                 operation->curr_unprocessed_data,
                                                 operation->unprocessed_len,
                                                 false);
@@ -7438,6 +7597,7 @@ psa_status_t ti_psa_aead_finish(psa_aead_operation_t *psa_operation,
     if (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg) == PSA_ALG_CCM)
     {
 #ifdef ENABLE_TI_CRYPTO_AESCCM
+        AESCCM_SegmentedFinalizeOperation aesccmSegmentedFinalizeOp;
         AESCCM_SegmentedFinalizeOperation_init(&aesccmSegmentedFinalizeOp);
         aesccmSegmentedFinalizeOp.input       = operation->curr_unprocessed_data;
         aesccmSegmentedFinalizeOp.output      = output;
@@ -7445,7 +7605,7 @@ psa_status_t ti_psa_aead_finish(psa_aead_operation_t *psa_operation,
         aesccmSegmentedFinalizeOp.mac         = tag;
         aesccmSegmentedFinalizeOp.macLength   = operation->tagSize;
 
-        ret                        = AESCCM_finalizeEncrypt(aesccmHandle, &aesccmSegmentedFinalizeOp);
+        ret = AESCCM_finalizeEncrypt((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, &aesccmSegmentedFinalizeOp);
         *tag_length                = aesccmSegmentedFinalizeOp.macLength;
         *ciphertext_length         = aesccmSegmentedFinalizeOp.inputLength;
         operation->unprocessed_len = 0;
@@ -7456,6 +7616,7 @@ psa_status_t ti_psa_aead_finish(psa_aead_operation_t *psa_operation,
     else if (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg) == PSA_ALG_GCM)
     {
 #ifdef ENABLE_TI_CRYPTO_AESGCM
+        AESGCM_SegmentedFinalizeOperation aesgcmSegmentedFinalizeOp;
         AESGCM_SegmentedFinalizeOperation_init(&aesgcmSegmentedFinalizeOp);
         aesgcmSegmentedFinalizeOp.input       = operation->curr_unprocessed_data;
         aesgcmSegmentedFinalizeOp.output      = output;
@@ -7463,7 +7624,7 @@ psa_status_t ti_psa_aead_finish(psa_aead_operation_t *psa_operation,
         aesgcmSegmentedFinalizeOp.mac         = tag;
         aesgcmSegmentedFinalizeOp.macLength   = operation->tagSize;
 
-        ret                        = AESGCM_finalizeEncrypt(aesgcmHandle, &aesgcmSegmentedFinalizeOp);
+        ret = AESGCM_finalizeEncrypt((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, &aesgcmSegmentedFinalizeOp);
         *tag_length                = aesgcmSegmentedFinalizeOp.macLength;
         *ciphertext_length         = aesgcmSegmentedFinalizeOp.inputLength;
         operation->unprocessed_len = 0;
@@ -7515,12 +7676,6 @@ psa_status_t ti_psa_aead_verify(psa_aead_operation_t *psa_operation,
     *plaintext_length                  = 0;
     void *output_free_address          = NULL;
 
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg));
-    if (status != PSA_SUCCESS)
-    {
-        return ti_psa_aead_error(operation, status, NULL);
-    }
-
     if ((operation->id == 0U) || (operation->iv_set == 0U) || (operation->in_error_state == 1U))
     {
         return ti_psa_aead_error(operation, PSA_ERROR_BAD_STATE, NULL);
@@ -7548,7 +7703,8 @@ psa_status_t ti_psa_aead_verify(psa_aead_operation_t *psa_operation,
      */
     if (!operation->done_updating_ad)
     {
-        status = ti_psa_aead_update_ad_internal(operation->alg,
+        status = ti_psa_aead_update_ad_internal(operation,
+                                                operation->alg,
                                                 operation->curr_unprocessed_data,
                                                 operation->unprocessed_len,
                                                 false);
@@ -7579,6 +7735,7 @@ psa_status_t ti_psa_aead_verify(psa_aead_operation_t *psa_operation,
     if (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg) == PSA_ALG_CCM)
     {
 #ifdef ENABLE_TI_CRYPTO_AESCCM
+        AESCCM_SegmentedFinalizeOperation aesccmSegmentedFinalizeOp;
         AESCCM_SegmentedFinalizeOperation_init(&aesccmSegmentedFinalizeOp);
         aesccmSegmentedFinalizeOp.input       = operation->curr_unprocessed_data;
         aesccmSegmentedFinalizeOp.output      = output;
@@ -7586,7 +7743,7 @@ psa_status_t ti_psa_aead_verify(psa_aead_operation_t *psa_operation,
         aesccmSegmentedFinalizeOp.mac         = (uint8_t *)tag;
         aesccmSegmentedFinalizeOp.macLength   = operation->tagSize;
 
-        ret               = AESCCM_finalizeDecrypt(aesccmHandle, &aesccmSegmentedFinalizeOp);
+        ret = AESCCM_finalizeDecrypt((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig, &aesccmSegmentedFinalizeOp);
         *plaintext_length = aesccmSegmentedFinalizeOp.inputLength;
 
         status = map_AES_status(ret);
@@ -7595,6 +7752,7 @@ psa_status_t ti_psa_aead_verify(psa_aead_operation_t *psa_operation,
     else if (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg) == PSA_ALG_GCM)
     {
 #ifdef ENABLE_TI_CRYPTO_AESGCM
+        AESGCM_SegmentedFinalizeOperation aesgcmSegmentedFinalizeOp;
         AESGCM_SegmentedFinalizeOperation_init(&aesgcmSegmentedFinalizeOp);
         aesgcmSegmentedFinalizeOp.input       = operation->curr_unprocessed_data;
         aesgcmSegmentedFinalizeOp.output      = output;
@@ -7602,7 +7760,7 @@ psa_status_t ti_psa_aead_verify(psa_aead_operation_t *psa_operation,
         aesgcmSegmentedFinalizeOp.mac         = (uint8_t *)tag;
         aesgcmSegmentedFinalizeOp.macLength   = tag_length;
 
-        ret               = AESGCM_finalizeDecrypt(aesgcmHandle, &aesgcmSegmentedFinalizeOp);
+        ret = AESGCM_finalizeDecrypt((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig, &aesgcmSegmentedFinalizeOp);
         *plaintext_length = aesgcmSegmentedFinalizeOp.inputLength;
 
         status = map_AES_status(ret);
@@ -7639,7 +7797,7 @@ psa_status_t ti_psa_aead_verify(psa_aead_operation_t *psa_operation,
  */
 psa_status_t ti_psa_aead_abort(psa_aead_operation_t *psa_operation)
 {
-    psa_status_t status;
+    psa_status_t status                = PSA_SUCCESS;
     ti_psa_aead_operation_t *operation = &psa_operation->MBEDTLS_PRIVATE(ctx).ti_ctx;
 
     if (operation->id == 0U)
@@ -7651,37 +7809,19 @@ psa_status_t ti_psa_aead_abort(psa_aead_operation_t *psa_operation)
         return PSA_SUCCESS;
     }
 
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg));
-    if (status != PSA_SUCCESS)
-    {
-        return ti_psa_aead_error(operation, status, NULL);
-    }
-
     switch (PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg))
     {
 #ifdef ENABLE_TI_CRYPTO_AESCCM
         case PSA_ALG_CCM:
-            /* Close and reopen driver since cancellation is not supported for polling mode */
-            AESCCM_close(aesccmHandle);
-
-    #ifdef TFM_BUILD
-            psa_aesccm_construct(PSA_CALLBACK_MODE);
-    #else
-            psa_aesccm_construct(PSA_BLOCKING_MODE);
-    #endif
+            /* Close driver since cancellation is not supported for polling mode */
+            AESCCM_close((AESCCM_Handle)&operation->driver.aesccm.aesccmConfig);
             break;
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESGCM
         case PSA_ALG_GCM:
-            /* Close and reopen driver since cancellation is not supported for polling mode */
-            AESGCM_close(aesgcmHandle);
-
-    #ifdef TFM_BUILD
-            psa_aesgcm_construct(PSA_CALLBACK_MODE);
-    #else
-            psa_aesgcm_construct(PSA_BLOCKING_MODE);
-    #endif
+            /* Close driver since cancellation is not supported for polling mode */
+            AESGCM_close((AESGCM_Handle)&operation->driver.aesgcm.aesgcmConfig);
             break;
 #endif
 
@@ -7725,12 +7865,6 @@ psa_status_t ti_psa_aead_encrypt(mbedtls_svc_key_id_t key,
     uint8_t *tag;
 
     *ciphertext_length = 0;
-
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg));
-    if (status != PSA_SUCCESS)
-    {
-        return status;
-    }
 
     if (!PSA_ALG_IS_AEAD(alg) || PSA_ALG_IS_WILDCARD(alg))
     {
@@ -7813,7 +7947,22 @@ psa_status_t ti_psa_aead_encrypt(mbedtls_svc_key_id_t key,
                     }
                     return status;
                 }
+                AESCCM_Config aesccmConfig;
+                AESCCM_Object aesccmObject;
 
+                AESCCM_Handle aesccmHandle = psa_aesccm_construct(&aesccmConfig, &aesccmObject);
+
+                if (aesccmHandle == NULL)
+                {
+                    if (output != ciphertext)
+                    {
+                        free(output_free_address);
+                    }
+                    return PSA_ERROR_BAD_STATE;
+                }
+
+                AESCCM_OneStepOperation aesccmOneStepOp;
+                CryptoKey aesccmCryptoKey;
                 AESCCM_OneStepOperation_init(&aesccmOneStepOp);
                 KeyStore_PSA_initKey(&aesccmCryptoKey, key, PSA_BITS_TO_BYTES(keyBits), NULL);
                 aesccmOneStepOp.key         = &aesccmCryptoKey;
@@ -7829,6 +7978,18 @@ psa_status_t ti_psa_aead_encrypt(mbedtls_svc_key_id_t key,
 
                 ret    = AESCCM_oneStepEncrypt(aesccmHandle, &aesccmOneStepOp);
                 status = map_AES_status(ret);
+
+                if (((AESCCM_Object *)aesccmHandle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+                {
+                    /* Set a marker so that the secure callback knows that the driver handle can be closed, since
+                     * this is a one-shot operation.
+                     */
+                    ((AESCCM_Object *)aesccmHandle->object)->common.isOpen = false;
+                }
+                else
+                {
+                    AESCCM_close(aesccmHandle);
+                }
                 break;
             }
 #endif
@@ -7846,7 +8007,22 @@ psa_status_t ti_psa_aead_encrypt(mbedtls_svc_key_id_t key,
                     }
                     return status;
                 }
+                AESGCM_Config aesgcmConfig;
+                AESGCM_Object aesgcmObject;
 
+                AESGCM_Handle aesgcmHandle = psa_aesgcm_construct(&aesgcmConfig, &aesgcmObject);
+
+                if (aesgcmHandle == NULL)
+                {
+                    if (output != ciphertext)
+                    {
+                        free(output_free_address);
+                    }
+                    return PSA_ERROR_BAD_STATE;
+                }
+
+                AESGCM_OneStepOperation aesgcmOneStepOp;
+                CryptoKey aesgcmCryptoKey;
                 AESGCM_OneStepOperation_init(&aesgcmOneStepOp);
                 KeyStore_PSA_initKey(&aesgcmCryptoKey, key, PSA_BITS_TO_BYTES(keyBits), NULL);
                 aesgcmOneStepOp.key                   = &aesgcmCryptoKey;
@@ -7863,6 +8039,18 @@ psa_status_t ti_psa_aead_encrypt(mbedtls_svc_key_id_t key,
 
                 ret    = AESGCM_oneStepEncrypt(aesgcmHandle, &aesgcmOneStepOp);
                 status = map_AES_status(ret);
+
+                if (((AESGCM_Object *)aesgcmHandle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+                {
+                    /* Set a marker so that the secure callback knows that the driver handle can be closed, since
+                     * this is a one-shot operation.
+                     */
+                    ((AESGCM_Object *)aesgcmHandle->object)->common.isOpen = false;
+                }
+                else
+                {
+                    AESGCM_close(aesgcmHandle);
+                }
                 break;
             }
 #endif
@@ -7920,12 +8108,6 @@ psa_status_t ti_psa_aead_decrypt(mbedtls_svc_key_id_t key,
     else
     {
         return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    status = psa_check_aes_handle(PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(alg));
-    if (status != PSA_SUCCESS)
-    {
-        return status;
     }
 
     if (!PSA_ALG_IS_AEAD(alg) || PSA_ALG_IS_WILDCARD(alg))
@@ -8011,6 +8193,21 @@ psa_status_t ti_psa_aead_decrypt(mbedtls_svc_key_id_t key,
                     }
                     return status;
                 }
+                AESCCM_Config aesccmConfig;
+                AESCCM_Object aesccmObject;
+                AESCCM_Handle aesccmHandle = psa_aesccm_construct(&aesccmConfig, &aesccmObject);
+
+                if (aesccmHandle == NULL)
+                {
+                    if (output != plaintext)
+                    {
+                        free(output_free_address);
+                    }
+                    return PSA_ERROR_BAD_STATE;
+                }
+
+                AESCCM_OneStepOperation aesccmOneStepOp;
+                CryptoKey aesccmCryptoKey;
 
                 AESCCM_OneStepOperation_init(&aesccmOneStepOp);
                 KeyStore_PSA_initKey(&aesccmCryptoKey, key, PSA_BITS_TO_BYTES(keyBits), NULL);
@@ -8027,6 +8224,19 @@ psa_status_t ti_psa_aead_decrypt(mbedtls_svc_key_id_t key,
 
                 ret    = AESCCM_oneStepDecrypt(aesccmHandle, &aesccmOneStepOp);
                 status = map_AES_status(ret);
+
+                if (((AESCCM_Object *)aesccmHandle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+                {
+                    /* Set a marker so that the secure callback knows that the driver handle can be closed, since
+                     * this is a one-shot operation.
+                     */
+                    ((AESCCM_Object *)aesccmHandle->object)->common.isOpen = false;
+                }
+                else
+                {
+                    AESCCM_close(aesccmHandle);
+                }
+
                 break;
             }
 #endif
@@ -8045,6 +8255,23 @@ psa_status_t ti_psa_aead_decrypt(mbedtls_svc_key_id_t key,
                     return status;
                 }
 
+                AESGCM_Config aesgcmConfig;
+                AESGCM_Object aesgcmObject;
+
+                AESGCM_Handle aesgcmHandle = psa_aesgcm_construct(&aesgcmConfig, &aesgcmObject);
+
+                if (aesgcmHandle == NULL)
+                {
+                    if (output != ciphertext)
+                    {
+                        free(output_free_address);
+                    }
+                    return PSA_ERROR_BAD_STATE;
+                }
+
+                AESGCM_OneStepOperation aesgcmOneStepOp;
+                CryptoKey aesgcmCryptoKey;
+
                 AESGCM_OneStepOperation_init(&aesgcmOneStepOp);
                 KeyStore_PSA_initKey(&aesgcmCryptoKey, key, PSA_BITS_TO_BYTES(keyBits), NULL);
                 aesgcmOneStepOp.key                   = &aesgcmCryptoKey;
@@ -8061,6 +8288,18 @@ psa_status_t ti_psa_aead_decrypt(mbedtls_svc_key_id_t key,
 
                 ret    = AESGCM_oneStepDecrypt(aesgcmHandle, &aesgcmOneStepOp);
                 status = map_AES_status(ret);
+
+                if (((AESGCM_Object *)aesgcmHandle->object)->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+                {
+                    /* Set a marker so that the secure callback knows that the driver handle can be closed, since
+                     * this is a one-shot operation.
+                     */
+                    ((AESGCM_Object *)aesgcmHandle->object)->common.isOpen = false;
+                }
+                else
+                {
+                    AESGCM_close(aesgcmHandle);
+                }
                 break;
             }
 #endif
@@ -8824,65 +9063,20 @@ psa_status_t psa_crypto_init(void)
 
 /* Driver init */
 #ifdef ENABLE_TI_CRYPTO_AESCBC
-    if (aescbcHandle == NULL)
-    {
-        AESCBC_init();
-
-    #ifdef TFM_BUILD
-        psa_aescbc_construct(PSA_CALLBACK_MODE);
-    #else
-        psa_aescbc_construct(PSA_BLOCKING_MODE);
-    #endif
-    }
+    AESCBC_init();
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESCCM
-    if (aesccmHandle == NULL)
-    {
-        AESCCM_init();
-
-    #ifdef TFM_BUILD
-        psa_aesccm_construct(PSA_CALLBACK_MODE);
-    #else
-        psa_aesccm_construct(PSA_BLOCKING_MODE);
-    #endif
-    }
+    AESCCM_init();
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESCMAC
     /* It is safe to unconditionally initialize AES CMAC driver */
     AESCMAC_init();
-
-    if (aescmacHandle == NULL)
-    {
-    #ifdef TFM_BUILD
-        psa_aescmac_construct(PSA_CALLBACK_MODE);
-    #else
-        psa_aescmac_construct(PSA_BLOCKING_MODE);
-    #endif
-    }
-
-    if (aescbcmacHandle == NULL)
-    {
-    #ifdef TFM_BUILD
-        psa_aescbcmac_construct(PSA_CALLBACK_MODE);
-    #else
-        psa_aescbcmac_construct(PSA_BLOCKING_MODE);
-    #endif
-    }
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESCTR
-    if (aesctrHandle == NULL)
-    {
-        AESCTR_init();
-
-    #ifdef TFM_BUILD
-        psa_aesctr_construct(PSA_CALLBACK_MODE);
-    #else
-        psa_aesctr_construct(PSA_BLOCKING_MODE);
-    #endif
-    }
+    AESCTR_init();
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESECB
@@ -8890,16 +9084,7 @@ psa_status_t psa_crypto_init(void)
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_AESGCM
-    if (aesgcmHandle == NULL)
-    {
-        AESGCM_init();
-
-    #ifdef TFM_BUILD
-        psa_aesgcm_construct(PSA_CALLBACK_MODE);
-    #else
-        psa_aesgcm_construct(PSA_BLOCKING_MODE);
-    #endif
-    }
+    AESGCM_init();
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_ECDH
@@ -8911,16 +9096,7 @@ psa_status_t psa_crypto_init(void)
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_EDDSA
-    if (eddsaHandle == NULL)
-    {
-        EDDSA_init();
-
-    #ifdef TFM_BUILD
-        psa_eddsa_construct(PSA_CALLBACK_MODE);
-    #else
-        psa_eddsa_construct(PSA_BLOCKING_MODE);
-    #endif
-    }
+    EDDSA_init();
 #endif
 
 #ifdef ENABLE_TI_CRYPTO_SHA2

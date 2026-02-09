@@ -180,14 +180,13 @@ uint32_t busDrv_PrepareTxnParts(TBusDrvObj *pBusDrv, TTxnStruct *pTxn)
             /* Add buffer length to total transaction length */
             pBusDrv->uTxnLength += uBufLen;
 
+            uPartNum = pBusDrv->uCurrTxnPartsNum;
 
-            /* If in a Tx aggregation, return TRUE (need to accumulate all parts before sending the transaction) */
-            if (TXN_PARAM_GET_AGGREGATE(pTxn) == TXN_AGGREGATE_ON)
+            if (uPartNum > (MAX_XFER_BUFS-1))
             {
-                //TRACE(pBusDrv->hReport, REPORT_SEVERITY_INFORMATION, "busDrv_PrepareTxnParts: In aggregation so exit, uTxnLength=%d, bWrite=%d, Len0=%d, Len1=%d, Len2=%d, Len3=%d\n", pBusDrv->uTxnLength, bWrite, pTxn->aLen[0], pTxn->aLen[1], pTxn->aLen[2], pTxn->aLen[3]);
-                return TRUE;
+                ASSERT_GENERAL(0);//not suppose to happen
+                return TXN_STATUS_ERROR; // Buffer overflow protection
             }
-
 
             /* If current buffer has full SDIO blocks, prepare a block-mode transaction part */
             pBusDrv->aTxnParts[uPartNum].bBlkMode = FALSE;
@@ -200,14 +199,20 @@ uint32_t busDrv_PrepareTxnParts(TBusDrvObj *pBusDrv, TTxnStruct *pTxn)
             uPartNum++;
 
             /* Set last More flag as specified for the whole Txn */
-            pBusDrv->aTxnParts[uPartNum - 1].bMore = TXN_PARAM_GET_MORE(pTxn);
+            //pBusDrv->aTxnParts[uPartNum - 1].bMore = TXN_PARAM_GET_MORE(pTxn);
             pBusDrv->uCurrTxnPartsNum = uPartNum;
-        }
-        /* TXN length of data packet might be aligned to SDIO block size.
-           Thus, we add padding size to total transaction length
-           without copy the padding to DMA buffer */
 
-        return FALSE;
+
+        }
+
+        /* If in a Tx aggregation, return TRUE (need to accumulate all parts before sending the transaction) */
+        if (TXN_PARAM_GET_AGGREGATE(pTxn) == TXN_AGGREGATE_ON)
+        {
+            //TRACE(pBusDrv->hReport, REPORT_SEVERITY_INFORMATION, "busDrv_PrepareTxnParts: In aggregation so exit, uTxnLength=%d, bWrite=%d, Len0=%d, Len1=%d, Len2=%d, Len3=%d\n", pBusDrv->uTxnLength, bWrite, pTxn->aLen[0], pTxn->aLen[1], pTxn->aLen[2], pTxn->aLen[3]);
+            return TRUE;//it is aggr
+        }
+
+        return FALSE;//not agge
     }
     else
     {
@@ -288,7 +293,7 @@ ETxnStatus busDrv_SendTxnParts(TBusDrvObj *pBusDrv)
     int eStatus;
     TTxnPart   *pTxnPart;
     TTxnStruct *pTxn = pBusDrv->pCurrTxn;
-    uint32_t   i,j;
+    uint32_t   i;
     uint8_t direction = TXN_PARAM_GET_DIRECTION(pTxn);
     uint32_t FixedAdder = ((TXN_PARAM_GET_FIXED_ADDR(pTxn) == 1) ? 1 : 0);
 
@@ -302,26 +307,19 @@ ETxnStatus busDrv_SendTxnParts(TBusDrvObj *pBusDrv)
         /* If single step, send ELP byte */
         if (TXN_PARAM_GET_SINGLE_STEP(pTxn))
         {
-            for(j = 0; j < 2; j++)
+            if(0 != direction)
             {
-                if(0 != direction)
-                {
-                    //read
-                    eStatus = bus_sendReadCommand(pTxnPart->uHwAddr, pTxnPart->pHostAddr, pTxnPart->uLength, 0, 0xFF);
-                }
-                else
-                {
-                    eStatus = bus_sendWriteCommand(pTxnPart->uHwAddr, pTxnPart->pHostAddr, pTxnPart->uLength, 0);
-                }
-                //if the status returned OK from bus transaction, no need for second write so break the for loop
-                if (eStatus == 0)
-                {
-                    break;
-                }
-                else
-                {
-                    return TXN_STATUS_ERROR;
-                }
+                //read
+                eStatus = bus_sendReadCommand(pTxnPart->uHwAddr, pTxnPart->pHostAddr, pTxnPart->uLength, 0, 0xFF);
+            }
+            else
+            {
+                eStatus = bus_sendWriteCommand(pTxnPart->uHwAddr, pTxnPart->pHostAddr, pTxnPart->uLength, 0);
+            }
+            if (eStatus != 0)
+            {
+                pBusDrv->uCurrTxnPartsNum = 0;
+                return TXN_STATUS_ERROR;
             }
         }
         else
@@ -339,12 +337,13 @@ ETxnStatus busDrv_SendTxnParts(TBusDrvObj *pBusDrv)
             /* If error, set error in Txn struct, call TxnDone CB if not fully sync, and exit */
             if (eStatus < 0)
             {
+                pBusDrv->uCurrTxnPartsNum = 0;
                 TXN_PARAM_SET_STATUS(pTxn, TXN_PARAM_STATUS_ERROR);
                 return TXN_STATUS_ERROR;
             }
         }
     }
-    
+    pBusDrv->uCurrTxnPartsNum = 0;
     return TXN_STATUS_COMPLETE;
 }
 

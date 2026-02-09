@@ -4453,7 +4453,7 @@ static void build_single_mode_capability(struct hostapd_hw_modes *hwMode, tiwdrv
     for (i=0; i < hwMode->num_channels; i++)
     {
         hwMode->channels[i].chan = pChanList[i].chan;
-		hwMode->channels[i].freq = hwMode->channels[i].chan*5 + freqBase;;
+		hwMode->channels[i].freq = hwMode->channels[i].chan*5 + freqBase;
         hwMode->channels[i].max_tx_power = pChanList[i].max_tx_power;
 
 		if (hwMode->ht_capab & HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET)

@@ -3007,7 +3007,6 @@ int cc3xxx_trnspt_cmd_if_sta_add(void *apPriv, struct hostapd_sta_add_params *ap
     AddPeerCmd_t *pStaParams;
 
     //CME_CC3XX_PORT_PRINT("\n\rcmd_if_sta_add: Add STA");
-
     // Sanity checks on received parameters
     if ( (NULL == pDrv) || (NULL == apParams) )
     {
@@ -3045,6 +3044,16 @@ int cc3xxx_trnspt_cmd_if_sta_add(void *apPriv, struct hostapd_sta_add_params *ap
 
     GTRACE(GRP_DRIVER_DEBUG, "Peer %s, Add Command pending till 'set flags', add to list.", macStr);
     //CME_CC3XX_PORT_PRINT_ERROR("\n\rPeer %s, Add Command pending till 'set flags', add to list aid:%d.", macStr, apParams->aid);
+
+    // set MFP flag for WPA2_PLUS \ WPA3
+    if(apParams->flags & WPA_STA_MFP) 
+    {
+        pStaParams->peerInfo.configurePeer.mfp = TRUE;
+    }
+    else
+    {
+        pStaParams->peerInfo.configurePeer.mfp = FALSE;
+    }
 
     //
     // Keep peer parameters on the allocated command
@@ -3134,7 +3143,7 @@ int cc3xxx_trnspt_cmd_if_sta_remove(void *apPriv, const uint8_t *apAddr)
     int                     rc;
     char                    macStr[MAC_STR_LEN];
 
-    RemovePeer_t            *cmdParams   = (RemovePeer_t*)&cmd.commandParam.param;;
+    RemovePeer_t            *cmdParams   = (RemovePeer_t*)&cmd.commandParam.param;
 
     AddPeerCmd_t *pStaParams;
     AddPeerCmd_t *pPrevCmd; //Previous in link list (NULL if pStaParams is first)
@@ -3259,21 +3268,17 @@ int cc3xxx_trnspt_cmd_if_sta_remove(void *apPriv, const uint8_t *apAddr)
 int cc3xxx_trnspt_cmd_if_sta_set_flags(void *apPriv, const u8 *apAddr, unsigned int total_flags,
                          unsigned int flags_or, unsigned int flags_and)
 {
-   //
-
     int                     rc;
-    //CommandParamContol_t          cmd;
-    CommandParamContol_t cmd;
+    CommandParamContol_t    cmd;
     CommandComplete_t       cmdComplete;
     uint16_t                retVal;
     char                    macStr[MAC_STR_LEN];
-    ti_driver_ifData_t    *pDrv = (ti_driver_ifData_t *)apPriv;
-    AddPeerCmd_t *pStaParams;
-    AddPeerCmd_t *pPrevCmd; //Previous in link list (NULL if pStaParams is first)
-    Bool_e foundCmd = FALSE;
-    uint32_t uAcId;
-    uint32_t supportedRatesMask, basicRatesMask;
-
+    ti_driver_ifData_t      *pDrv = (ti_driver_ifData_t *)apPriv;
+    AddPeerCmd_t            *pStaParams;
+    AddPeerCmd_t            *pPrevCmd; //Previous in link list (NULL if pStaParams is first)
+    Bool_e                  foundCmd = FALSE;
+    uint32_t                uAcId;
+    uint32_t                supportedRatesMask, basicRatesMask;
 
     if (NULL == apAddr)
         return -1;
@@ -3423,9 +3428,34 @@ int cc3xxx_trnspt_cmd_if_sta_set_flags(void *apPriv, const u8 *apAddr, unsigned 
 
             udata_SetPeerParams(cmdReturn->linkId, apAddr, cmdParams->peerInfo.configurePeer.WMM);
 
-            udata_SetRxState(cmdReturn->linkId, LINK_STATE_OPEN);
+            //Set Rx State according to station authorization
+            if (total_flags & (WPA_STA_AUTHENTICATED | WPA_STA_ASSOCIATED))
+            {
+                if (flags_or & WPA_STA_AUTHORIZED)
+                {
+                    //Station is associated and authorized
+                    udata_SetRxState(cmdReturn->linkId, LINK_STATE_OPEN);
+                }
+                else
+                {
+                    //Station is associated but not authorized yet
+                    udata_SetRxState(cmdReturn->linkId, LINK_STATE_EAPOL);
+                }
+            }
+            //Set Tx State
             udata_SetTxState(cmdReturn->linkId, LINK_STATE_OPEN);
 
+            // If ap set pmf enabled based on peer mfp config attach to linkId
+            if (ROLE_IS_TYPE_AP_BASED(pDrv->roleType))
+            {
+                Bool_e isPmfEnable = FALSE;
+
+                if (pStaParams->peerInfo.configurePeer.mfp)
+                {
+                        isPmfEnable = TRUE;
+                }
+                udata_SetMgmtEncryption(cmdReturn->linkId, isPmfEnable);
+            }
 
             /* By default set all ACs of both links as not required for admission control (updated after connection) */
             for (uAcId = 0; uAcId < MAX_NUM_OF_AC; uAcId++)
@@ -3479,6 +3509,7 @@ int cc3xxx_trnspt_cmd_if_sta_set_flags(void *apPriv, const u8 *apAddr, unsigned 
         {
             //CME_CC3XX_PORT_PRINT("\n\r update peer, peer: %s  link id:%d WPA_STA_AUTHORIZED *********",macStr,lid);
             GTRACE(GRP_DRIVER_MX, "update peer, peer: %s link id:%d WPA_STA_AUTHORIZED ",macStr, lid);
+            udata_SetRxState(lid, LINK_STATE_OPEN);
             connectionState = LINK_STATE_CONNECTED;
             sendStateChanged = TRUE;
         }

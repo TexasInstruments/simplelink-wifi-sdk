@@ -1857,7 +1857,7 @@
  *
  * Uncomment this macro to enable the support for TLS 1.3.
  */
-// #define MBEDTLS_SSL_PROTO_TLS1_3
+#define MBEDTLS_SSL_PROTO_TLS1_3
 
 /**
  * \def MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
@@ -2772,6 +2772,12 @@
  */
 #define MBEDTLS_DHM_C
 
+/* TI-MBEDTLS: While ECDH is provided via PSA/HW, we enable this to ensure that
+ * `MBEDTLS_SLL_TLS1_2_SOME_ECC` is defined. That is required to use the
+ * supported groups extension in TLS1.2 (see ssl_client.c). Even though this
+ * config is enabled, our PSA-related configs still ensure that HW-accelerated
+ * ECDH is used in the TLS handshake.
+ */
 /**
  * \def MBEDTLS_ECDH_C
  *
@@ -2788,7 +2794,7 @@
  *
  * Requires: MBEDTLS_ECP_C
  */
-// #define MBEDTLS_ECDH_C
+#define MBEDTLS_ECDH_C
 
 /**
  * \def MBEDTLS_ECDSA_C
@@ -3542,7 +3548,7 @@
  *
  * This module adds support for SHA-512.
  */
-// #define MBEDTLS_SHA512_C
+#define MBEDTLS_SHA512_C
 
 /**
  * \def MBEDTLS_SHA3_C

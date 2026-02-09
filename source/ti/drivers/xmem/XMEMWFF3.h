@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -410,7 +410,8 @@ typedef enum
     PY25Q256LC_IDX    = 9,
     MX25U3235F_IDX    = 10,
     MX25U6435F_IDX    = 11,
-    IS25WJ128F_IDX    = 12
+    IS25WJ128F_IDX    = 12,
+    W25Q12PW_IDX      = 13,
 } XMEM_Flash_Idx;
 
 /*!

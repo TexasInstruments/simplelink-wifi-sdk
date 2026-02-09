@@ -80,15 +80,24 @@ extern dbg_cntr_trnspt_t g_stat_trnpt;
  */ 
 TUdata * udata_Create(void)
 {
+    uint32_t i;
+
     HOOK(HOOK_UDATA);
     /* Allocate module object */
     gUdataCB = (TUdata *)os_zalloc(sizeof(TUdata));
-    
+
     if (!gUdataCB)
     {
        //GTRACE(1, "udata_Create(): Allocation failed!!\r\n"));
         return NULL;
     }
+
+    /* Enable intra-BSS bridge by default for all roles (allows AP clients to communicate) */
+    for (i = 0; i < MAX_NUM_WLAN_ROLE_IDS; i++)
+    {
+        gUdataCB->aIntraBssBridgeEnable[i] = 1;
+    }
+
     /* Create internal modules */
     if (NULL == rxData_create())
     {
@@ -908,7 +917,14 @@ uint32_t udataNet_GetTxMgmtLink(uint32_t uNetIfId, TMacAddr mac)
     {
         RoleID_t eFwRoleId = pUdata->aNetToRoleId[uNetIfId];
 
-        uHlid = pUdata->aGlobalHlids[eFwRoleId];
+        if (MAC_MULTICAST(mac))
+        {
+            uHlid = pUdata->aBcastHlid[eFwRoleId];
+        }
+        else
+        {
+            uHlid = pUdata->aGlobalHlids[eFwRoleId];
+        }
     }
 
     return uHlid;

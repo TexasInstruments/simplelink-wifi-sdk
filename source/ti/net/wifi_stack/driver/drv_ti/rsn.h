@@ -153,8 +153,6 @@ typedef enum
 
 } externalAuthMode_e;
 
-// Typedef supplicant key types
-typedef enum wpa_key_mgmt wpa_key_mgmt_e;
 
 // Used for Get/Set RSN/WPA/WPS IE
 #define RSN_GENERIC_IE_MAX_LEN  (255)

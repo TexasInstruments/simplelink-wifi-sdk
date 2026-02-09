@@ -603,6 +603,7 @@ void CME_P2pNegConfirmation(uint32_t aRoleId, Bool_e isGO);
 void cmeP2pGroupRemove(void);
 void cmeP2pCancel(void);
 void cmeStopP2pFind(struct wpa_supplicant *wpa_s);
+void cmeP2pClearAll();
 
 /* ----------------------------------------------------------------------------
  cmeRemoveAllProfilesFromSupplicant

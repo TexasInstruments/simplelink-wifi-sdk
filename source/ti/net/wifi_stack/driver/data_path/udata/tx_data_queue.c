@@ -167,26 +167,6 @@ int32_t sendPacket(uint32_t uHlid, uint32_t uQueId)
 
     if (eXmitStatus == STATUS_XMIT_SUCCESS)
     {
-        /* Update current AC and Link busy state (change may only be from not busy to busy) */
-        if (uBackpressureMap & TX_HW_CURRENT_AC_STOP)
-        {
-            SET_BIT_BY_IDX(pTxDataQ->uAcBusyBitmap, uQueId);
-            pLinkQ->aQueueCounters[uQueId].uAcStopped++;
-        }
-        if (uBackpressureMap & TX_HW_CURRENT_LINK_STOP)
-        {
-            SET_BIT_BY_IDX(pTxDataQ->uLinkBusyBitmap, uHlid);
-            pLinkQ->aQueueCounters[uQueId].uLinkStopped++;
-        }
-
-        /* Update current Link priority (change may only be from high to low priority upon sending packet) */
-        if ((uBackpressureMap & TX_HW_CURRENT_LINK_HIGH) == 0)
-        {
-            CLEAR_BIT_BY_IDX(pTxDataQ->uLinkPriorityBitmap, uHlid);
-        }
-
-        pLinkQ->aQueueCounters[uQueId].uXmittedPacket++;
-
         /* If packet sent to FW successfully return TRUE */
         return FRAME_SEND_SUCCESFULY;
     }
@@ -199,11 +179,6 @@ int32_t sendPacket(uint32_t uHlid, uint32_t uQueId)
         gErrorBusy++;
 #endif
         TX_FRAME_FLOW_CNTRL_PRINT_MUST("\n\rData frame: requeue\r\n");
-
-        /* Requeue the packet in a critical section */
-        //trnspt_lockTxQueue ();
-        //eQueStatus = que_Requeue (pLinkQ->aQueues[uQueId], (void *)pPktCtrlBlk);
-        //trnspt_unlockTxQueue ();
 
         if (eQueStatus == OK)
         {
@@ -1232,7 +1207,7 @@ void txDataQ_FreeFwAllocated (TTxCtrlBlk *pPktCtrlBlk)
     /* new packet, decrement packet in use counters */
     if(pPktCtrlBlk->tTxPktParams.uAcPendTXDataDone )
     {
-        //Report("\n\r dbg_tx. txDataQ_FreeFwAllocated, txDataQ_ReqToRunTxScheduler uAc:%d uPktPendTXDataPerAc:%d", uAc, pDataRsrc->uPktPendTXDataPerAc[uAc]);;
+        //Report("\n\r dbg_tx. txDataQ_FreeFwAllocated, txDataQ_ReqToRunTxScheduler uAc:%d uPktPendTXDataPerAc:%d", uAc, pDataRsrc->uPktPendTXDataPerAc[uAc]);
         pDataRsrc->uPktPendTXDataPerAc[uAc]--;
         pDataRsrc->uPktPendTXData--;
         pPktCtrlBlk->tTxPktParams.uAcPendTXDataDone =0;
@@ -1589,7 +1564,6 @@ static void txDataQ_RunScheduler (void* hCbHndl)
 #ifdef AC_DEBUG_REPORT 
     Report("\n\rAc Debug ,Run scheduler: schedCount=%d | exit count=%d", uScheduleCount, i);
 #endif
-    TWD_txXfer_EndOfBurst();
 }
 
 const static EAcTrfcType getAcQueueTable[MAX_NUM_OF_AC] = {QOS_AC_VO, QOS_AC_VI, QOS_AC_BE, QOS_AC_BK};

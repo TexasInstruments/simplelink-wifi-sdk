@@ -1128,27 +1128,14 @@ local_AsymHashPolicy(psa_algorithm_t alg,
         (PSA_ALG_ANY_HASH != PSA_ALG_GET_HASH(alg)))
     {
         size_t DigestNBits = (8U * PSA_HASH_LENGTH(PSA_ALG_GET_HASH(alg)));
-        if (PSA_ALG_SHA_512 == (PSA_ALG_GET_HASH(alg)))
+        /* At PSA layer and KeyStore layer, we reject digest lengths that are
+         * less than the modulus size, per FIPS 186-4 recommendation. An
+         * exception is made at modulus size 521 bits, since a 512 bit hash
+         * meets the security strength recommendation for that key size.
+         */
+        if ((DigestNBits < ModulusSizeBits) && (ModulusSizeBits != 521))
         {
-            if ((ModulusSizeBits < DigestNBits) && (ModulusSizeBits != 255U))
-            {
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
-        }
-        else
-        {
-            if (ModulusSizeBits < DigestNBits)
-            {
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
+            funcres = PSA_ERROR_INVALID_ARGUMENT;
         }
     }
     else

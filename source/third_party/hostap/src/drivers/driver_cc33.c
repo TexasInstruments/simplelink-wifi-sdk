@@ -1674,7 +1674,7 @@ static int32_t buildSingleModeCapability(RoleType_e aRoleType,
     for (i=0; i<apHwMode->num_channels; ++i)
     {
         apHwMode->channels[i].chan = pChanList[i];
-        apHwMode->channels[i].freq = apHwMode->channels[i].chan*5 + freqBase;;
+        apHwMode->channels[i].freq = apHwMode->channels[i].chan*5 + freqBase;
         apHwMode->channels[i].max_tx_power = 0;  // ToDo - needed for AP role,
                                                  // have to take this one from regulatory domain (?)
 

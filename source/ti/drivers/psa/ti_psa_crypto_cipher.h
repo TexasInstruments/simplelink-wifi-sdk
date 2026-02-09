@@ -34,9 +34,13 @@
 #include <ti/devices/DeviceFamily.h>
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     #include <ti/drivers/aesecb/AESECBXXF3.h>
+    #include <ti/drivers/aescbc/AESCBCXXF3.h>
+    #include <ti/drivers/aesctr/AESCTRXXF3.h>
 #elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
        (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
     #include <ti/drivers/aesecb/AESECBCC26XX.h>
+    #include <ti/drivers/aescbc/AESCBCCC26XX.h>
+    #include <ti/drivers/aesctr/AESCTRCC26XX.h>
 #endif
 struct ti_psa_cipher_operation_s
 {
@@ -52,6 +56,26 @@ struct ti_psa_cipher_operation_s
             AESECBCC26XX_Object aesecbObject;
 #endif
         } aesecb;
+        struct
+        {
+            AESCBC_Config aescbcConfig;
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+            AESCBCXXF3_Object aescbcObject;
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
+       (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
+            AESCBCCC26XX_Object aescbcObject;
+#endif
+        } aescbc;
+        struct
+        {
+            AESCTR_Config aesctrConfig;
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+            AESCTRXXF3_Object aesctrObject;
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
+       (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
+            AESCTRCC26XX_Object aesctrObject;
+#endif
+        } aesctr;
         /* Add other driver structs here as needed */
     } driver;
     /* Used to mark the operation struct as ready.*/

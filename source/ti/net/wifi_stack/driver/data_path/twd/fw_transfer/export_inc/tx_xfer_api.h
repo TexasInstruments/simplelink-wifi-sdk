@@ -49,6 +49,19 @@
  *   ============================
  */
 
+/**
+ * \fn     txXfer_Create
+ * \brief  Initialize module variables
+ *
+ * Initialize module variables including saving other modules handles
+ *
+ * \note
+ * \param
+ * \return 0
+ * \sa
+ */
+uint32_t txXfer_Init (void);
+
 
 /** 
  * \fn     txXfer_Destroy
@@ -63,9 +76,23 @@
  */ 
 uint32_t txXfer_Destroy (void);
 
+/**
+ * \fn     txXfer_SendPacket
+ * \brief  Send a Tx packet to the FW
+ *
+ * Called by the Tx upper layers to send a new Tx packet to the FW (after FW resources were allocated).
+ * Call txXfer_SendAggregatedPkts to forward
+ *     the aggregation to the FW.
+ *
+ * \note
+ * \param  pPktCtrlBlk - The new packet to send
+ * \return COMPLETE if completed in this context, PENDING if not, ERROR if failed
+ * \sa
+ */
+ETxnStatus txXfer_SendPacket (TTxCtrlBlk *pPktCtrlBlk);
 
 /** 
- * \fn     txXfer_Init
+ * \fn     txXferAggr_Init
  * \brief  Initialize module variables
  * 
  * Initialize module variables including saving other modules handles
@@ -75,55 +102,25 @@ uint32_t txXfer_Destroy (void);
  * \return 0
  * \sa     
  */ 
-uint32_t txXfer_Init (void);
+uint32_t txXferAggr_Init (void);
 
-
-/** 
- * \fn     txXfer_Restart
- * \brief  Restart some module variables
- * 
- * Restart some module variables upon init, stop or recovery
- * 
- * \note   
- * \param  
+/**
+ * \fn     txXferAggr_Destroy
+ * \brief  Destroy module
+ *
+ * Destroy module
+ *
+ * \note
+ * \param
  * \return 0
- * \sa     
- */ 
-uint32_t txXfer_Restart (void);
+ * \sa
+ */
+uint32_t txXferAggr_Destroy (void);
 
-
-/** 
- * \fn     txXfer_SetDefaults
- * \brief  Configure module default settings
- * 
- * Configure module default settings from ini file
- * 
- * \note   
- * \param  
- * \return void
- * \sa     
- */ 
-void txXfer_SetDefaults (void);
-
-
-/** 
- * \fn     txXfer_SetBusParams
- * \brief  Configure bus related parameters
- * 
- * Configure bus driver DMA-able buffer length to be used as a limit to the aggragation length.
- * 
- * \note   
- * \param  uDmaBufLen  - The bus driver DMA-able buffer length
- * \return void
- * \sa     
- */ 
-void txXfer_SetBusParams (uint32_t uDmaBufLen);
-
-
-/** 
+/**
  * \fn     txXfer_SendPacket
- * \brief  Send a Tx packet to the FW
- * 
+ * \brief  Send a Tx packet to the FW with delay to create aggregation
+ *
  * Called by the Tx upper layers to send a new Tx packet to the FW (after FW resources were allocated).
  * Aggregate the packet if possible, and if needed call txXfer_SendAggregatedPkts to forward 
  *     the aggregation to the FW.
@@ -133,7 +130,7 @@ void txXfer_SetBusParams (uint32_t uDmaBufLen);
  * \return COMPLETE if completed in this context, PENDING if not, ERROR if failed
  * \sa     
  */ 
-ETxnStatus txXfer_SendPacket (TTxCtrlBlk *pPktCtrlBlk);
+ETxnStatus txXferAggr_SendPacket (TTxCtrlBlk *pPktCtrlBlk);
 
 
 /** 
@@ -148,7 +145,7 @@ ETxnStatus txXfer_SendPacket (TTxCtrlBlk *pPktCtrlBlk);
  * \return void
  * \sa     
  */ 
-void txXfer_EndOfBurst (void);
+void txXferAggr_EndOfBurst (void);
 
 
 #ifdef TI_DBG

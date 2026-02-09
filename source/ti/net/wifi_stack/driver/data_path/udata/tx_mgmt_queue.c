@@ -1110,8 +1110,7 @@ static void runScheduler (void)
         }
         else
         {
-            /* We couldn't send from both queues so indicate end of packets burst and exit. */
-            TWD_txXfer_EndOfBurst ();
+            /* We couldn't send from both queues so indicate end of packets and exit. */
 
             trnspt_lockTxReqSched();
             pTxMgmtQ->txMgmtReqScheduleCount-=CountTxMgmtFrames;

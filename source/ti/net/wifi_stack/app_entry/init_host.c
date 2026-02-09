@@ -57,6 +57,7 @@
 #include "tx_ctrl_api.h"
 #include "tw_driver.h"
 #include "init_host.h"
+#include "l2_cfg.h"
 /******************************************************************************
                                     EXTERN
 ******************************************************************************/
@@ -152,6 +153,7 @@ int32_t InitHostDriver(void)
 #ifdef REMOVE_TX_CODE
     ret |= rxXfer_Init(); //TODO to remove
 #endif
+    ret |= txXferAggr_Init();
     ret |= txXfer_Init();
     ret |= txResult_Init();
     ret |= txCtrlBlk_Init();
@@ -203,7 +205,6 @@ int32_t InitHostDriver(void)
         Report("\r\nERROR !set defults failed");
         ASSERT_GENERAL(0);
     }
-
     ret = init_device((uint32_t)CONTROL_BUFFER_READ_SIZE_BTL,(uint32_t)CONTROL_BUFFER_READ_SIZE);
 
     if(ret < 0)
@@ -239,12 +240,21 @@ void DeInitHostDriverInternal(void * hCbHndl)
     }
 
     /* Data path */
+    ret = txXferAggr_Destroy();
+
+    if (ret)
+    {
+        goto fail;
+    }
+
+    /* Data path */
     ret = txXfer_Destroy();
 
     if (ret)
     {
         goto fail;
     }
+
 
     ret = txResult_Destroy();
     if (ret)
@@ -457,4 +467,39 @@ void host_getCounters(WlanRole_e roleType, dbg_cntr_trnspt_t *counters)
 
 }
 
+/******************************************************************************
 
+    NAME:           InitIniParamsHost
+
+    PROTOTYPE:      init
+
+    DESCRIPTION:    Read ini params value to initate globals on wlan_start 
+
+    CALLER:        ctrlCmdFw_DownloadIniParams
+
+    RETURNS:        NONE
+******************************************************************************/
+void InitIniParamsHost(cmd_ini_params_download_t *cmd)
+{
+    struct cc33xx_conf_file *conf = (struct cc33xx_conf_file *)(cmd->payload);
+
+    // Set ps_scheme according to PowerSaveScheme
+    uint8_t ps_scheme = conf->mac.ps_scheme; 
+    AcPsMode_t acPsMode =
+    {
+        .wmeAcPsMode[AC_BE] = ps_scheme,
+        .wmeAcPsMode[AC_BK] = ps_scheme,
+        .wmeAcPsMode[AC_VI] = ps_scheme,
+        .wmeAcPsMode[AC_VO] = ps_scheme
+    };
+    l2_cfg_Dynamic_set(L2_AC_PS_MODE, (uint8_t *)&acPsMode);
+
+    // Update the l2CfgCommon_t parameters based on the INI file configuration
+    if (gpL2CommonCfg != NULL)
+    {
+        // Set the he support value
+        gpL2CommonCfg->heSupport = conf->mac.he_enable;
+    }
+
+    // CMD is freed in caller function
+}

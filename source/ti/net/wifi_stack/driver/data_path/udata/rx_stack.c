@@ -994,9 +994,6 @@ static void rxData_RcvPacketData(void *pBuffer)
             /* If dest MAC is ours, unicast bridge is required so send to Tx and drop Rx packet */
             if (txDataQ_LinkMacFind(&uMacLink, pEthernetHeader->dst) == OK)
             {
-                //uint8_t *pTemp = (uint8_t*)pEthernetHeader->dst;
-                //Report(REPORT_SEVERITY_INFORMATION, " rxData_rcvPacketData() : MAC found %02x-%02x-%02x-%02x-%02x-%02x\r\n", pTemp[0],pTemp[1], pTemp[2], pTemp[3], pTemp[4], pTemp[5]);
-
                 sendDataPacketToTx(RX_ETH_PKT_DATA(pBuffer), (uint16_t)RX_ETH_PKT_LEN(pBuffer), uMacLink);
 
                 RxBufFree(pBuffer);
@@ -1025,8 +1022,8 @@ static void rxData_RcvPacketData(void *pBuffer)
         /* AP-role BSS broadcat Bridge handling */
         if (IS_ROLE_TYPE_AP_OR_P2PGO(pLinkInfo->eRoleType) && pRxData->pUdata->aIntraBssBridgeEnable[pLinkInfo->eFwRoleId])
         {
-            /* send to TX (also sent to Rx - see below) */ 
-            sendDataPacketToTx(RX_ETH_PKT_DATA(pBuffer), (uint16_t)RX_ETH_PKT_LEN(pBuffer), 
+            /* send to TX (also sent to Rx - see below) */
+            sendDataPacketToTx(RX_ETH_PKT_DATA(pBuffer), (uint16_t)RX_ETH_PKT_LEN(pBuffer),
                                pRxData->pUdata->aBcastHlid[pLinkInfo->uNetIfId]);
         }
 

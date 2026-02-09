@@ -35,19 +35,21 @@
 #include <stdint.h>
 #include <string.h>
 
+typedef void (*IRQCallbackFnType)(void);
+
 /**
  * @brief Initialize the WLAN IRQ callback.
  *
  * @param cb Callback to be called when the interrupt occurs.
  */
-extern void wlan_IRQInit(void *cb);
+extern void wlan_IRQInit(void (*cb));
 
 /**
  * @brief Initialize the WLAN IRQ callback, called before module start to receive the init interrupt of the FW.
  *
  * @param cb Callback to be called when the interrupt occurs.
  */
-extern void wlan_IRQInitBeforeHwInit(void *cb);
+extern void wlan_IRQInitBeforeHwInit(void (*cb));
 
 /**
  * @brief Deinitialize the WLAN IRQ callback.

@@ -287,13 +287,6 @@ typedef struct {
     uint8_t shouldConnectToAnyP2P; // not supported
     uint8_t shouldUseFastConnect;
     uint8_t autoStart;
-#if CC35XX_NOT_SUPPORED
-    int intent;                // p2p, not supported
-    int forceAutonomousGO;     // p2p, not supported
-    int neginitiator;          // p2p, not supported
-    //int autoSmartConfig;
-    //int autoProvisioning;
-#endif
     uint8_t fastPersistent;        // either to store fast frame into flash or not
     uint8_t padding[3];
 } CmeConnectionPolicyParams_t;

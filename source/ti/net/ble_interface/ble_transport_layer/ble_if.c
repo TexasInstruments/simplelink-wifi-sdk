@@ -130,6 +130,7 @@ int BleIf_VendorEventHandler(uint8_t* data, uint16_t len)
 int BleIf_EnableBLE()
 {
     int ret = 0;
+    int status = 0;
 
     ret = osi_SyncObjCreate(&bleInitEventSyncObj);
     if(ret != 0)
@@ -163,7 +164,8 @@ int BleIf_EnableBLE()
     if (OSI_OK != ret)
     {
         Report("\n\rBleIf_EnableBLE: Failed to receive BLE Init Done. error number %d", ret);
-        ASSERT_GENERAL(0);
+        Report("\n\rBleIf_EnableBLE: Check if BLE is supported and enabled in INI file and try again.");
+        status = -1;
     }
 
     ret = osi_SyncObjDelete(&bleInitEventSyncObj);
@@ -173,7 +175,7 @@ int BleIf_EnableBLE()
         ASSERT_GENERAL(0);
     }
 
-    return ret;
+    return status;
 }
 
 int BleIf_SetBdAddr(const unsigned char *pBdAddr)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025, Texas Instruments Incorporated
+ * Copyright (c) 2021-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -200,7 +200,7 @@ __STATIC_INLINE void AESECB_releaseLock(AESECB_Handle handle)
  */
 __STATIC_INLINE void AESECB_enableThreadSafety(AESECB_Handle handle)
 {
-    AESECBXXF3_Object *object = handle->object;
+    AESECBXXF3_Object *object = (AESECBXXF3_Object *)handle->object;
     object->threadSafe        = true;
 }
 /*! @endcond */
@@ -218,7 +218,7 @@ __STATIC_INLINE void AESECB_enableThreadSafety(AESECB_Handle handle)
  */
 __STATIC_INLINE void AESECB_disableThreadSafety(AESECB_Handle handle)
 {
-    AESECBXXF3_Object *object = handle->object;
+    AESECBXXF3_Object *object = (AESECBXXF3_Object *)handle->object;
     object->threadSafe        = false;
 }
 /*! @endcond */

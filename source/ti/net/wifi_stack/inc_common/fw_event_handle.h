@@ -53,7 +53,7 @@
 #define HINT_SECOND_LOADER_INIT_COMPLETE 0x10 //bit_4
 #define HINT_FW_INIT_COMPLETE            0x20 //bit_5
 
-#define RX_TX_BUFFER   12000 //(17664-- for 16k RXaggr )(for 8k RX aggr 9216)
+#define RX_TX_BUFFER   13000 //(17664-- for 16k RXaggr )(for 8k RX aggr 13000 same buffer size as in the fW)
 #define SDIO_BLOCK_SIZE 128
 
 #define NAB_EXTRA_BYTES 4

@@ -27,7 +27,7 @@ static FILE *wpa_debug_tracing_file = NULL;
 #endif /* CONFIG_DEBUG_LINUX_TRACING */
 
 
-int wpa_debug_level = MSG_INFO;
+int wpa_debug_level = MSG_DEBUG;
 int wpa_debug_show_keys = 0;
 int wpa_debug_timestamp = 0;
 int wpa_debug_syslog = 0;
@@ -257,6 +257,8 @@ static void _wpa_hexdump(int level, const char *title, const u8 *buf,
 			 size_t len, int show, int only_syslog)
 {
 	size_t i;
+	if(len > 100) // to prevent flooding
+	    return;
 
 #ifdef CONFIG_DEBUG_LINUX_TRACING
 	if (wpa_debug_tracing_file != NULL) {
@@ -334,7 +336,7 @@ static void _wpa_hexdump(int level, const char *title, const u8 *buf,
 			}
 
 			for (i = 0; i < len; i++)
-				os_snprintf(&strbuf[i * 3], 4, " %02x",
+				os_snprintf(&strbuf[i * 2],3, "%02x",
 					    buf[i]);
 
 			display = strbuf;
@@ -388,7 +390,7 @@ void wpa_hexdump(int level, const char *title, const void *buf, size_t len)
 
 void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len)
 {
-	_wpa_hexdump(level, title, buf, len, wpa_debug_show_keys, 0);
+	_wpa_hexdump(level, title, buf, len, 1, 0);
 }
 
 

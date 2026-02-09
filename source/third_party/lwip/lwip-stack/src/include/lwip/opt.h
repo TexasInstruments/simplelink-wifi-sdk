@@ -3094,9 +3094,9 @@
  *
  * Options need to appended like this:
  *   LWIP_ASSERT("dhcp option overflow", *options_len_ptr + option_len + 2 <= DHCP_OPTIONS_LEN);
- *   msg->options[(*options_len_ptr)++] = &lt;option_number&gt;;
- *   msg->options[(*options_len_ptr)++] = &lt;option_len&gt;;
- *   msg->options[(*options_len_ptr)++] = &lt;option_bytes&gt;;
+ *   msg->options[(*options_len_ptr)++] = &lt;option_number&gt;
+ *   msg->options[(*options_len_ptr)++] = &lt;option_len&gt;
+ *   msg->options[(*options_len_ptr)++] = &lt;option_bytes&gt;
  *   [...]
  */
 #ifdef __DOXYGEN__
@@ -3152,7 +3152,7 @@
  * Options need to appended like this:
  *   u8_t *options = (u8_t *)(msg + 1);
  *   LWIP_ASSERT("dhcp option overflow", sizeof(struct dhcp6_msg) + *options_len_ptr + newoptlen <= max_len);
- *   options[(*options_len_ptr)++] = &lt;option_data&gt;;
+ *   options[(*options_len_ptr)++] = &lt;option_data&gt
  *   [...]
  */
 #ifdef __DOXYGEN__

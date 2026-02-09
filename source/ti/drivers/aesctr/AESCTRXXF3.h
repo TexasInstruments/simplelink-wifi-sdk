@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025, Texas Instruments Incorporated
+ * Copyright (c) 2021-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -176,8 +176,11 @@ typedef struct
  *
  */
 void AESCTRXXF3_processData(const uint8_t *input, uint8_t *output, size_t inputLength, bool isOneStepOrFinalOperation);
+/*! @endcond */
 
 #if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+/*! @cond NODOC */
+
 /*!
  * @brief Configures the DMA to process the given input data.
  *        #AESCTRXXF3_writeCounter must be called to start the operation
@@ -263,7 +266,7 @@ __STATIC_INLINE void AESCTR_releaseLock(AESCTR_Handle handle)
  */
 __STATIC_INLINE void AESCTR_enableThreadSafety(AESCTR_Handle handle)
 {
-    AESCTRXXF3_Object *object = handle->object;
+    AESCTRXXF3_Object *object = (AESCTRXXF3_Object *)handle->object;
     object->threadSafe        = true;
 }
 /*! @endcond */
@@ -281,7 +284,7 @@ __STATIC_INLINE void AESCTR_enableThreadSafety(AESCTR_Handle handle)
  */
 __STATIC_INLINE void AESCTR_disableThreadSafety(AESCTR_Handle handle)
 {
-    AESCTRXXF3_Object *object = handle->object;
+    AESCTRXXF3_Object *object = (AESCTRXXF3_Object *)handle->object;
     object->threadSafe        = false;
 }
 /*! @endcond */

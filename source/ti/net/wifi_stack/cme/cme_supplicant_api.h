@@ -290,6 +290,15 @@ struct wpa_supplicant * drv_getIfaceFromRoleID(struct wpa_global *apGlobal, uint
 
 
 /* ----------------------------------------------------------------------------
+ drv_getP2pDeviceSupplicant
+      Search for p2p device interface
+
+ Parameters: IN None
+
+ Retrun:  pointer to wpa supplicant instance
+---------------------------------------------------------------------------- */
+ struct wpa_supplicant* drv_getP2pDeviceSupplicant(void);
+/* ----------------------------------------------------------------------------
  drv_handleScanCompleteEvent
       This function forwards the notification of connection scan completion to
       supplicant.

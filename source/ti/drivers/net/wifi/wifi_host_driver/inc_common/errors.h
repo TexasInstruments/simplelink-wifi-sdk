@@ -66,6 +66,7 @@ typedef enum
     WLAN_ERROR_TYPE__WSOC_FW_INIT,
     WLAN_ERROR_TYPE__INI_PARAMS_INIT,
     WLAN_ERROR_TYPE__RX_SM,
+    WLAN_ERROR_TYPE__RX_SM_LENGTH_OF_FRAME_IS_INVALID_FROM_FW,
     WLAN_ERROR_TYPE__TRANSCEIVER_ALREADY_ON,
     WLAN_ERROR_TYPE__TRANSCEIVER_NOT_SET,
     WLAN_ERROR_TYPE__CMD_GENERAL,
@@ -231,7 +232,7 @@ int32_t  WlanError(wlanErrorSeverity_e severity, wlanErrorModule_e module, wlanE
 uint32_t WlanError_GetType(int32_t error);
 uint32_t WlanError_GetModule(int32_t error);
 uint32_t WlanError_GetSeverity(int32_t error);
-uint32_t WlanError_ConvertWsocError(int error);
+wlanErrorType_e WlanError_ConvertWsocError(int error);
 
 
 #ifdef  __cplusplus

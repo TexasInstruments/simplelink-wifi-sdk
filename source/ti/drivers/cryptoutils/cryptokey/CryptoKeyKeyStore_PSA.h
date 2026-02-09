@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1081,7 +1081,7 @@ typedef psa_algorithm_t KeyStore_PSA_Algorithm;
  * into a cryptographic coprocessor external to the secure element. Typically,
  * the key is stored in a wrapped format and must be unwrapped by the secure
  * element before being sent to the coprocessor for use. For persistent keys,
- * the #PSA_KEY_USAGE_CACHE flag may also be set to reduce overhead for faster
+ * the #KEYSTORE_PSA_KEY_USAGE_CACHE flag may also be set to reduce overhead for faster
  * subsequent loading into the coprocessor.
  */
 #define KEYSTORE_PSA_KEY_USAGE_COPROCESSOR ((KeyStore_PSA_KeyUsage)PSA_KEY_USAGE_COPROCESSOR)

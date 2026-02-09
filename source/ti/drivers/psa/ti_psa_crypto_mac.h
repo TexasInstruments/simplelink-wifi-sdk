@@ -65,6 +65,16 @@ struct ti_psa_mac_operation_s
             AESCMACCC26XX_Object aescmacObject;
 #endif
         } aescmac;
+        struct
+        {
+            AESCMAC_Config aescbcmacConfig;
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+            AESCMACXXF3_Object aescbcmacObject;
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
+       (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
+            AESCMACCC26XX_Object aescbcmacObject;
+#endif
+        } aescbcmac;
     } driver;
     /** Unique ID indicating which driver got assigned to do the
      * operation. Since driver contexts are driver-specific, swapping

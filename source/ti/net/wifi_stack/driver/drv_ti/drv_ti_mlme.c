@@ -937,9 +937,8 @@ int32_t ti_drv_txDeauthDisassocPacket(ti_driver_ifData_t *apDrv,
         GTRACE(GRP_DRIVER_CC33, "ti_drv_txDeauthDisassocPacket: ERROR No valid hlid was found!  NetifId = %d", link);
         return NOK;
     }
-        
-    //identify if encripted mgmt frame
-    if (txCtrlParams_GetMgmtEncryptMode(link))
+    //identify if encripted mgmt frame only if not broadcast
+    if (txCtrlParams_GetMgmtEncryptMode(link) && !MAC_MULTICAST((uint8_t *)apBssid))
     {
         SecureHdrLength = RSN_SEC_LEN;
         extraHThdr += SecureHdrLength;
@@ -984,12 +983,17 @@ int32_t ti_drv_txDeauthDisassocPacket(ti_driver_ifData_t *apDrv,
     } 
 
     COPY_WLAN_WORD(&pDot11Header->fc, &fc);
-
-    MAC_COPY (pDot11Header->DA, (uint8_t *)apBssid);
+    MAC_COPY (pDot11Header->DA, (uint8_t *)apBssid); 
     MAC_COPY (pDot11Header->SA, (uint8_t *)apDrv->macAddr);
+
+    // WLAN_DISCONNECT_AP_REMOVE_PEER is only on unicast deauth    
     if(WLAN_DISCONNECT_AP_REMOVE_PEER == aReason)
     {
         aReason = WLAN_DISCONNECT_DEAUTH_SENDING_STA_LEAVING;
+    }
+
+    if(ROLE_IS_TYPE_AP_BASED(apDrv->roleType))
+    {
         MAC_COPY (pDot11Header->BSSID, (uint8_t *)apDrv->macAddr);
     }
     else

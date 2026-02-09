@@ -209,7 +209,6 @@ extern "C" {
 
 #define WLAN_WPS_PIN_STR_LEN    9
 
-
 /*****************************************************************************/
 /* ENUM DEFINITIONS                                                     */
 /*****************************************************************************/
@@ -297,7 +296,7 @@ typedef enum
     CHANNEL_188 = 188,
     CHANNEL_192 = 192,
     CHANNEL_196 = 196
-} WlanChannel49G_e;;
+} WlanChannel49G_e;
 
 typedef enum
 {
@@ -305,6 +304,12 @@ typedef enum
     WPS_METHOD_PIN
 } WlanWpsConfigMethod_e;
 
+typedef enum
+{
+    SAE_ANTI_CLOGGING_DEFAULT = 5,
+    SAE_ANTI_CLOGGING_ALWAYS = 0,
+    SAE_ANTI_CLOGGING_LOW = 15
+} WlanSaeAntiCloggingType_e;
 /*****************************************************************************/
 /* STRUCTURE DEFINITIONS                                                     */
 /*****************************************************************************/
@@ -334,7 +339,7 @@ typedef struct
     uint8_t       HtCapabilitiesIe[WLAN_DOT11_HT_CAPABILITIES_ELE_LEN + WLAN_LEN_OF_IE_HEADER];   /* HT capabilities IE unparsed */
 
     uint16_t      erpIeLen;     // HT capabilities IE were received
-    uint8_t       erpIe[WLAN_DOT11_ERP_ELE_LEN + WLAN_LEN_OF_IE_HEADER];;
+    uint8_t       erpIe[WLAN_DOT11_ERP_ELE_LEN + WLAN_LEN_OF_IE_HEADER];
     Bool_e        mErpPresent;
     uint8_t       mUseProtection; //erp capabilities
     uint8_t/*EPreamble*/    mBarkerPreambleMode; //erp capabilities
@@ -431,6 +436,10 @@ typedef struct RoleUpApCmd
     uint8_t countryDomain[3];
     /* SAE PWE Options */
     uint8_t sae_pwe;
+    /* SAE anti-clogging threshold  - see WlanSaeAntiCloggingType_e */
+    uint8_t sae_anticlogging_threshold;
+    /* Set transition disable */
+    uint8_t transitionDisable;
     /* Set AP to start as autonomous P2P Group Owner */
     uint8_t p2p_aGO; //TRUE/FALSE
     /* AP WPS enabled/disabled */
@@ -706,6 +715,7 @@ typedef enum
     WLAN_EVENT_P2P_GROUP_REMOVED,   
     WLAN_EVENT_P2P_SCAN_COMPLETED,
     WLAN_EVENT_P2P_GROUP_FORMATION_FAILED,
+    WLAN_EVENT_P2P_PEER_NOT_FOUND,
     WLAN_EVENT_CONNECT_PERIODIC_SCAN_COMPLETE,
     WLAN_EVENT_FW_CRASH,
     WLAN_EVENT_COMMAND_TIMEOUT,
@@ -914,6 +924,12 @@ typedef enum
     POWER_MANAGEMENT_NUM_OF_MODES
 } WlanPowerManagement_e;
 
+typedef struct
+{
+    uint32_t* channelArray;
+    uint32_t  length;
+} WlanSelectedChannelsArray_t;
+
 typedef enum
 {
     WAKE_UP_EVENT_BEACON    = 0, /* Wake on every Beacon */
@@ -1022,6 +1038,12 @@ typedef struct
     uint8_t reserved;
 } WlanPolicySetGet_t;
 
+typedef struct
+{
+    char pin[WLAN_WPS_PIN_STR_LEN]; 
+    uint32_t timeout; 
+} WlanSetWpsApPinParam_t;
+
 typedef enum
 {
     WLAN_SET_MACADDRESS,
@@ -1082,8 +1104,11 @@ typedef enum
     WLAN_SET_PRIMARY_CONNECTIVITY_FW,
     WLAN_SET_CONNECTION_SCAN_EARLY_TERMINATION,
     WLAN_SET_CONNECTION_POLICY,
-    WLAN_SET_SCAN_DWELL_TIME
+    WLAN_SET_SCAN_DWELL_TIME,
+    WLAN_SET_LISTED_CHANNELS_FOR_SCAN,
+    WLAN_SET_WPS_AP_PIN
 } WlanSet_e;
+
 
 typedef enum
 {
@@ -1530,8 +1555,10 @@ typedef struct
     uint16_t maxChannel;
     uint8_t  numOfChannels;
     uint32_t chanBitmap;
+#ifdef CC35XX   
     uint8_t  customIndex; // This param is used in CC35xx only
     uint8_t  resetEntry;  // This param is used in CC35xx only
+#endif
 } WlanSetRegDomainCustomEntry_t;
 
 typedef struct
@@ -2040,6 +2067,35 @@ int Wlan_Get(WlanGet_e wlanGetType, void *params);
 
                 //RESULTS//
                 Channel 40 will be configured based on test_entry_2, with a Maximum TX Power of 20 dBm and DFS Disabled.
+
+                ### Wlan_Set Type 'WLAN_SET_LISTED_CHANNELS_FOR_SCAN'
+                Set a list of channels for next/upcoming Scan/Connect
+                This command sets a list of channels that will only be set when doing scan or connect, the list is used only
+                one time, meaning you need to set it again if you cant to list specific channels for scan/connect, after you 
+                scan or connect the listed channels will be resetted and the next scan/connect will be on all possible channels
+
+                the WLAN_SET_LISTED_CHANNEL_FOR_SCAN set command takes struct of WlanSelectedChannelsArray_t which includes
+                an allocated array of the list of channels we want to scan and the length that represents channels being set or not
+                
+                \param[in]  WlanSelectedChannelsArray_t
+
+                ## Example of how to set a channels 1,3 ,5
+
+                uint32_t channelsArray[3] = {1,3,5};
+
+                WlanSelectedChannelsArray_t selectedChannels = {
+
+                    .channelArray = channelsArray
+                    .length = 3
+
+                };
+                Wlan_Set(WLAN_SET_LISTED_CHANNELS_FOR_SCAN, (void *)&selectedChannels);
+
+                for setting all the channels to be scanned we can
+                do the following
+
+                Wlan_Set(WLAN_SET_LISTED_CHANNELS_FOR_SCAN, NULL);
+                
 */
 int Wlan_Set(WlanSet_e wlanSetType, void *params);
 
@@ -2161,6 +2217,7 @@ int Wlan_ProfileGet(const uint16_t Index, signed char* pName, int *pNameLen,
                         uint8_t *pMacAddr, WlanSecParams_t* pSecParams, WlanSecParamsExt_t* pSecExtParams,
                         uint32_t *pPriority, uint32_t *pHidden);
 
+
 /*!
     \brief Delete WLAN profile
 
@@ -2175,7 +2232,6 @@ int Wlan_ProfileGet(const uint16_t Index, signed char* pName, int *pNameLen,
 
     \warning
 */
-
 int Wlan_ProfileDel(const uint8_t Index);
 
 

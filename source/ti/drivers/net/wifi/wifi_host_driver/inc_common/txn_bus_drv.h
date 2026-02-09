@@ -48,7 +48,7 @@
  ************************************************************************/
 
 #define TRANPORT_BUS_PAD_LEN_READ           8
-#define MAX_XFER_BUFS               12
+#define MAX_XFER_BUFS               (10*3)//need to be TWD_TX_AGGREG_PKTS_LIMIT_DEF X number of section per frame(3)
 
 #define TXN_PARAM_STATUS_OK         0
 #define TXN_PARAM_STATUS_ERROR      1

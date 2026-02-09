@@ -38,7 +38,8 @@
 <div id="TOC">
 <ul>
 <li><a href="#introduction">Introduction</a></li>
-<li><a href="#release-highlights">Release highlights</a><ul>
+<li><a href="#release-highlights">Release highlights</a></li>
+<li><a href="#supported-features">Supported Features</a></li>
 <li><a href="#documentation">Documentation</a></li>
 <li><a href="#installer-operating-systems-support">Installer Operating Systems Support</a></li>
 <li><a href="#dependencies">Dependencies</a></li>
@@ -48,13 +49,27 @@
 <li><a href="#fixed-issues">Fixed Issues</a></li>
 <li><a href="#known-issues">Known Issues</a></li>
 <li><a href="#technical-support-and-product-updates">Technical Support and Product Updates</a></li>
-</ul></li>
 </ul>
 </div>
 <h2 id="introduction">Introduction</h2>
-<p>This CC35xxE <strong>S</strong>oftware <strong>D</strong>evelopment <strong>K</strong>it delivers components that enable engineers to develop applications for the Texas Instruments CC35xx Wi-Fi and BLE combo MCU devices</p>
-<p>This is version <strong>9.21.00.XX GA</strong> of the Wi-Fi SDK</p>
-<h1 id="release-highlights">Release highlights</h1>
+<p>The SimpleLink™ Wi-Fi® SDK provides a comprehensive software toolkit for developing IoT applications on the CC35xxE family of wireless MCUs. This powerful SDK includes essential components like the Bluetooth® LE protocol stack supporting Bluetooth 5.4, Wi-Fi 6 with an included networking stack based on LwIP, and the FreeRTOS kernel and TI Drivers in one easy-to-use software package, along with example applications and exhaustive documentation. When used with TI’s SimpleLink Wi-Fi® CC35xxE LaunchPads, the SDK provides a complete development solution for IoT applications.</p>
+<p>This is version <strong>9.22.00.XX GA</strong> of the Wi-Fi SDK</p>
+<h2 id="release-highlights">Release highlights</h2>
+<ul>
+<li>OTA - incrementing major version will update the related OTP fuse during OTA process thereby preventing rollback to images with lower major-versions</li>
+<li>Winbond W25Q12PWxxxM 128Mbit SDR flash support</li>
+<li>INI file can now be modified and programed via sysconfig</li>
+<li>Support flash map option for 8MB flash with NO OTA</li>
+<li>mbedTLS package support for TLS1.3</li>
+<li>Crypto drivers support for multiple context usage: AES-CBC driver, AES-CCM driver, Elliptic-Curve (EC) drivers</li>
+<li>New sysconfig default:
+<ul>
+<li>Default flash size is now defined as 8MB</li>
+<li>Default OTA configuration is now enabled</li>
+</ul></li>
+<li>Bug Fixes</li>
+</ul>
+<h2 id="supported-features">Supported Features</h2>
 <ul>
 <li>Wi-Fi
 <ul>
@@ -107,6 +122,7 @@
 <li>IS25WJ064F</li>
 <li>W25Q64JW</li>
 <li>W25Q32JW</li>
+<li>W25Q12PW_EXPERIMENTAL</li>
 <li>PY25Q32LB</li>
 <li>PY25Q64LB</li>
 <li>PY25Q128LA</li>
@@ -129,7 +145,6 @@
 <ul>
 <li><a href="./docs/Documentation_Overview.html">User’s Guide</a></li>
 <li><a href="./docs/simplelink_mcu_sdk/html/quickstart/cc35xx-quickstart-index.html">Quick Start Guide</a></li>
-<li><a href="./docs/simplelink_mcu_sdk/release_notes_coresdk_wff3_9_20_00_18.html">Drivers Release Notes</a></li>
 </ul>
 <h2 id="installer-operating-systems-support">Installer Operating Systems Support</h2>
 <ul>
@@ -146,7 +161,7 @@
 </ul>
 <h2 id="packages">Packages</h2>
 <ul>
-<li><code>Wi-Fi \ BLE Firmware</code> | 1.8.0.20 |</li>
+<li><code>Wi-Fi \ BLE Firmware</code> | 1.8.0.28 |</li>
 <li><code>Wi-Fi \ BLE PHY</code> | x.x.x.45.6.1.23.71 |</li>
 <li><code>NimBLE</code> | 1.7.0 |</li>
 <li><code>WPA Supplicant</code> | 2.10 |</li>
@@ -166,10 +181,9 @@
 <li>The Out-of-box experience of “Activation and Initial Programming” as described in the “Quick Start Guide” will only work on Rev-A of the LP-EM-CC35X1 Launchpad (it is not compatible with older revisions of the Launchpad, such as Rev E4, Rev E3 and Rev E2).</li>
 <li>CCS20.4 – after downloading and installing CCS 20.4, users will need to invoke the “check-for-update” feature in order to pull a new device-support package, or manually install a device-support package from the CC35XX SDK (the device-support package version as seen in CCS should be v1.2.7, in the SDK the zip is labeled as 1.2.0.15)</li>
 <li>Default INI file that is compiled with examples is for dual-band devices (CC355x), for single-band devices please update the INI file with IsDeplexerPresent=0, and recompile</li>
-<li>INI-file updates can only be done through generating new binary file and manually adding to the application (this will be supported through Sysconfig in a future release)</li>
-<li>The following crypto drivers only support single context usage (multi-context support pending): AES-CBC driver, AES-CCM driver, Elliptic-Curve (EC) drivers</li>
 <li>PSRAM functionality is provided as Early Access (EA) support. PSRAM can currently be accessed using the “XMEM” driver APIs. SW stack and heap cannot be placed on PSRAM in this release</li>
 <li>The SPI-examples (spicontroller and spiperipheral) are currently not functional. The SPI-driver and the underlying hardware are fully tested and validated, and fully functional</li>
+<li>Default NVOCMPS driver page configuration insufficient for concurrent WLAN profile and BLE bond operation</li>
 </ul>
 <h2 id="fixed-issues">Fixed Issues</h2>
 <table>
@@ -181,24 +195,32 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">OSPREY_MX-1191</td>
-<td align="left"><span>Application is unstable and sometimes crashes when CM33 exits deep sleep while Wi-Fi is connected.</span></td>
+<td align="center">OSPREY_MX-1517</td>
+<td align="left"><span>Some instability observed in long-duration (multi-hour) TCP data-traffic over Wi-Fi</span></td>
 </tr>
 <tr class="even">
-<td align="center">OSPREY_MX-765</td>
-<td align="left"><span>Scan without active role can cause subsequent scans to fail </span></td>
+<td align="center">OSPREY_MX-1512</td>
+<td align="left"><span>[Multicast] Issue with Multicast TX in AP role </span></td>
 </tr>
 <tr class="odd">
-<td align="center">OSPREY_MX-763</td>
-<td align="left"><span>Scan in AP role shows limited results</span></td>
+<td align="center">OSPREY_MX-1453</td>
+<td align="left"><span>MQTT APP - all messages received in subscribe are QOS-1</span></td>
 </tr>
 <tr class="even">
-<td align="center">OSPREY_MX-580</td>
-<td align="left"><span>[COEX] WLAN Scan sometimes fails during BLE Peri. conn. with 7.5ms interval</span></td>
+<td align="center">OSPREY_MX-1115</td>
+<td align="left"><span>[Network Terminal] disabling DHCP in APUT with wlan_set_if_ip doesn't work</span></td>
 </tr>
 <tr class="odd">
-<td align="center">ILTOOLS-757</td>
-<td align="left"><span>[MX1][SYSCFG] CC3551E device pin list contains incorrect mode numbers</span></td>
+<td align="center">OSPREY_MX-1101</td>
+<td align="left"><span>atcmd: (AT+Recv TCP IPv4 Base64) and (AT+RecvFrom UDP IPv4 Base64) receive more data than expected</span></td>
+</tr>
+<tr class="even">
+<td align="center">OSPREY_MX-889</td>
+<td align="left"><span>[COEX] APUT - In some cases peer STA DHCP fails during BLE data</span></td>
+</tr>
+<tr class="odd">
+<td align="center">OSPREY_MX-846</td>
+<td align="left"><span>Low throughput with small packet size (60-256 bytes), AP/ STA Single role</span></td>
 </tr>
 </tbody>
 </table>
@@ -212,6 +234,14 @@
 </thead>
 <tbody>
 <tr class="odd">
+<td align="center">OSPREY_MX-1626</td>
+<td align="left"><span>[IOP AP] iphone 17 Can't Authenticate with CC35XX in AP Role with WPA3 Security </span></td>
+</tr>
+<tr class="even">
+<td align="center">OSPREY_MX-1607</td>
+<td align="left"><span>Cannot connect to hidden AP on a DFS channel</span></td>
+</tr>
+<tr class="odd">
 <td align="center">OSPREY_MX-1520</td>
 <td align="left"><span>SW does not support configuring external slow-clock</span></td>
 </tr>
@@ -224,42 +254,14 @@
 <td align="left"><span>[COEX] some degraded traffic and scan performance observed in Coexistence mode (Wi-Fi + BLE)</span></td>
 </tr>
 <tr class="even">
-<td align="center">OSPREY_MX-1517</td>
-<td align="left"><span>Some instability observed in long-duration (multi-hour) TCP data-traffic over Wi-Fi</span></td>
-</tr>
-<tr class="odd">
-<td align="center">OSPREY_MX-1512</td>
-<td align="left"><span>[Multicast] Issue with Multicast TX in AP role </span></td>
-</tr>
-<tr class="even">
-<td align="center">OSPREY_MX-1453</td>
-<td align="left"><span>MQTT APP - all messages received in subscribe are QOS-1</span></td>
-</tr>
-<tr class="odd">
 <td align="center">OSPREY_MX-1447</td>
 <td align="left"><span>[BLE]: BLE Connection timeout occurred sometimes during heavy BLE traffic</span></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="center">OSPREY_MX-1287</td>
 <td align="left"><span>Power consumption currently higher than expected due to missing software optimization</span></td>
 </tr>
-<tr class="odd">
-<td align="center">OSPREY_MX-1115</td>
-<td align="left"><span>[Network Terminal] disabling DHCP in APUT with wlan_set_if_ip doesn't work</span></td>
-</tr>
 <tr class="even">
-<td align="center">OSPREY_MX-1101</td>
-<td align="left"><span>atcmd: (AT+Recv TCP IPv4 Base64) and (AT+RecvFrom UDP IPv4 Base64) receive more data than expected</span></td>
-</tr>
-<tr class="odd">
-<td align="center">OSPREY_MX-889</td>
-<td align="left"><span>[COEX] APUT - In some cases peer STA DHCP fails during BLE data</span></td>
-</tr>
-<tr class="even">
-<td align="center">OSPREY_MX-846</td>
-<td align="left"><span>Low throughput with small packet size (60-256 bytes), AP/ STA Single role</span></td>
-</tr>
-<tr class="odd">
 <td align="center">OSPREY_MX-725</td>
 <td align="left"><span>TCP bidirectional traffic is sometimes unbalanced between Rx and Tx</span></td>
 </tr>
@@ -277,7 +279,7 @@
   with 100,000+ analog ICs and embedded processors, along with software, tools
   and the industry‘s largest sales/support staff.</p>
   <p>
-    <a href="https://www.ti.com/corp/docs/legal/copyright.shtml">© Copyright 1995-2025</a>, Texas Instruments Incorporated. All rights reserved. <br>
+    <a href="https://www.ti.com/corp/docs/legal/copyright.shtml">© Copyright 1995-2026</a>, Texas Instruments Incorporated. All rights reserved. <br>
     <a href="https://www.ti.com/corp/docs/legal/trademark/trademrk.htm">Trademarks</a> | <a href="https://www.ti.com/corp/docs/legal/privacy.shtml">Privacy policy</a> | <a href="https://www.ti.com/corp/docs/legal/termsofuse.shtml">Terms of use</a> | <a href="https://www.ti.com/lsds/ti/legal/termsofsale.page">Terms of sale</a>
   </p>
 </footer>

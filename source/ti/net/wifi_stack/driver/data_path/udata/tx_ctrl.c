@@ -550,7 +550,7 @@ EStatusXmit txCtrl_XmitData(TTxCtrlBlk *pPktCtrlBlk, uint8_t *pBackpressureMap)
             }
 #endif
 
-            eStatus = TWD_txXfer_SendPacket(pPktCtrlBlk);
+            eStatus = TWD_txXferAggr_SendPacket(pPktCtrlBlk);
         }
         
         //CL_TRACE_END_L4("tiwlan_drv.ko", "INHERIT", "TX", ".XferSendPacket");

@@ -58,6 +58,7 @@
 #include "drv_ti_internal.h"
 #include "cme_supplicant_api.h"
 #include "cme_dispatcher_api.h"
+#include "init_host_if.h"
 
 /*this is the NAB address for MX cmd APP2NAB_ADDR, it is not used on MX, because the SDIO wrapper is not there
  * so for passing the validation on twIf_Transact function, it is set the same as in LX */
@@ -1117,9 +1118,10 @@ int ctrlCmdFw_DownloadIniParams()
     cmd_ini_params_download_t *cmd = NULL;
     uint32_t cmdIniSize;
     uint32_t cmdSizeForIni = CMD_MAX_SIZE;
-    int ret=0;
+    FILE *iniFileHandle = NULL;
+    int ret = 0;
 
-    if(CMD_INI_FILE_SIZE > CMD_MAX_SIZE)
+    if (CMD_INI_FILE_SIZE > CMD_MAX_SIZE)
     {
         cmdSizeForIni = CMD_INI_FILE_SIZE;
     }
@@ -1138,27 +1140,32 @@ int ctrlCmdFw_DownloadIniParams()
         ASSERT_GENERAL(0);
     }
 
-    FILE *IniFileHandle = osi_fopen("cc33xx-conf", "rb");
-
-
-    if(!IniFileHandle)
+    iniFileHandle = osi_fopen("cc35xx-conf", "rb");
+    if (!iniFileHandle)
     {
-        Report("\n\rERROR: Cant Open/Find cc35xx-conf.bin file\n\r");
+        Report("\n\rERROR: Can't open/find cc35xx-conf.bin file\n\r");
         ASSERT_GENERAL(0);
     }
     else
     {
-        osi_fread((cmd->payload), CC33X_CONF_SIZE, 0, IniFileHandle);
+        size_t bytesRead = 0;
+        bytesRead = osi_fread((cmd->payload), CC33X_CONF_SIZE, 0, iniFileHandle);
+        if (bytesRead != CC33X_CONF_SIZE)
+        {
+            Report("\n\rERROR: Failed to read complete configuration file");
+            ASSERT_GENERAL(0);
+        }
         cmd->length = CC33X_CONF_SIZE;
-        osi_fclose(IniFileHandle);
+        osi_fclose(iniFileHandle);
     }
-
 
     ctrlCmdFw_LockHostDriver();
 
     WLSendFW_Command(CMD_DOWNLOAD_INI_PARAMS, CMD_DOWNLOAD_INI_PARAMS, cmd, cmdIniSize, NULL, 0);
 
     ctrlCmdFw_UnlockHostDriver();
+
+    InitIniParamsHost(cmd);
 
     os_free(cmd);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025, Texas Instruments Incorporated
+ * Copyright (c) 2021-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -220,7 +220,7 @@ __STATIC_INLINE void AESCMAC_releaseLock(AESCMAC_Handle handle)
  */
 __STATIC_INLINE void AESCMAC_enableThreadSafety(AESCMAC_Handle handle)
 {
-    AESCMACXXF3_Object *object = handle->object;
+    AESCMACXXF3_Object *object = (AESCMACXXF3_Object *)handle->object;
     object->threadSafe         = true;
 }
 /*! @endcond */
@@ -238,7 +238,7 @@ __STATIC_INLINE void AESCMAC_enableThreadSafety(AESCMAC_Handle handle)
  */
 __STATIC_INLINE void AESCMAC_disableThreadSafety(AESCMAC_Handle handle)
 {
-    AESCMACXXF3_Object *object = handle->object;
+    AESCMACXXF3_Object *object = (AESCMACXXF3_Object *)handle->object;
     object->threadSafe         = false;
 }
 /*! @endcond */

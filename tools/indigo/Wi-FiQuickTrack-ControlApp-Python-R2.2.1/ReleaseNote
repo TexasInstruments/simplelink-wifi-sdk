@@ -1,0 +1,12 @@
+Release #2.2.0.1
+
+Python ControlApp release 2.2
+
+Changes:
+
+Initial release for QuickTrack Testing including
+
+* APUT support
+* STAUT support
+* P2P support
+* AFC DUT support

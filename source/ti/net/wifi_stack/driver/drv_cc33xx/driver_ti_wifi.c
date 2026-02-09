@@ -170,12 +170,14 @@ extern uint32_t isextDPP();
 extern int32_t set_cond_in_process_wlan_supplicant_operation();
 extern int32_t set_cond_in_process_wlan_one_shot_scan();
 extern int32_t set_cond_in_process_wlan_periodic_scan();
-extern int32_t set_cond_in_process_wlan_roledown();
-extern void set_finish_wlan_roledown();
+extern int32_t set_cond_in_process_wlan_ap_roledown();
+extern int32_t set_cond_in_process_wlan_sta_roledown();
+extern void set_finish_wlan_ap_roledown();
+extern void set_finish_wlan_sta_roledown();
 extern void set_finish_wlan_supplicant_operation();
 extern void CME_start_one_shot_scan_timer();
 extern void CME_start_periodic_scan_timer();
-extern void CME_peer_aging_timer_stop(OsiTimer_t osTimer);
+extern void CME_peer_aging_timer_stop(OsiTimer_t *osTimer);
 
 OsiLockObj_t    extAppLockObj;
 extern txCtrl_t *gTxCtrlCB;
@@ -562,7 +564,7 @@ void ti_driver_deinit(void *apPriv)
         }
 
         //if aging timer and thread are up release them
-        CME_peer_aging_timer_stop(pDrv->timerPeerAgingSample);
+        CME_peer_aging_timer_stop(&pDrv->timerPeerAgingSample);
         pDrv->peerAgingTimeout = 0;
 
         os_free(pDrv);
@@ -766,7 +768,7 @@ int ti_driver_set_key(void *apPriv, struct wpa_driver_set_key_params *params)
 
     if (ROLE_IS_TYPE_AP_BASED(pDrv->roleType))
     {
-        uint8_t lid = 0xFF;
+        uint8_t lid = INVALID_LINK;
 
         if (MAC_BROADCAST(secKey.macAddress)) //AP Broadcast
         {
@@ -1944,7 +1946,7 @@ int ti_driver_send_mgmt_frame(void *apPriv,
         //if freq = 0 means Use bss->freq and wait_time =0
         if (((freq == pDrv->freq) || (freq == 0)))
         {
-            wpa_printf(MSG_INFO, "ti_driver: P2P send mgmt frame on bss-freq :%d",pDrv->freq);
+            wpa_printf(MSG_DEBUG, "ti_driver: P2P send mgmt frame on bss-freq :%d",pDrv->freq);
             ret = ti_send_mgmt_frame(pDrv, apData, aDataLen);
             if(ret < 0)
             {
@@ -2188,9 +2190,8 @@ int ti_driver_ext_set_ROC( uint32_t    channel,
         ret = -1;
         goto out;
     }
-    roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_DEVICE);
 
-    wpa_s = drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
+    wpa_s = drv_getP2pDeviceSupplicant(); 
 
     //role was not enabled
     if(wpa_s == NULL )
@@ -2306,7 +2307,14 @@ int Wlan_RoleDown_from_CME_thread(WlanRole_e roleType, unsigned long int timeout
 
     HOOK(HOOK_WLAN_IF);
 
-    ret = set_cond_in_process_wlan_roledown();
+    if(roleType == WLAN_ROLE_AP)
+    {
+        ret = set_cond_in_process_wlan_ap_roledown();
+    }
+    else
+    {
+        ret = set_cond_in_process_wlan_sta_roledown();
+    }
     if(ret != OSI_OK)
     {
         CME_PRINT_REPORT("\n\r ---device roleDown_from_CME_thread - retry---");
@@ -2361,11 +2369,25 @@ int Wlan_RoleDown_from_CME_thread(WlanRole_e roleType, unsigned long int timeout
         }
     }
     HOOK(HOOK_WLAN_IF);
-    set_finish_wlan_roledown();
+    if(roleType == WLAN_ROLE_AP)
+    {
+        set_finish_wlan_ap_roledown();
+    }
+    else
+    {
+        set_finish_wlan_sta_roledown();
+    }
     return ret;
 
     fail:
-		set_finish_wlan_roledown();
+        if(roleType == WLAN_ROLE_AP)
+        {
+            set_finish_wlan_ap_roledown();
+        }
+        else
+        {
+            set_finish_wlan_sta_roledown();
+        }
         return ret;
 }
 
@@ -3305,7 +3327,7 @@ RoleType_e drv_getStaIface(struct wpa_global *apGlobal, struct wpa_supplicant **
     // supports 2 roles at most. If first role isn't a STA based role,
     // check if there's another role.
     {
-        if (NULL != wpa_s->next)
+        while (NULL != wpa_s->next)
         {
             wpa_s = wpa_s->next;
             pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
@@ -3356,7 +3378,7 @@ RoleType_e drv_getDeviceIface(struct wpa_global *apGlobal, struct wpa_supplicant
     // supports 2 roles at most. If first role isn't a STA based role,
     // check if there's another role.
     {
-        if (NULL != wpa_s->next)
+        while (NULL != wpa_s->next)
         {
             wpa_s = wpa_s->next;
             pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
@@ -3547,6 +3569,17 @@ RoleType_e drv_getRoleTypeFromRoleId(struct wpa_global *apGlobal, uint32_t aRole
     }
 
     return ROLE_TYPE_NONE;
+}
+
+ struct wpa_supplicant* drv_getP2pDeviceSupplicant(void)
+{
+    uint32_t roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_DEVICE);
+    if (roleId == INVALID_ROLE_ID) 
+    {
+        GTRACE(GRP_CME, "CME: ERROR! No P2P device role");
+        return NULL;
+    }
+    return drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
 }
 
 // ----------------------------------------------------------------------------
@@ -4004,7 +4037,7 @@ static void sendEventDeauthDisassoc(ti_driver_ifData_t *apDrv, uint32_t aType,
     union wpa_event_data event;
     uint32  minLen = WLAN_HDR_LEN + sizeof(apMngPack->u.deauth);
     uint16 reason_code;
-    wpaEventType_e type;
+    enum wpa_event_type   type;
 
     GET_MAC_STR(apMngPack->bssid, macStr);
 
@@ -4098,7 +4131,7 @@ static void sendEventUnprotDeauthDisassoc(ti_driver_ifData_t *apDrv, uint32_t aT
     union wpa_event_data event;
     uint32  minLen = WLAN_HDR_LEN + sizeof(apMngPack->u.deauth);
     uint16 reason_code;
-    wpaEventType_e type;
+    enum wpa_event_type  type;
 
     GET_MAC_STR(apMngPack->bssid, macStr);
 
@@ -5587,7 +5620,7 @@ fail:
  Return code:   none
 ---------------------------------------------------------------------------- */
 void drv_sendConnectTimeoutEvent(ti_driver_ifData_t  *apDrv,
-                                     wpaEventType_e  aType,
+                                 enum wpa_event_type  aType,
                                      uint8_t         *apBssid)
 {
     HOOK(HOOK_IN_DRIVER_TI_WIFI);
@@ -5719,11 +5752,10 @@ void ti_driver_go_neg_completed(struct wpa_supplicant *wpa_s,
     GTRACE(GRP_DRIVER_CC33, "ti_driver_go_neg_completed: res.ssid=%s status:%d  isGO=%d peer=" MACSTR, 
             res->ssid, res->status, res->role_go, MAC2STR(res->peer_device_addr));
 
-    //In case of success send to CME negotiation confirm message
     if (res->status != 0)
     {
         GTRACE(GRP_DRIVER_CC33, "Negotiation Failed!");
-        pDrv->p2pConnectionStarted = FALSE;
+        cmeP2pClearAll();
 
         return;
     }
@@ -5753,13 +5785,21 @@ void ti_driver_p2p_find_stopped(struct wpa_supplicant *wpa_s)
     ti_driver_ifData_t *pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
 
     GTRACE(GRP_DRIVER_CC33, "ti_driver: p2p_find_stopped! gP2pSearchStopping=%d", gCmeP2pInfo.p2pFindStopping);
-    CME_PRINT_REPORT("\n\rp2p find stopped");
+    CME_PRINT_REPORT("\n\rp2p find stopped. gP2pSearchStopping=%d", gCmeP2pInfo.p2pFindStopping);
     gCmeP2pInfo.p2pFindStopping = TRUE;
  
     if (pDrv->p2pPeerCandidateIsFound == 0)
     {
         // we didn't find any peer candidate and search is timeout
         // mark that connection is stopped
+        if (pDrv->p2pConnectionStarted == TRUE)
+        {
+            // Notify application that P2P peer was not found during find timeout
+            GTRACE(GRP_CME, "P2P find timed out - peer not found, notify host");
+            CME_PRINT_REPORT("\n\rP2P find timed out - peer not found, notify host");
+            wlanDispatcherSendEvent(WLAN_EVENT_P2P_PEER_NOT_FOUND, (void*)NULL, 0);
+            gCmeP2pInfo.p2pConnectPending = FALSE;
+        }
         pDrv->p2pConnectionStarted = FALSE;
     }
 
@@ -5861,7 +5901,6 @@ void ti_driver_p2p_group_removed(struct wpa_supplicant *wpa_s)
     if (ROLE_IS_TYPE_P2P(roleType))
     {
         struct wpa_supplicant *wpa_s;
-        RoleType_e deviceRoleType;
 
         gP2pGroupRoleType = NOT_IN_GROUP;
         gP2pGroupRole = P2P_GROUP_ROLE_NONE;
@@ -5871,16 +5910,14 @@ void ti_driver_p2p_group_removed(struct wpa_supplicant *wpa_s)
         gCmeP2pInfo.p2pConnectPending = FALSE;
 
         // release connection related flags on device role
-        deviceRoleType = drv_getDeviceIface(gpSupplicantGlobals, &wpa_s);
-        if (ROLE_TYPE_NONE == deviceRoleType)
+        wpa_s = drv_getP2pDeviceSupplicant();
+        if (wpa_s == NULL)
         {
             CME_PRINT_REPORT_ERROR("\n\r Could not retrive p2p device drv! ");
         }
         else
         {
-            pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
-            pDrv->p2pPeerCandidateIsFound = 0;
-            pDrv->p2pConnectionStarted = FALSE;
+            cmeP2pClearAll();
         }
         
         //notify host that group was removed 

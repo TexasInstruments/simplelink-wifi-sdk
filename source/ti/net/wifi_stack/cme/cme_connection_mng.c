@@ -282,7 +282,7 @@ _cmeFastConnectionCB_t gCmeFastConnectionCB_ull ;
 
 uint8_t gEnableFastConnectionStoreToFlash = 0; //TODO: Add support for this by user configuration
 
-#define CME_FAST_CONNECTION_TIMEOUT_MILI_SEC  (500)
+#define CME_FAST_CONNECTION_TIMEOUT_MILI_SEC  (2500)
 
 void wlan_calculate_pmk(int ssid_len,
                 int8_t *ssid,
@@ -421,7 +421,7 @@ const char  SUPP_PAC_FILE_MEMORY_BLOB[] = "blob://";
 static int isBlackListed(uint32_t index);
 static void cmeFastConnectAttempt(struct wpa_supplicant *wpa_s,_cme_minimized_wpa_ssid_t *ssid, int first_attempt);
 
-//#define CME_ENT_SUITE_B_PMK_CACHE_SUPPORT
+#define CME_ENT_SUITE_B_PMK_CACHE_SUPPORT
 #ifdef CME_ENT_SUITE_B_PMK_CACHE_SUPPORT
 typedef struct 
 {
@@ -1889,10 +1889,8 @@ void cmeMngSetConnectionPolicy(uint8_t   should_connect_to_any_p2p_device,
     HOOK(HOOK_IN_CME_CONNECTION_MNG);
 
     gCmeConnectionPolicyParams_ull.shouldUseFastConnect = should_use_fast_connect;
-#if CC35XX_NOT_SUPPORED
-    gCmeConnectionPolicyParams_ull.shouldConnectToOpenAp = should_connect_to_open_ap;
+    gCmeConnectionPolicyParams_ull.shouldConnectToOpenAp = should_connect_to_open_ap;//not supported
     gCmeConnectionPolicyParams_ull.shouldConnectToAnyP2P = should_connect_to_any_p2p_device;
-#endif
     gCmeConnectionPolicyParams_ull.autoStart = auto_start;
     gCmeConnectionPolicyParams_ull.fastPersistent = fast_persistant;
 
@@ -3920,9 +3918,9 @@ static void addProfileEap2DB(uint16_t    SecType,
     switch(SecType)
     {
         case WLAN_SEC_TYPE_WPA_WPA2://WPA2
-            inputProfile->profile.pairwise_cipher       = WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_TKIP/*|WPA_CIPHER_GCMP_256*/;
+            inputProfile->profile.pairwise_cipher       = WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_TKIP|WPA_CIPHER_GCMP_256;
 
-            inputProfile->profile.group_cipher          = WPA_CIPHER_CCMP| WPA_CIPHER_GCMP|WPA_CIPHER_TKIP/*|WPA_CIPHER_GCMP_256*/;
+            inputProfile->profile.group_cipher          = WPA_CIPHER_CCMP| WPA_CIPHER_GCMP|WPA_CIPHER_TKIP|WPA_CIPHER_GCMP_256;
 
             inputProfile->profile.key_mgmt              = WPA_KEY_MGMT_IEEE8021X|WPA_KEY_MGMT_IEEE8021X_SHA256;
 
@@ -3930,46 +3928,46 @@ static void addProfileEap2DB(uint16_t    SecType,
 
             break;
         case WLAN_SEC_TYPE_WPA2_PLUS://with PMF optional
-            inputProfile->profile.pairwise_cipher       = WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_TKIP/*|WPA_CIPHER_GCMP_256*/;
+            inputProfile->profile.pairwise_cipher       = WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_TKIP|WPA_CIPHER_GCMP_256;
 
 
-            inputProfile->profile.group_cipher          = WPA_CIPHER_CCMP| WPA_CIPHER_GCMP|WPA_CIPHER_TKIP/*|WPA_CIPHER_GCMP_256*/;
+            inputProfile->profile.group_cipher          = WPA_CIPHER_CCMP| WPA_CIPHER_GCMP|WPA_CIPHER_TKIP|WPA_CIPHER_GCMP_256;
 
 
             inputProfile->profile.key_mgmt              = WPA_KEY_MGMT_IEEE8021X|WPA_KEY_MGMT_IEEE8021X_SHA256;
 
             inputProfile->profile.ieee80211w = MGMT_FRAME_PROTECTION_OPTIONAL;
 
-            inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_AES_128_CMAC /*WPA_CIPHER_BIP_cMAC_128*/|WPA_CIPHER_BIP_GMAC_128/*|WPA_CIPHER_BIP_GMAC_256|WPA_CIPHER_BIP_CMAC_256*/;
+            inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_AES_128_CMAC|WPA_CIPHER_BIP_CMAC_256|WPA_CIPHER_BIP_GMAC_128|WPA_CIPHER_BIP_GMAC_256|WPA_CIPHER_BIP_CMAC_256;
 
             break;
         case WLAN_SEC_TYPE_WPA3:
             //WPA_CIPHER_CCMP_256 not allowed for wPA3
-            inputProfile->profile.pairwise_cipher       =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP/*|WPA_CIPHER_GCMP_256*/;
+            inputProfile->profile.pairwise_cipher       =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_GCMP_256;
 
-            inputProfile->profile.group_cipher          =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP/*|WPA_CIPHER_GCMP_256*/;
+            inputProfile->profile.group_cipher          =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_GCMP_256;
 
 
             inputProfile->profile.key_mgmt              =  WPA_KEY_MGMT_IEEE8021X| WPA_KEY_MGMT_IEEE8021X_SHA256
-                                                           /*|WPA_KEY_MGMT_IEEE8021X_SUITE_B|WPA_KEY_MGMT_IEEE8021X_SUITE_B_192*/;
+                                                           |WPA_KEY_MGMT_IEEE8021X_SUITE_B|WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
 
 
-            inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_AES_128_CMAC /*WPA_CIPHER_BIP_cMAC_128*/|WPA_CIPHER_BIP_GMAC_128 /*| WPA_CIPHER_BIP_GMAC_256|WPA_CIPHER_BIP_CMAC_256*/;
+            inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_AES_128_CMAC | WPA_CIPHER_BIP_CMAC_256|WPA_CIPHER_BIP_GMAC_128 | WPA_CIPHER_BIP_GMAC_256|WPA_CIPHER_BIP_CMAC_256;
             inputProfile->profile.ieee80211w = MGMT_FRAME_PROTECTION_REQUIRED;
 
             break;
         case WLAN_SEC_TYPE_WPA2_WPA3:
-            inputProfile->profile.pairwise_cipher       = WPA_CIPHER_CCMP|WPA_CIPHER_GCMP/*|WPA_CIPHER_GCMP_256*/|
+            inputProfile->profile.pairwise_cipher       = WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_GCMP_256|
                                                            WPA_CIPHER_TKIP;
 
-            inputProfile->profile.group_cipher          =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP/*|WPA_CIPHER_GCMP_256*/|
+            inputProfile->profile.group_cipher          =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_GCMP_256|
                                                            WPA_CIPHER_TKIP;
 
             inputProfile->profile.key_mgmt              =  WPA_KEY_MGMT_IEEE8021X| WPA_KEY_MGMT_IEEE8021X_SHA256
-                                                           /*| WPA_KEY_MGMT_IEEE8021X_SUITE_B|WPA_KEY_MGMT_IEEE8021X_SUITE_B_192*/;
+                                                           | WPA_KEY_MGMT_IEEE8021X_SUITE_B|WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
 
 
-            inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_AES_128_CMAC /*WPA_CIPHER_BIP_cMAC_128*/|WPA_CIPHER_BIP_GMAC_128/* | WPA_CIPHER_BIP_GMAC_256|WPA_CIPHER_BIP_CMAC_256*/;
+            inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_AES_128_CMAC|WPA_CIPHER_BIP_CMAC_256 |WPA_CIPHER_BIP_GMAC_128 | WPA_CIPHER_BIP_GMAC_256|WPA_CIPHER_BIP_CMAC_256;
             inputProfile->profile.ieee80211w = MGMT_FRAME_PROTECTION_OPTIONAL;
             break;
     }
@@ -3978,7 +3976,6 @@ static void addProfileEap2DB(uint16_t    SecType,
     inputProfile->profile.proto                 = WPA_PROTO_RSN;
     inputProfile->profile.auth_alg              = WPA_AUTH_ALG_OPEN;
     inputProfile->profile.secType               = CME_SEC_TYPE_WPA_ENT;
-    //inputProfile->profile.group_mgmt_cipher = WPA_CIPHER_NONE;
     inputProfile->profile.auth_alg = WPA_AUTH_ALG_OPEN;
 
 
@@ -5203,7 +5200,7 @@ static void setSharedSsidParams(CMEWlanAddGetProfile_t *apCmd,
 	// the amount of probe response packets.
 	apSsid->scan_ssid = CME_ALL_PROFILES_ARE_HIDDEN;
 
-	if (0 == IRQ_UtilIsZeroMacAddress((const uint8_t *)apCmd->Bssid))
+	if (IRQ_UtilIsZeroMacAddress((const uint8_t *)apCmd->Bssid) == FALSE)
 	{
 		IRQ_UtilCopyMacAddress(apCmd->Bssid, apSsid->bssid);
 		apSsid->bssid_set = 1;
@@ -5671,11 +5668,10 @@ static void duplicateSharedSsidParams(const _cme_minimized_wpa_ssid_t *apInputAp
     apSsid->scan_ssid = apInputApSsid->scan_ssid ;
 
     //check init bssid
-    if(!IRQ_UtilIsZeroMacAddress(apInputApSsid->bssid))
+    if(IRQ_UtilIsZeroMacAddress(apInputApSsid->bssid) == FALSE)
     {
         IRQ_UtilCopyMacAddress(apInputApSsid->bssid, apSsid->bssid);
         apSsid->bssid_set = apInputApSsid->bssid_set;
-
     }
 
     apSsid->key_mgmt = apInputApSsid->key_mgmt;
@@ -5693,6 +5689,12 @@ static void duplicateSharedSsidParams(const _cme_minimized_wpa_ssid_t *apInputAp
             apSsid->key_mgmt,//for LTS:WPA_KEY_MGMT_IEEE8021X
             apSsid->group_mgmt_cipher,
             apSsid->ieee80211w);
+
+    if(apSsid->bssid_set)
+    {
+        CME_PRINT_REPORT("bssid:"MACSTR "\n\r",MAC2STR(apInputApSsid->bssid));
+    }
+
 
     HOOK(HOOK_IN_CME_CONNECTION_MNG);
 }
@@ -6748,7 +6750,7 @@ int32_t add_preferred_network_common(CMEWlanAddGetProfile_t   *apProfileCmd,
     }
     
     /* Copy BSSID */
-    if (0 == IRQ_UtilIsZeroMacAddress((const uint8_t *)apProfileCmd->Bssid))
+    if (FALSE == IRQ_UtilIsZeroMacAddress((const uint8_t *)apProfileCmd->Bssid))
 	{
 		IRQ_UtilCopyMacAddress(apProfileCmd->Bssid, apSsid->bssid);
 		apSsid->bssid_set = 1;
@@ -7204,7 +7206,8 @@ void cmeIsCurrentlyConnectedProfileDeleted(int index)
     {
 #ifdef CC35XX_SUPPORT_P2P_PROFILE
         //TODO - P2P - support this logic for P2P as well?
-        ASSERT_GENERAL(0);
+        //ASSERT_GENERAL(0);
+        return;
 #endif
     }
     else if (cme_is_sta_role_like_activated())
@@ -7337,7 +7340,7 @@ int16_t cmeGetPreferredNetwork(uint8_t Index, CMEWlanAddGetEapProfile_t *Args)
         Args->CommonAddProf.SsidLen = 0;
     }
     // copy Bssid
-    if(IRQ_UtilIsZeroMacAddress(preferredNetworks[Index].profile.bssid) != 0)
+    if(IRQ_UtilIsZeroMacAddress(preferredNetworks[Index].profile.bssid) == FALSE)
     {
         os_memcpy(Args->CommonAddProf.Bssid, preferredNetworks[Index].profile.bssid, ETH_ALEN);
     }
@@ -8260,8 +8263,13 @@ void cmeWlanConnectDigest(CMEWlanConnectCommon_t *pConnectCmd, CMEEapWlanConnect
     if (pConnectCmd && (secType >= WLAN_SEC_TYPE_P2P_PBC)
         && (secType <= WLAN_SEC_TYPE_P2P_PIN_AUTO))
     {
-        pDrv = drv_getDriverData(NETIF_NAME(TIWLAN_DEV_NAME_P2PDEV));
-        wpa_s = pDrv->wpa_s;
+        wpa_s = drv_getP2pDeviceSupplicant();
+        if (wpa_s == NULL)
+        {
+            GTRACE(GRP_CME, "CME: No P2P Device found!!!");
+            ASSERT_GENERAL(0);
+        }
+        pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
         roleType = pDrv->roleType;
         roleId = pDrv->roleId;
         CME_PRINT_REPORT("\r\n CME: P2P search for peer bssid %x:%x:%x:%x:%x:%x", pConnectCmd->Bssid[0],
@@ -8497,7 +8505,6 @@ void cmeWlanConnectDigest(CMEWlanConnectCommon_t *pConnectCmd, CMEEapWlanConnect
     }
     else if (ROLE_IS_TYPE_DEVICE(roleType))
     {
-            //cmeHandleP2pConnection(pCmdbuffer);
         cmeWlanConnect(roleId, 
                         pConnectCmd,
                         NULL,
@@ -8571,8 +8578,17 @@ void cmeAddWpaPmkCache(struct wpa_supplicant *wpa_s, const uint8_t *pmkid, uint8
     _cme_wpa_pmkid_params_t *pmkid_params;
     if (gAdHocProfile_ull.uniqueProfileId == CME_INVALID_PROFILE_ID)
     {
-        CME_PRINT_REPORT("\n\r cmeAddWpaPmkCache: it's a profile connection index = %d", gConnectingIndex_ull);
-        pmkid_params = &gPreferredNetworks[gConnectingIndex_ull].pmkid_params;
+        if ((gConnectingIndex_ull != CONN_ATTEMPT_INVALID_IDX) &&
+            (gConnectingIndex_ull < CME_MAX_SCAN_SSID))
+        {
+            CME_PRINT_REPORT("\n\r cmeAddWpaPmkCache: it's a profile connection index = %d", gConnectingIndex_ull);
+            pmkid_params = &gPreferredNetworks[gConnectingIndex_ull].pmkid_params;
+        }
+        else
+        {
+            CME_PRINT_REPORT("\n\r Not a valid Profile index!!!");
+            return;
+        }
     }
     else
     {
@@ -8665,6 +8681,7 @@ void cmeHandleP2pConnection(CMEWlanConnectCommon_t *apCmd, uint32_t aKeyMgmt)
 
     if (pDevDrv == NULL)
     {
+        //should not happen - since checked earlier
         GTRACE(GRP_CME, "CME: Connection received for P2P Security, but p2p device role isn't enabled!!!");
         ASSERT_GENERAL(0);
     }
@@ -8850,6 +8867,26 @@ void cmeP2pConnect(void *apPriv)
     CME_SET_WPS_AD_HOC_CONNECTION(); //Mark the ad hoc is WPS so the next scan will be for WPS networks
     GTRACE(GRP_CME, "CME: after call P2P wpas_p2p_connect: CME_SET_WPS_AD_HOC_CONNECTION"); 
 }
+
+void cmeP2pClearAll()
+{
+    struct wpa_supplicant *wpa_s = NULL;
+    ti_driver_ifData_t *pDrv = NULL; 
+
+    wpa_s = drv_getP2pDeviceSupplicant();
+
+    if (wpa_s != NULL)
+    {
+        pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
+        pDrv->p2pConnectionStarted = FALSE;
+        memset(pDrv->p2pPeerAddr, 0, 6);
+        pDrv->p2pPeerCandidateIsFound = 0;
+        pDrv->p2pCapabGroupOwnerBit = 0;
+    }
+
+    gCmeP2pInfo.p2pConnectPending = FALSE;
+
+}
 void cmeP2pGroupRemove()
 {
     uint32_t roleId;
@@ -8866,10 +8903,9 @@ void cmeP2pGroupRemove()
             CME_PRINT_REPORT("\r\n CME: No Group is formed!!!");
 
             //Maybe negotiation in process - try to get role device
-            roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_DEVICE);
-            if (roleId != INVALID_ROLE_ID)
+            wpa_s = drv_getP2pDeviceSupplicant();
+            if (wpa_s != NULL)
             {
-                wpa_s = drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
                 allowRemoveGroup = TRUE;
             }
             else
@@ -8916,14 +8952,19 @@ void cmeP2pGroupRemove()
     {
         int ret;
         pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
+    
+        //clean all flags
+        cmeP2pClearAll();
+        //call p2p group remove
         ret = wpas_p2p_group_remove(wpa_s, wpa_s->ifname);
         if (ret < 0)
         {
-            CME_PRINT_REPORT("\r\n Group Removed Command returned -1. \r\nGroup was not formed but group command arrive. \r\nLet's notify Host\n");
+            CME_PRINT_REPORT("\r\n [role:%d] Group Removed Command returned -1. \r\nGroup was not formed but group command arrive. \r\nLet's notify Host\n",
+                       pDrv->roleType);
 
             if (pDrv != NULL)
             {
-                CmeP2pGroupRemovedNotify(pDrv->roleType);
+                CmeP2pGroupRemovedNotify(pDrv->roleType);                
             }
             else
             {

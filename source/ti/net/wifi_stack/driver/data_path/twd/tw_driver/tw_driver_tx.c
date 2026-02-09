@@ -105,13 +105,19 @@ ETxnStatus TWD_txXfer_SendPacket (TTxCtrlBlk *pPktCtrlBlk)
     return txXfer_SendPacket (pPktCtrlBlk);
 }
 
-void TWD_txXfer_EndOfBurst (void)
+
+ETxnStatus TWD_txXferAggr_SendPacket (TTxCtrlBlk *pPktCtrlBlk)
 {
     HOOK(HOOK_TWDRIVERTX);
 
-    txXfer_EndOfBurst ();
+    return txXferAggr_SendPacket (pPktCtrlBlk);
 }
 
+void TWD_txXferAggr_EndOfBurst (void)
+{
+    HOOK(HOOK_TWDRIVERTX);
 
+    txXferAggr_EndOfBurst ();
+}
 
 

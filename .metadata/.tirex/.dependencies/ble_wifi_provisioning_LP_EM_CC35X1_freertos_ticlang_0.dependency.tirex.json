@@ -21,6 +21,8 @@
             "+../../network_lwip.c -> network_lwip.c",
             "+../../network_mbedtls.c -> network_mbedtls.c",
             "+../../network_lwip.h -> network_lwip.h",
+            "+../../date_time_service.c -> date_time_service.c",
+            "+../../date_time_service.h -> date_time_service.h",
             "+../../nimble_host_provisioning.c -> nimble_host_provisioning.c",
             "+../../nimble_host_provisioning.h -> nimble_host_provisioning.h",
             "+../../socket_examples.c -> socket_examples.c",

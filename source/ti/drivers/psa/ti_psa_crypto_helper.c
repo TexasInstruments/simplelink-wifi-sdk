@@ -79,23 +79,55 @@
         #include <third_party/mbedtls/include/mbedtls/asn1write.h>
     #endif
 
+    #if defined(MBEDTLS_BIGNUM_C)
+        #include <third_party/mbedtls/include/mbedtls/bignum.h>
+    #endif
+
+    #if defined(MBEDTLS_CAMELLIA_C)
+        #include <third_party/mbedtls/include/mbedtls/camellia.h>
+    #endif
+
+    #if defined(MBEDTLS_CCM_C)
+        #include <third_party/mbedtls/include/mbedtls/ccm.h>
+    #endif
+
     #if defined(MBEDTLS_CHACHA20_C)
         #include <third_party/mbedtls/include/mbedtls/chacha20.h>
+    #endif
+
+    #if defined(MBEDTLS_CIPHER_C)
+        #include <third_party/mbedtls/include/mbedtls/cipher.h>
     #endif
 
     #if defined(MBEDTLS_CHACHAPOLY_C)
         #include <third_party/mbedtls/include/mbedtls/chachapoly.h>
     #endif
 
+    #if !(defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG) || defined(MBEDTLS_PSA_HMAC_DRBG_MD_TYPE))
+        #include <third_party/mbedtls/include/mbedtls/ctr_drbg.h>
+    #endif
+
+    #if defined(MBEDTLS_DES_C)
+        #include <third_party/mbedtls/include/mbedtls/des.h>
+    #endif
+
+    #if defined(MBEDTLS_ECP_LIGHT) || defined(MBEDTLS_ECP_RESTARTABLE)
+        #include <third_party/mbedtls/include/mbedtls/ecp.h>
+    #endif
+
     #include <third_party/mbedtls/include/mbedtls/entropy.h>
     #include <third_party/mbedtls/include/mbedtls/error.h>
 
-    #if defined(MBEDTLS_BIGNUM_C)
-        #include <third_party/mbedtls/include/mbedtls/bignum.h>
-    #endif
-
     #if defined(MBEDTLS_GCM_C)
         #include <third_party/mbedtls/include/mbedtls/gcm.h>
+    #endif
+
+    #if !defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG) && defined(MBEDTLS_PSA_HMAC_DRBG_MD_TYPE)
+        #include <third_party/mbedtls/include/mbedtls/hmac_drbg.h>
+    #endif
+
+    #if defined(MBEDTLS_MD_LIGHT)
+        #include <third_party/mbedtls/include/mbedtls/md.h>
     #endif
 
     #if defined(MBEDTLS_PK_C)

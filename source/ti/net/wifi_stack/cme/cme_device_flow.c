@@ -216,14 +216,14 @@ void CmeDeviceROC (Cme_Users_e __user)
 
 void CmeDeviceCROC (Cme_Users_e __user)
 {
-    int32_t roleId, ret;
+    int32_t ret;
     struct wpa_supplicant *wpa_s;
     uint32_t*   pArgs;
 
     CME_PRINT_REPORT("\n\rCME :Device SM: CmeDeviceCROC \n");
 
-    roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_DEVICE);
-    wpa_s = drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
+    wpa_s = drv_getP2pDeviceSupplicant();
+
     if(wpa_s == NULL )
     {
         GTRACE(GRP_CME,"CME :ERROR ! DEVICE role doesn't exists");

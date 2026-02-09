@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -190,13 +190,13 @@ static int_fast16_t ECDSAXXF3HSM_setECCurveParameters(ECDSAXXF3HSM_Object *objec
     {
         case ECDSA_TYPE_SEC_P_224_R1:
             object->curveLength  = ECDSA_CURVE_LENGTH_224;
-            object->digestLength = ECDSA_DIGEST_LENGTH_224;
+            object->digestLength = (object->digestLength == 0) ? ECDSA_DIGEST_LENGTH_224 : object->digestLength;
             curveFamily          = EIP130DOMAIN_ECC_FAMILY_NIST_P;
             break;
         case ECDSA_TYPE_BRP_P_256_R1:
         case ECDSA_TYPE_SEC_P_256_R1:
             object->curveLength  = ECDSA_CURVE_LENGTH_256;
-            object->digestLength = ECDSA_DIGEST_LENGTH_256;
+            object->digestLength = (object->digestLength == 0) ? ECDSA_DIGEST_LENGTH_256 : object->digestLength;
             if (object->curveType == ECDSA_TYPE_SEC_P_256_R1)
             {
                 curveFamily = EIP130DOMAIN_ECC_FAMILY_NIST_P;
@@ -210,7 +210,7 @@ static int_fast16_t ECDSAXXF3HSM_setECCurveParameters(ECDSAXXF3HSM_Object *objec
         case ECDSA_TYPE_BRP_P_384_R1:
         case ECDSA_TYPE_SEC_P_384_R1:
             object->curveLength  = ECDSA_CURVE_LENGTH_384;
-            object->digestLength = ECDSA_DIGEST_LENGTH_384;
+            object->digestLength = (object->digestLength == 0) ? ECDSA_DIGEST_LENGTH_384 : object->digestLength;
             if (object->curveType == ECDSA_TYPE_SEC_P_384_R1)
             {
                 curveFamily = EIP130DOMAIN_ECC_FAMILY_NIST_P;
@@ -223,13 +223,13 @@ static int_fast16_t ECDSAXXF3HSM_setECCurveParameters(ECDSAXXF3HSM_Object *objec
             break;
         case ECDSA_TYPE_BRP_P_512_R1:
             object->curveLength  = ECDSA_CURVE_LENGTH_512;
-            object->digestLength = ECDSA_DIGEST_LENGTH_512;
+            object->digestLength = (object->digestLength == 0) ? ECDSA_DIGEST_LENGTH_512 : object->digestLength;
             curveFamily          = EIP130DOMAIN_ECC_FAMILY_BRAINPOOL_R1;
             object->domainId     = ECDSA_DOMAIN_ID_BRP;
             break;
         case ECDSA_TYPE_SEC_P_521_R1:
             object->curveLength  = ECDSA_CURVE_LENGTH_521;
-            object->digestLength = ECDSA_DIGEST_LENGTH_512;
+            object->digestLength = (object->digestLength == 0) ? ECDSA_DIGEST_LENGTH_512 : object->digestLength;
             curveFamily          = EIP130DOMAIN_ECC_FAMILY_NIST_P;
             break;
         default:
@@ -541,6 +541,21 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
     object->paramAssetID        = 0;
     object->returnStatus        = ECDSA_STATUS_SUCCESS;
 
+    /* Convert length in bytes to bits and validate.
+     * A value of 0 means use the default digest length for the curve.
+     * That is set in ECDSAXXF3HSM_setECCurveParameters().
+     */
+    size_t digestLengthBits = (operation->hashLength) << 3;
+
+    if ((digestLengthBits != 0) && (digestLengthBits != ECDSA_DIGEST_LENGTH_224) &&
+        (digestLengthBits != ECDSA_DIGEST_LENGTH_256) && (digestLengthBits != ECDSA_DIGEST_LENGTH_384) &&
+        (digestLengthBits != ECDSA_DIGEST_LENGTH_512))
+    {
+        return ECDSA_STATUS_ERROR;
+    }
+
+    object->digestLength = (ECDSA_DigestLength)digestLengthBits;
+
     /* Perform the following operations:
      * - Check the HSM HW status
      * - Setup up Driver metadata and EC curve parameters
@@ -625,6 +640,21 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
     object->keyAssetID          = 0;
     object->paramAssetID        = 0;
     object->returnStatus        = ECDSA_STATUS_SUCCESS;
+
+    /* Convert length in bytes to bits and validate.
+     * A value of 0 means use the default digest length for the curve.
+     * That is set in ECDSAXXF3HSM_setECCurveParameters().
+     */
+    size_t digestLengthBits = (operation->hashLength) << 3;
+
+    if ((digestLengthBits != 0) && (digestLengthBits != ECDSA_DIGEST_LENGTH_224) &&
+        (digestLengthBits != ECDSA_DIGEST_LENGTH_256) && (digestLengthBits != ECDSA_DIGEST_LENGTH_384) &&
+        (digestLengthBits != ECDSA_DIGEST_LENGTH_512))
+    {
+        return ECDSA_STATUS_ERROR;
+    }
+
+    object->digestLength = (ECDSA_DigestLength)digestLengthBits;
 
     /* Perform the following operations:
      * - Check the HSM HW status
@@ -947,22 +977,19 @@ static int_fast16_t ECDSAXXF3HSM_createKeyAsset(ECDSA_Handle handle)
         assetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA;
     }
 
-    /* the chosen curve type determines the asset policy's SHA algorithm of choice */
-    switch (object->curveType)
+    /* SHA hash length doesn't have to match curve length */
+    switch (object->digestLength)
     {
-        case ECDSA_TYPE_SEC_P_224_R1:
+        case ECDSA_DIGEST_LENGTH_224:
             assetPolicy |= EIP130_ASSET_POLICY_ACH_SHA224;
             break;
-        case ECDSA_TYPE_BRP_P_256_R1:
-        case ECDSA_TYPE_SEC_P_256_R1:
+        case ECDSA_DIGEST_LENGTH_256:
             assetPolicy |= EIP130_ASSET_POLICY_ACH_SHA256;
             break;
-        case ECDSA_TYPE_BRP_P_384_R1:
-        case ECDSA_TYPE_SEC_P_384_R1:
+        case ECDSA_DIGEST_LENGTH_384:
             assetPolicy |= EIP130_ASSET_POLICY_ACH_SHA384;
             break;
-        case ECDSA_TYPE_BRP_P_512_R1:
-        case ECDSA_TYPE_SEC_P_521_R1:
+        case ECDSA_DIGEST_LENGTH_512:
             assetPolicy |= EIP130_ASSET_POLICY_ACH_SHA512;
             break;
         default:

@@ -43,12 +43,14 @@
 #include <mbedtls/sha1.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/sha512.h>
+#include <mbedtls/ssl.h>
 #include <psa/crypto.h>       /* For PSA Crypto API */
 #include "mbedtls/md.h"
 
 
 
 #define CONFIG_HMAC_SHA256_KDF
+#define CONFIG_HMAC_SHA384_KDF
 /* hostapd/wpa_supplicant provides forced_memzero(),
  * but prefer mbedtls_platform_zeroize() */
 #define forced_memzero(ptr,sz) mbedtls_platform_zeroize(ptr,sz)
@@ -61,6 +63,11 @@
 #include "sha256.h"
 #include "sha384.h"
 #include "sha512.h"
+
+int sha384_prf_bits(const u8 *key, size_t key_len, const char *label,
+            const u8 *data, size_t data_len, u8 *buf,
+            size_t buf_len_bits);
+
 
 int crypto_psa_get_random(void *params, unsigned char *randBuff, size_t randLen)
 {
@@ -327,10 +334,6 @@ int sha512_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
     return md_vector(num_elem, addr, len, mac, MBEDTLS_MD_SHA512);
 }
 
-int sha384_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
-{
-    return md_vector(num_elem, addr, len, mac, MBEDTLS_MD_SHA384);
-}
 #endif
 
 
@@ -394,10 +397,6 @@ int sha512_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
     return sha384_512_vector(num_elem, addr, len, mac, 0);
 }
 
-int sha384_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
-{
-    return sha384_512_vector(num_elem, addr, len, mac, 1);
-}
 #endif
 
 #ifdef MBEDTLS_SHA256_C
@@ -533,19 +532,6 @@ int hmac_sha512(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
                MBEDTLS_MD_SHA512);
 }
 
-int hmac_sha384_vector(const u8 *key, size_t key_len, size_t num_elem,
-                       const u8 *addr[], const size_t *len, u8 *mac)
-{
-    return hmac_vector(key, key_len, num_elem, addr, len, mac,
-               MBEDTLS_MD_SHA384);
-}
-
-//int hmac_sha384(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
-//                u8 *mac)
-//{
-//    return hmac_vector(key, key_len, 1, &data, &data_len, mac,
-//               MBEDTLS_MD_SHA384);
-//}
 #endif
 
 
@@ -580,47 +566,318 @@ int hmac_sha384(const u8 *key, size_t key_len,
     return 0;
 }
 
-int sha384_prf(const u8 *key, size_t key_len,
-        const char *label,
-        const u8 *data, size_t data_len,
-        u8 *out, size_t out_len)
+int hmac_sha384_kdf(const u8 *key, size_t key_len,
+                    const char *label,
+                    const u8 *context, size_t context_len,
+                    u8 *out, size_t out_len)
 {
+    const mbedtls_md_info_t *md;
+    mbedtls_md_context_t ctx;
+    u8 counter = 1;
+    u8 hash[48]; /* SHA384 output */
     size_t pos = 0;
-    u8 a[48]; // SHA-384 output size
-    u8 hmac[48];
-    size_t hlen = 48;
+    int ret;
 
-    const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA384);
-
-    if(!md_info)
-    {
+    md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA384);
+    if (!md)
         return -1;
-    }
-    // A(0) = label||data
-    if(mbedtls_md_hmac(md_info, key, key_len,
-            (const u8 *)label, strlen(label), a) != 0)
-    {
-        return -1;
-    }
 
     while (pos < out_len) {
-        // HMAC(key, A(i) || label || data)
-        if(mbedtls_md_hmac(md_info, key, key_len, a, hlen, hmac) !=0)
-        {
-            return -1;
+        mbedtls_md_init(&ctx);
+
+        ret = mbedtls_md_setup(&ctx, md, 1);
+        if (ret != 0)
+            goto fail;
+
+        ret = mbedtls_md_hmac_starts(&ctx, key, key_len);
+        if (ret != 0)
+            goto fail;
+
+        /* Counter */
+        ret = mbedtls_md_hmac_update(&ctx, &counter, 1);
+        if (ret != 0)
+            goto fail;
+
+        /* Label */
+        ret = mbedtls_md_hmac_update(&ctx,
+                                (const unsigned char *) label,
+                                strlen(label));
+        if (ret != 0)
+            goto fail;
+
+        /* Null separator */
+        ret = mbedtls_md_hmac_update(&ctx, (const unsigned char *) "\0", 1);
+        if (ret != 0)
+            goto fail;
+
+        /* Context */
+        ret = mbedtls_md_hmac_update(&ctx, context, context_len);
+        if (ret != 0)
+            goto fail;
+
+        /* Final */
+        ret = mbedtls_md_hmac_finish(&ctx, hash);
+        if (ret != 0)
+            goto fail;
+
+        size_t copy_len = (out_len - pos > sizeof(hash)) ?
+        sizeof(hash) : (out_len - pos);
+
+        memcpy(out + pos, hash, copy_len);
+        pos += copy_len;
+        counter++;
+
+        mbedtls_md_free(&ctx);
+    }
+
+    return 0;
+
+    fail:
+        mbedtls_md_free(&ctx);
+        return -1;
+}
+
+int sha384_prf(const u8 *key, size_t key_len,
+               const char *label,
+               const u8 *data, size_t data_len,
+               u8 *buf, size_t buf_len)
+{
+    return sha384_prf_bits(key, key_len, label, data, data_len, buf,
+                   buf_len * 8);
+}
+
+/**
+ * sha384_prf_bits - IEEE Std 802.11ac-2013, 11.6.1.7.2 Key derivation function
+ * @key: Key for KDF
+ * @key_len: Length of the key in bytes
+ * @label: A unique label for each purpose of the PRF
+ * @data: Extra data to bind into the key
+ * @data_len: Length of the data
+ * @buf: Buffer for the generated pseudo-random key
+ * @buf_len: Number of bits of key to generate
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function is used to derive new, cryptographically separate keys from a
+ * given key. If the requested buf_len is not divisible by eight, the least
+ * significant 1-7 bits of the last octet in the output are not part of the
+ * requested output.
+ */
+int sha384_prf_bits(const u8 *key, size_t key_len, const char *label,
+            const u8 *data, size_t data_len, u8 *buf,
+            size_t buf_len_bits)
+{
+    u16 counter = 1;
+    size_t pos, plen;
+    u8 hash[SHA384_MAC_LEN];
+    const u8 *addr[4];
+    size_t len[4];
+    u8 counter_le[2], length_le[2];
+    size_t buf_len = (buf_len_bits + 7) / 8;
+
+    addr[0] = counter_le;
+    len[0] = 2;
+    addr[1] = (u8 *) label;
+    len[1] = os_strlen(label);
+    addr[2] = data;
+    len[2] = data_len;
+    addr[3] = length_le;
+    len[3] = sizeof(length_le);
+
+    WPA_PUT_LE16(length_le, buf_len_bits);
+    pos = 0;
+    while (pos < buf_len) {
+        plen = buf_len - pos;
+        WPA_PUT_LE16(counter_le, counter);
+        if (plen >= SHA384_MAC_LEN) {
+            if (hmac_sha384_vector(key, key_len, 4, addr, len,
+                           &buf[pos]) < 0)
+                return -1;
+            pos += SHA384_MAC_LEN;
+        } else {
+            if (hmac_sha384_vector(key, key_len, 4, addr, len,
+                           hash) < 0)
+                return -1;
+            os_memcpy(&buf[pos], hash, plen);
+            pos += plen;
+            break;
+        }
+        counter++;
+    }
+
+    /*
+     * Mask out unused bits in the last octet if it does not use all the
+     * bits.
+     */
+    if (buf_len_bits % 8) {
+        u8 mask = 0xff << (8 - buf_len_bits % 8);
+        buf[pos - 1] &= mask;
+    }
+
+    forced_memzero(hash, sizeof(hash));
+
+    return 0;
+}
+
+
+/**
+ * sha384_prf_raw - Raw HMAC-based PRF matching original mbedTLS implementation
+ * @key: Key for PRF
+ * @key_len: Length of the key in bytes
+ * @label: A unique label for each purpose of the PRF
+ * @data: Extra data to bind into the key (can be NULL)
+ * @data_len: Length of the data
+ * @out: Buffer for the generated pseudo-random key
+ * @out_len: Number of bytes of key to generate
+ * Returns: 0 on success, -1 on failure
+ *
+ * This is a lower-level implementation that directly uses PSA MAC operations
+ * to match the exact behavior of the original mbedTLS implementation.
+ * Uses the construction: PRF(secret, label, seed) = HMAC(secret, A(1) || seed) || ...
+ * where A(i) = HMAC(secret, A(i-1)) and A(0) = label
+ */
+int sha384_prf_raw(const u8 *key, size_t key_len,
+                   const char *label,
+                   const u8 *data, size_t data_len,
+                   u8 *out, size_t out_len)
+{
+    psa_status_t status;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+    psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
+    psa_algorithm_t alg = PSA_ALG_HMAC(PSA_ALG_SHA_384);
+
+    #define SHA384_HASH_LEN 48  /* SHA-384 output is 48 bytes */
+    u8 a[SHA384_HASH_LEN];      /* A(i) in the PRF construction */
+    u8 hmac[SHA384_HASH_LEN];   /* Temporary HMAC output */
+    size_t mac_len;
+    size_t pos = 0;
+    size_t label_len = label ? strlen(label) : 0;
+    int ret = -1;
+
+    /* Validate inputs */
+    if (!key || key_len == 0 || !out || out_len == 0) {
+        return -1;
+    }
+
+    /* Initialize PSA Crypto */
+    status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        return -1;
+    }
+
+    /* Set up key attributes for MAC operations */
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
+    psa_set_key_algorithm(&attributes, alg);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+    psa_set_key_bits(&attributes, PSA_BYTES_TO_BITS(key_len));
+
+    /* Use volatile key */
+    psa_set_key_lifetime(&attributes,
+        PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+            PSA_KEY_PERSISTENCE_VOLATILE,
+            PSA_KEY_LOCATION_LOCAL_STORAGE));
+
+    /* Import the key */
+    status = psa_import_key(&attributes, key, key_len, &key_id);
+    if (status != PSA_SUCCESS) {
+        goto cleanup;
+    }
+
+    /* Compute A(0) = HMAC(key, label) if label exists */
+    if (label_len > 0) {
+        operation = psa_mac_operation_init();
+        status = psa_mac_sign_setup(&operation, key_id, alg);
+        if (status != PSA_SUCCESS) {
+            goto cleanup;
         }
 
-        size_t copy_len = (out_len - pos > hlen) ? hlen : (out_len - pos);
+        status = psa_mac_update(&operation, (const u8 *)label, label_len);
+        if (status != PSA_SUCCESS) {
+            psa_mac_abort(&operation);
+            goto cleanup;
+        }
+
+        status = psa_mac_sign_finish(&operation, a, sizeof(a), &mac_len);
+        if (status != PSA_SUCCESS || mac_len != SHA384_HASH_LEN) {
+            goto cleanup;
+        }
+    } else {
+        /* No label, start with zeros */
+        memset(a, 0, sizeof(a));
+    }
+
+    /* Generate output using iterative HMAC */
+    while (pos < out_len) {
+        /* Compute HMAC(key, A(i)) */
+        operation = psa_mac_operation_init();
+        status = psa_mac_sign_setup(&operation, key_id, alg);
+        if (status != PSA_SUCCESS) {
+            goto cleanup;
+        }
+
+        status = psa_mac_update(&operation, a, SHA384_HASH_LEN);
+        if (status != PSA_SUCCESS) {
+            psa_mac_abort(&operation);
+            goto cleanup;
+        }
+
+        /* Optionally include data in each iteration */
+        if (data && data_len > 0) {
+            status = psa_mac_update(&operation, data, data_len);
+            if (status != PSA_SUCCESS) {
+                psa_mac_abort(&operation);
+                goto cleanup;
+            }
+        }
+
+        status = psa_mac_sign_finish(&operation, hmac, sizeof(hmac), &mac_len);
+        if (status != PSA_SUCCESS || mac_len != SHA384_HASH_LEN) {
+            goto cleanup;
+        }
+
+        /* Copy the required amount to output */
+        size_t copy_len = (out_len - pos > SHA384_HASH_LEN) ? SHA384_HASH_LEN : (out_len - pos);
         memcpy(out + pos, hmac, copy_len);
         pos += copy_len;
 
-        // A(i+1) = HMAC(key, A(i))
-        if(mbedtls_md_hmac(md_info, key, key_len, a, hlen, a) != 0)
-        {
-            return -1;
+        /* Compute A(i+1) = HMAC(key, A(i)) for next iteration */
+        if (pos < out_len) {
+            operation = psa_mac_operation_init();
+            status = psa_mac_sign_setup(&operation, key_id, alg);
+            if (status != PSA_SUCCESS) {
+                goto cleanup;
+            }
+
+            status = psa_mac_update(&operation, a, SHA384_HASH_LEN);
+            if (status != PSA_SUCCESS) {
+                psa_mac_abort(&operation);
+                goto cleanup;
+            }
+
+            status = psa_mac_sign_finish(&operation, a, sizeof(a), &mac_len);
+            if (status != PSA_SUCCESS || mac_len != SHA384_HASH_LEN) {
+                goto cleanup;
+            }
         }
     }
-    return 0;
+
+    /* Success */
+    ret = 0;
+
+cleanup:
+    /* Zero out sensitive data */
+    memset(a, 0, sizeof(a));
+    memset(hmac, 0, sizeof(hmac));
+
+    /* Destroy the key */
+    if (key_id != 0) {
+        psa_destroy_key(key_id);
+    }
+
+    /* Reset key attributes */
+    psa_reset_key_attributes(&attributes);
+
+    return ret;
 }
 
 /* Vectorized HMAC-SHA384 */
@@ -663,6 +920,42 @@ int hmac_sha384_vector(const u8 *key, size_t key_len,
     fail:
         mbedtls_md_free(&ctx);
         return ret ? -1 : 0;
+}
+
+
+int sha384_vector(size_t num_elem,
+                  const u8 *addr[],
+                  const size_t *len,
+                  u8 *mac)
+{
+    mbedtls_sha512_context ctx;
+    size_t i;
+
+    if (!mac)
+        return -1;
+
+    mbedtls_sha512_init(&ctx);
+
+    /* 1 = use SHA-384, 0 = SHA-512 */
+    if (mbedtls_sha512_starts(&ctx, 1) != 0)
+        goto fail;
+
+    for (i = 0; i < num_elem; i++) {
+        if (addr[i] && len[i] > 0) {
+            if (mbedtls_sha512_update(&ctx, addr[i], len[i]) != 0)
+                goto fail;
+        }
+    }
+
+    if (mbedtls_sha512_finish(&ctx, mac) != 0)
+        goto fail;
+
+    mbedtls_sha512_free(&ctx);
+    return 0;
+
+fail:
+    mbedtls_sha512_free(&ctx);
+    return -1;
 }
 
 #ifdef MBEDTLS_SHA1_C
@@ -777,15 +1070,6 @@ int hmac_sha512_kdf(const u8 *secret, size_t secret_len,
 }
 #endif
 
-#ifdef CRYPTO_MBEDTLS_HMAC_KDF_SHA384
-int hmac_sha384_kdf(const u8 *secret, size_t secret_len,
-            const char *label, const u8 *seed, size_t seed_len,
-            u8 *out, size_t outlen)
-{
-    return hmac_kdf_expand(secret, secret_len, label, seed, seed_len,
-                           out, outlen, MBEDTLS_MD_SHA384);
-}
-#endif
 #endif
 
 #ifdef MBEDTLS_SHA256_C

@@ -23,6 +23,7 @@ set(${TARGET_NAME}_SOURCES
      ${CMAKE_CURRENT_LIST_DIR}/driver/data_path/twd/tw_driver/tw_driver_tx.c
      ${CMAKE_CURRENT_LIST_DIR}/driver/data_path/twd/fw_transfer/txResult.c
      ${CMAKE_CURRENT_LIST_DIR}/driver/data_path/twd/fw_transfer/txXfer.c
+     ${CMAKE_CURRENT_LIST_DIR}/driver/data_path/twd/fw_transfer/txXfer_aggr.c     
      ${CMAKE_CURRENT_LIST_DIR}/driver/data_path/udata/Tx_data_clsfr.c
      ${CMAKE_CURRENT_LIST_DIR}/driver/data_path/udata/rx_queue.c
      ${CMAKE_CURRENT_LIST_DIR}/driver/data_path/udata/rx_stack.c

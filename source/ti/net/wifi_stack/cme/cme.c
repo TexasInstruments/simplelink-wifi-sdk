@@ -84,6 +84,7 @@
 #include "cme_internal_api.h"
 #include "l2_cfg.h"
 #include "regulatory_domain_api.h"
+#include "wps_hostapd.h"
 // ============================================================================
 //      Debug only - CME tester
 // ============================================================================
@@ -176,6 +177,8 @@ typedef enum
 //    CME_MESSAGE_ID_ROLE_STOP_COMPLETE,      // FW role stop complete indication
 
     CME_MESSAGE_ID_P2P_CMD,                 // Wlan Set P2P commads 
+
+    CME_MESSAGE_ID_SET_WPS_AP_PIN,          // Wlan Set WPS AP PIN for ER 
 
     // -------------------------------
     //  Internal events
@@ -420,6 +423,7 @@ typedef struct
         uint32_t                      peerAgingTimeout;
         WlanScanDwellTime_t            dwellTimes;
 
+        WlanSetWpsApPinParam_t          wpsApPin;
 
     } un;
 
@@ -1034,7 +1038,7 @@ int32_t CME_WlanSetMode(uint8_t calledFromCmeThread,uint32_t role_bitmap, uint32
         CME_PRINT_REPORT("\n\rCME_WlanSetMode: send to CME with role switch "
                          "request, wait for completion, timeout: %lu \r\n",
                          timeout);
-                
+        
         // Wait on sync object - new role set operation must block command mailbox!
 		ret = osi_SyncObjWait(&gCmeCommandBlockingSyncObject, timeout);
 	    if (OSI_OK != ret)
@@ -1289,6 +1293,17 @@ int16_t CME_GetConnPolicy(WlanPolicySetGet_t *policy)
     return 0;
 }
 
+
+int16_t CME_SetWpsApPin(WlanSetWpsApPinParam_t *pWpsApPinParams)
+{
+    cmeMsg_t msg;
+
+    msg.msgId = CME_MESSAGE_ID_SET_WPS_AP_PIN;
+    
+    os_memcpy(&(msg.un.wpsApPin), pWpsApPinParams, sizeof(WlanSetWpsApPinParam_t));
+
+    return pushMsg2Queue(&msg);
+}
 
 // ----------------------------------------------------------------------------
 
@@ -2057,7 +2072,7 @@ int32_t CME_RemainOnChannelTimeoutNotify(uint32_t aRoleId)
 
     cmeMsg_t msg;
 
-    msg.msgId = CME_MESSAGE_ID_ROC_TIMER_TIMEOUT;;
+    msg.msgId = CME_MESSAGE_ID_ROC_TIMER_TIMEOUT;
     msg.roleId = aRoleId;
 
     return pushMsg2Queue_fromIntr(&msg);
@@ -2974,19 +2989,12 @@ void cme_Thread(void* apParam)
                     struct wpa_supplicant *wpa_s = drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
                     char *endptr;
                     unsigned long pin_val;
+                    size_t pin_len = 0;
 
                     if (NULL == wpa_s)
                     {
                         GTRACE(GRP_CME, "Can't start a WPS session if AP is not activated!");
                         wlanDispatcherSendEvent(WLAN_EVENT_AP_WPS_START_FAILED, (void*)(&ret), sizeof(int8_t));
-                        break;
-                    }
-
-                    pin_val = strtoul(wpsSession->pin, &endptr, 10);
-                    if ((*endptr != '\0') || (wps_pin_valid(pin_val) == FALSE)) 
-                    {
-                        GTRACE(GRP_CME, "AP WPS session: invalid PIN code received");
-                        wlanDispatcherSendEvent(WLAN_EVENT_WPS_INVALID_PIN, NULL, 0);
                         break;
                     }
 
@@ -3002,6 +3010,36 @@ void cme_Thread(void* apParam)
                     }
                     else
                     {
+                        pin_len = strlen(wpsSession->pin);
+                        // Validate PIN length: must be 4 or 8 digits
+                        if (pin_len != 4 && pin_len != 8) 
+                        {
+                            GTRACE(GRP_CME, "AP WPS session: invalid PIN length %d (expected 4 or 8)", pin_len);
+                            CME_PRINT_REPORT_ERROR("\n\rAP WPS session: invalid PIN length %d (expected 4 or 8)", pin_len);
+                            wlanDispatcherSendEvent(WLAN_EVENT_WPS_INVALID_PIN, NULL, 0);
+                            break;
+                        }
+
+                        pin_val = strtoul(wpsSession->pin, &endptr, 10);
+                        if (*endptr != '\0')
+                        {
+                            GTRACE(GRP_CME, "AP WPS session: invalid PIN - contains non-numeric characters");
+                            CME_PRINT_REPORT_ERROR("\n\rAP WPS session: invalid PIN - contains non-numeric characters");
+                            wlanDispatcherSendEvent(WLAN_EVENT_WPS_INVALID_PIN, NULL, 0);
+                            break;
+                        }
+                        
+                        if (pin_len == 8) 
+                        {
+                            if (wps_pin_valid(pin_val) == FALSE) 
+                            {
+                                GTRACE(GRP_CME, "AP WPS session: invalid 8-digit PIN checksum");
+                                CME_PRINT_REPORT_ERROR("\n\rAP WPS session: invalid 8-digit PIN checksum");
+                                wlanDispatcherSendEvent(WLAN_EVENT_WPS_INVALID_PIN, NULL, 0);
+                                break;
+                            }
+                        }
+
                         ret = wpa_supplicant_ap_wps_pin(wpa_s, NULL, (const char*)wpsSession->pin, NULL, 0, 0);
                         if (ret < 0)
                         {
@@ -3011,6 +3049,45 @@ void cme_Thread(void* apParam)
                         }
                     }
                 }break; //CME_MESSAGE_ID_START_AP_WPS_SESSION
+
+                case CME_MESSAGE_ID_SET_WPS_AP_PIN:
+                {
+                    int8_t ret = 0;
+                    WlanSetWpsApPinParam_t *wpsApPin = &(msg.un.wpsApPin);
+                    uint32_t roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_AP);
+                    struct wpa_supplicant *wpa_s = drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
+                    char *endptr;
+                    unsigned long pin_val;
+
+                    if (NULL == wpa_s)
+                    {
+                        GTRACE(GRP_CME, "Cannot set WPS AP PIN if AP is not activated!");
+                        CME_PRINT_REPORT_ERROR("\r\nCME: CME_MESSAGE_ID_SET_WPS_AP_PIN ,AP Role is not up");
+                        ret = WlanError(WLAN_ERROR_SEVERITY__LOW, WLAN_ERROR_MODULE__CME, WLAN_ERROR_TYPE__ROLE_IS_NOT_UP);
+                        break;
+                    }
+                    
+                    pin_val = strtoul(wpsApPin->pin, &endptr, 10);
+                    if ((*endptr != '\0') || (wps_pin_valid(pin_val) == FALSE)) 
+                    {
+                        GTRACE(GRP_CME, "AP WPS PIN Set: invalid PIN code received");
+                        CME_PRINT_REPORT_ERROR("\r\nCME: CME_MESSAGE_ID_SET_WPS_AP_PIN ,invalid PIN code received");
+                        wlanDispatcherSendEvent(WLAN_EVENT_WPS_INVALID_PIN, NULL, 0);
+                        break;
+                    }
+
+                    ret = hostapd_wps_ap_pin_set(wpa_s->ap_iface->bss[0], (const char*)wpsApPin->pin, wpsApPin->timeout);
+                    if (ret < 0)
+                    {
+                        GTRACE(GRP_CME, "Failed - to set AP WPS PIN, error code %d", ret);
+                        CME_PRINT_REPORT_ERROR("\r\nCME: CME_MESSAGE_ID_SET_WPS_AP_PIN ,Failed - to set AP WPS PIN, error code %d", ret);
+                        ret = WlanError(WLAN_ERROR_SEVERITY__LOW, WLAN_ERROR_MODULE__CME, WLAN_ERROR_TYPE__INVALID_PARAM_SET_TYPE);
+                        break;
+                    }
+
+                    
+                }break; //CME_MESSAGE_ID_SET_WPS_AP_PIN
+
                 case CME_MESSAGE_ID_SET_EXT_WPS_SESSION:
                 {
                     int8_t ret = 0;
@@ -4322,75 +4399,87 @@ void cme_Thread(void* apParam)
                 case CME_MESSAGE_ID_P2P_CMD:
                 {
                     struct wpa_supplicant *wpa_s;
-                    uint32_t roleId;
-
-                    CME_PRINT_REPORT("\n\r CME: P2P CMD #%d", msg.generalData);
-
-                    if (msg.generalData == P2P_CMD_ID_SCAN_STOP)
+                    
+                    //CME_PRINT_REPORT("\n\r CME: P2P CMD #%d", msg.generalData);
+                    switch (msg.generalData)
                     {
-                        //we can stop p2p_findon role device only
-                        //role device role, if exist stop scan
-
-                        roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_DEVICE);
-                        if (roleId != INVALID_ROLE_ID)
+                        case P2P_CMD_ID_SCAN_STOP:
                         {
-                            wpa_s = drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
+                            //we can stop p2p_find on role device only
+                            //role device role, if exist stop scan
 
-                            cmeStopP2pFind(wpa_s);
+                            wpa_s = drv_getP2pDeviceSupplicant();
+
+                            if (wpa_s != NULL)
+                            {
+                                cmeStopP2pFind(wpa_s);
+                            }
+                            else
+                            {
+                                GTRACE(GRP_CME, "CME: ERROR! Stop p2p find failed - no device roleId!!!");
+                                CME_PRINT_REPORT("\n\r CME: ERROR! Stop p2p find failed - no device roleId!!!");
+                            }
                         }
-                        else
+                        break;
+
+                        case P2P_CMD_ID_GROUP_REMOVE:
                         {
-                            GTRACE(GRP_CME, "CME: ERROR! Stop p2p find failed - no device roleId!!!");
-                            CME_PRINT_REPORT("\n\r CME: ERROR! Stop p2p find failed - no device roleId!!!");
+                            cmeP2pGroupRemove();
                         }
-                    }
-                    else if (msg.generalData == P2P_CMD_ID_GROUP_REMOVE)
-                    {
-                        cmeP2pGroupRemove();
-                    }
-                    else if (msg.generalData == P2P_CMD_ID_CONFIG_CHANNELS)
-                    {
-                        P2pParams_t params;
-                        params.operChannel = msg.un.p2pConfigParams.operChannel;
-                        params.operReg = msg.un.p2pConfigParams.operClass;
-                        params.listenChannel = msg.un.p2pConfigParams.listenChannel;
-                        params.listenReg = msg.un.p2pConfigParams.listenClass;
-                        params.goIntent = msg.un.p2pConfigParams.goIntent;
+                        break;
 
-                        GTRACE(GRP_CME, "CME: P2P_CMD_ID_CONFIG_CHANNELS setting oper:%d %d listen:%d %d go_intent=%d", 
-                        params.operChannel, params.operReg, params.listenChannel, params.listenReg, params.goIntent);
-
-                        CME_PRINT_REPORT("\n\rCME: P2P_CMD_ID_CONFIG_CHANNELS setting oper:%d %d listen:%d %d go_intent=%d", 
-                        params.operChannel, params.operReg, params.listenChannel, params.listenReg, params.goIntent);
-
-                        cfgSetP2pParameters(&params);
-
-                        //apply changed params on the wpa_supplicant config struct
-                        //1. get device drv
-                        roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_DEVICE);
-                        if (roleId != INVALID_ROLE_ID)
+                        case P2P_CMD_ID_CONFIG_CHANNELS:
                         {
-                            wpa_s = drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
+                            P2pParams_t params;
+                            params.operChannel = msg.un.p2pConfigParams.operChannel;
+                            params.operReg = msg.un.p2pConfigParams.operClass;
+                            params.listenChannel = msg.un.p2pConfigParams.listenChannel;
+                            params.listenReg = msg.un.p2pConfigParams.listenClass;
+                            params.goIntent = msg.un.p2pConfigParams.goIntent;
 
-                            //2. update p2p
-                            cfgBuildP2pParameters(wpa_s->conf);
+                            GTRACE(GRP_CME, "CME: P2P_CMD_ID_CONFIG_CHANNELS setting oper:%d %d listen:%d %d go_intent=%d", 
+                            params.operChannel, params.operReg, params.listenChannel, params.listenReg, params.goIntent);
 
+                            cfgSetP2pParameters(&params);
+
+                            //apply changed params on the wpa_supplicant config struct
+                            //1. get device drv
+
+                            wpa_s = drv_getP2pDeviceSupplicant();
+
+                            if (wpa_s != NULL)
+                            {
+                                //2. update p2p
+                                cfgBuildP2pParameters(wpa_s->conf);
+
+                            }
+                            else
+                            {
+                                GTRACE(GRP_CME, "CME: ERROR! P2P_CMD_ID_CONFIG_CHANNELS failed - no device roleId!!!");
+                                CME_PRINT_REPORT("\n\r CME: ERROR! P2P_CMD_ID_CONFIG_CHANNELS failed - no device roleId!!!");
+                            }
+   
                         }
-                        else
+                        break;
+
+                        case P2P_CMD_ID_LISTEN:
                         {
-                            GTRACE(GRP_CME, "CME: ERROR! P2P_CMD_ID_CONFIG_CHANNELS failed - no device roleId!!!");
-                            CME_PRINT_REPORT("\n\r CME: ERROR! P2P_CMD_ID_CONFIG_CHANNELS failed - no device roleId!!!");
+                            cmeP2pListen();
                         }
+                        break;
+
+                        case P2P_CMD_ID_CANCEL:
+                        {
+                            cmeP2pCancel();
+                        }
+                        break;
+
+                        default:
+
+                            break;
 
                     }
-                    else if (msg.generalData == P2P_CMD_ID_LISTEN)
-                    {
-                        cmeP2pListen();
-                    }
-                    else if (msg.generalData == P2P_CMD_ID_CANCEL)
-                    {
-                        cmeP2pCancel();
-                    }
+
                 }
                 break;
                 case CME_MESSAGE_ID_SET_NON_PREFFERED_CHANNELS:
@@ -4810,7 +4899,7 @@ int32_t cme_init()
 #endif
     gPrivateIeCB = NULL;
 
-    //p2p related info init
+    //initialize p2p info
     gCmeP2pInfo.p2pFindStopping = FALSE;
     gCmeP2pInfo.p2pConnectPending = FALSE;
 
@@ -5705,7 +5794,7 @@ int16 CME_WlanApRemovePeer(CMEWlanApRemovePeer_t *pCmdRemovePeer)
 
         if (pushMsg2Queue(&msg) < 0)
         {
-            status = WlanError(WLAN_ERROR_SEVERITY__LOW, WLAN_ERROR_MODULE__CME, WLAN_ERROR_TYPE__HOST_RESPONSE_STATUS_ERROR);;
+            status = WlanError(WLAN_ERROR_SEVERITY__LOW, WLAN_ERROR_MODULE__CME, WLAN_ERROR_TYPE__HOST_RESPONSE_STATUS_ERROR);
         }
         else
         {
@@ -5717,7 +5806,7 @@ int16 CME_WlanApRemovePeer(CMEWlanApRemovePeer_t *pCmdRemovePeer)
     }
     else
     {
-        status = WlanError(WLAN_ERROR_SEVERITY__LOW, WLAN_ERROR_MODULE__CME, WLAN_ERROR_TYPE__INVALID_ROLE);;;
+        status = WlanError(WLAN_ERROR_SEVERITY__LOW, WLAN_ERROR_MODULE__CME, WLAN_ERROR_TYPE__INVALID_ROLE);
     }
 
     return status;

@@ -88,8 +88,8 @@ typedef struct
     uint32_t  link_tx_dbgStackEntNumPktsXfered[WLANLINKS_MAX_LINKS];
 
     uint32_t  dbgStartCollectCntr[WLANLINKS_MAX_LINKS];
-    uint32_t  dbgTimeFirstPacket_Ms[WLANLINKS_MAX_LINKS];;
-    uint32_t  dbgTimeLastPacket_Ms[WLANLINKS_MAX_LINKS];;
+    uint32_t  dbgTimeFirstPacket_Ms[WLANLINKS_MAX_LINKS];
+    uint32_t  dbgTimeLastPacket_Ms[WLANLINKS_MAX_LINKS];
 
     uint32_t  dbgNumPktsSent[WLANLINKS_MAX_LINKS];       /* Pkts sent by data-link or mgmt-link. */
     uint32_t  dbgNumBytesSent[WLANLINKS_MAX_LINKS];       /* Bytes sent by data-link or mgmt-link. */

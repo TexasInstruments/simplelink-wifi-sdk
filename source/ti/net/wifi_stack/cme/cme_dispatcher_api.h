@@ -131,6 +131,17 @@ int16_t CME_StartApWpsSession(wlanWpsSession_t *wpsSession);
 ---------------------------------------------------------------------------- */
 int16_t CME_SetExtWpsSession(wlanSetExtWpsSession_t *wpsParams);
 
+
+/* ----------------------------------------------------------------------------
+ CME_SetWpsApPin
+      This function sets WPS AP PIN (for ER)
+
+ Parameters:    WlanSetWpsApPinParam_t
+                
+ Return code:   0 -  succeeded, -1 failed.
+---------------------------------------------------------------------------- */
+int16_t CME_SetWpsApPin(WlanSetWpsApPinParam_t *pWpsApPinParams);
+
 /* ----------------------------------------------------------------------------
  CME_GetMacAddress
       This function return the current MAC address

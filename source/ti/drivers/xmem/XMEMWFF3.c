@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -288,8 +288,7 @@ XMEM_Handle XMEMWFF3_open(XMEM_Params *params)
     /* Check for available slot */
     for (i = 0; i < XMEM_count; i++)
     {
-        object = object + i;
-
+        /* Check if current object slot is available (not opened) */
         if (false == object->opened)
         {
             break;
@@ -302,6 +301,9 @@ XMEM_Handle XMEMWFF3_open(XMEM_Params *params)
             MutexP_unlock(writeMutex, key);
             return (NULL);
         }
+
+        /* Current object is opened, move to the next object in the array */
+        object = object + 1;
     }
 
     hwAttrs = handle->hwAttrs;
@@ -1026,33 +1028,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0402220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0402220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0200,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1076,33 +1078,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0402220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0402220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0200,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1126,33 +1128,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0802220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0802220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0802220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0802220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0400,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1176,33 +1178,83 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0802220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0802220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0802220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0802220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0400,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
+
+        /* Polling operation */
+        .pollingCfg.command        = 0x05900000,
+        .pollingCfg.timeOut        = 200,
+        .pollingCfg.NumOfIteration = 4,
+
+        /* General */
+        .sectorSize    = 0x1000,
+        .verifyBufSize = 256};
+
+    const FlashType W25Q12PW = {
+
+        /* Operations */
+        .writeStigCfg.preStigCfg  = 1,
+        .writeStigCfg.postStigCfg = 0,
+        .readStigCfg.preStigCfg   = 0,
+        .readStigCfg.postStigCfg  = 0,
+        .eraseStigCfg.preStigCfg  = 1,
+        .eraseStigCfg.postStigCfg = 0,
+        .eraseStigCfg.StigCfg     = 1,
+
+        /* Enter STIG mode */
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0802220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
+
+        /* EXIT STIG mode */
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0802220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
+
+        /* Pre STIG configuration */
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .writeStigCfg.preStigOperation[0].data    = 0x06000001,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
+
+        /* Execute STIG operation */
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .readStigCfg.stigOperation[0].data     = 0x0bba0300,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .writeStigCfg.stigOperation[0].data    = 0x020ab000,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1226,33 +1278,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0402220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0402220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0200,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1276,33 +1328,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0402220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0402220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0200,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1326,33 +1378,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0a02220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0a02220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0a02220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0a02220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0500,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1376,33 +1428,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0a02220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0a02220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0a02220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0a02220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0500,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1426,33 +1478,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0a02220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0a02220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0a02220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0a02220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0500,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1476,33 +1528,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0c02220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0c02220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0c02220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0c02220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bbb0600,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020bb000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200b0000,
 
         /* Polling operation */
@@ -1526,33 +1578,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0402220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0402220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0200,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1576,33 +1628,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0402220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0402220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0402220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .readStigCfg.stigOperation[0].data     = 0x0bba0200,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1626,33 +1678,33 @@ static void flashTypeSelection(void)
         .eraseStigCfg.StigCfg     = 1,
 
         /* Enter STIG mode */
-        .enterStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .enterStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .enterStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[1].data    = 0x0602220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .enterStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .enterStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0602220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
 
         /* EXIT STIG mode */
-        .exitStigCfg[0].address = 0x41910000, // OSPI_O_CONFIG
-        .exitStigCfg[0].data    = 0x82080089, // OSPI_O_CONFIG
-        .exitStigCfg[1].address = 0x41910004, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[1].data    = 0x0602220b, // SPI_O_DEV_INSTR_RD_CONFIG
-        .exitStigCfg[2].address = 0x41910008, // OSPI_O_DEV_INSTR_WR_CONFIG
-        .exitStigCfg[2].data    = 0x00022002, // OSPI_O_DEV_INSTR_WR_CONFIG
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0602220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
 
         /* Pre STIG configuration */
-        .writeStigCfg.preStigOperation[0].address = 0xffffff90,
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.preStigOperation[0].data    = 0x06000001,
-        .eraseStigCfg.preStigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
 
         /* Execute STIG operation */
-        .readStigCfg.stigOperation[0].address  = 0xffffff90,
-        .readStigCfg.stigOperation[0].data     = 0x0bba0200,
-        .writeStigCfg.stigOperation[0].address = 0xffffff90,
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .readStigCfg.stigOperation[0].data     = 0x0bba0300,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .writeStigCfg.stigOperation[0].data    = 0x020ab000,
-        .eraseStigCfg.stigOperation[0].address = 0xffffff90,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
         .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
 
         /* Polling operation */
@@ -1743,6 +1795,11 @@ static void flashTypeSelection(void)
             case IS25WJ128F_IDX:
                 {
                     XMEMWFF3_hwAttrs.flashType = IS25WJ128F;
+                }
+                break;
+            case W25Q12PW_IDX:
+                {
+                    XMEMWFF3_hwAttrs.flashType = W25Q12PW;
                 }
                 break;
 

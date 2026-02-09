@@ -2120,6 +2120,11 @@ static void setKey(KeyAction_e aAction, securityKeys_t *apSecurityKey, const cha
             isPmfEnable = TRUE;
             break;
 
+        case WPA_ALG_GCMP_256:
+            setKeyCfg.cipher_type = CIPHER_SUITE_GCMP256;
+            isPmfEnable = TRUE;
+            break;
+
         default:
             CME_PRINT_REPORT_ERROR("\n\r setKey wrong cipher keyType:%d", apSecurityKey->keyType);
             ASSERT_GENERAL(0);
@@ -2144,7 +2149,7 @@ static void setKey(KeyAction_e aAction, securityKeys_t *apSecurityKey, const cha
         Bool_e bEncrypt = FALSE, bDropBcast;
 
 
-        if(apSecurityKey->keyType > WPA_ALG_IGTK)
+        if(apSecurityKey->keyType > WPA_ALG_BIP_CMAC_256)
         {
             ASSERT_GENERAL(0);
         }
@@ -2203,7 +2208,14 @@ static void setKey(KeyAction_e aAction, securityKeys_t *apSecurityKey, const cha
         GTRACE(GRP_DRIVER_CC33,"Setting pmf for lid :%d pmf :%d", apSecurityKey->lid, isPmfEnable);
         wlanLinks_UpdateLinkPMFEnabled(apSecurityKey->lid, isPmfEnable);
         udata_SetDataEncryption(apSecurityKey->lid, bEncrypt, bDropBcast, bEncrypt);
-        udata_SetMgmtEncryption(apSecurityKey->lid, isPmfEnable);
+
+        // MGMT encryption for sta based role and ap role brodcast only
+        // have ap based and lidkeytype is broadcast
+        if ( ROLE_IS_TYPE_STA_BASED(pDrv->roleType) || ((apSecurityKey->lidKeyType == KEY_TYPE_BROADCAST) && ROLE_IS_TYPE_AP_BASED(pDrv->roleType)) )
+        {
+            udata_SetMgmtEncryption(apSecurityKey->lid, isPmfEnable);
+        }
+        
         udata_SetEncryptionType(apSecurityKey->lid, keyType);
     }
 

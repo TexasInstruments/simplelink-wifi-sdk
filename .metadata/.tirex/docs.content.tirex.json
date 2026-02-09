@@ -2,250 +2,313 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_wifi_sdk_9_21_00_15.html",
+        "location": "../../release_notes_simplelink_wifi_sdk_9_22_00_12.html",
         "devices": [
-            "CC2340R5"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
+            "LP-EM-CC35X1"
         ],
         "mainCategories": [
-            "Documents"
-        ]
+            [
+                "Documents"
+            ]
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The release notes provide information about the changes and improvements made in this version of the SDK.</p>"
     },
     {
         "name": "Documentation Overview",
         "resourceType": "file",
         "location": "../../docs/Documentation_Overview.html",
         "devices": [
-            "CC2340R5"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
+            "LP-EM-CC35X1"
         ],
         "mainCategories": [
-            "Documents"
-        ]
-    },
-    {
-        "name": "Quick Start Guide",
-        "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/Quick_Start_Guide.html",
-        "devices": [
-            "CC2340R5"
+            [
+                "Documents"
+            ]
         ],
-        "devtools": [
-            "LP-EM-CC2340R5"
+        "resourceClass": [
+            "document"
         ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ]
-    },
-    {
-        "name": "SimpleLink MCU SDK User's Guide",
-        "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/Users_Guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ]
-    },
-    {
-        "name": "BLE5-Stack User's Guide",
-        "resourceType": "file",
-        "location": "../../docs/ble5stack/ble5stack-users-guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "BLE5-Stack"
-        ]
-    },
-    {
-        "name": "BLE5-Stack Quick Start Guide",
-        "resourceType": "file",
-        "location": "../../docs/ble5stack/ble5stack-quickstart-guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "BLE5-Stack"
-        ]
-    },
-    {
-        "name": "BLE5-Stack Migration Guide",
-        "resourceType": "file",
-        "location": "../../docs/ble5stack/ble5stack-migration-guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "BLE5-Stack"
-        ]
-    },
-    {
-        "name": "BLE5-Stack Debugging Guide",
-        "resourceType": "file",
-        "location": "../../docs/ble5stack/ble5stack-debugging-guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "BLE5-Stack"
-        ]
-    },
-    {
-        "name": "Proprietary RF Quick Start Guide",
-        "resourceType": "file",
-        "location": "../../docs/proprietary-rf/proprietary-rf-quick-start-guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "Proprietary RF"
-        ]
-    },
-    {
-        "name": "Proprietary RF Migration Guide",
-        "resourceType": "file",
-        "location": "../../docs/proprietary-rf/proprietary-rf-migration-guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "Proprietary RF"
-        ]
-    },
-    {
-        "name": "Proprietary RF User's Guide",
-        "resourceType": "file",
-        "location": "../../docs/proprietary-rf/proprietary-rf-users-guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "Proprietary RF"
-        ]
-    },
-    {
-        "name": "Proprietary RF Examples User's Guide",
-        "resourceType": "file",
-        "location": "../../docs/proprietary-rf/proprietary-rf-examples-users-guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "Proprietary RF"
-        ]
+        "description": "<p>The SimpleLink Wi-Fi SDK comes with documentation for all of the supported software libraries included in the SDK. For a good overview of what documentation is available in the SimpleLink Wi-Fi SDK, go to \"Documentation Overview\".</p>"
     },
     {
         "name": "TI-POSIX User's Guide",
         "resourceType": "file",
         "location": "../../docs/tiposix/Users_Guide.html",
         "devices": [
-            "CC2340R5"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "devtools": [
-            "LP-EM-CC2340R5"
+            "LP-EM-CC35X1"
         ],
-        "categories": [
-            "Documents",
-            "TI-RTOS Kernel (SYS/BIOS)"
-        ]
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Core SDK"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The TI-POSIX User's Guide provides information about using the TI-POSIX layer in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "TI-UTILS User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/tiutils/TIUTILS_Users_Guide.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Core SDK"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The TI-UTILS User's Guide provides information about using the TI-UTILS library in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "TI-UTILS API Reference",
+        "resourceType": "file",
+        "location": "../../docs/tiutils/TIUTILS_API_Reference.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Core SDK"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The TI-UTILS API Reference provides information about the TI-UTILS library in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "Secure Drivers APIs",
+        "resourceType": "file",
+        "location": "../../docs/secure_drivers/securedriversAPIs.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Secure Drivers"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The Secure Drivers APIs document provides information about the secure drivers APIs in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "TI-mbedTLS User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/mbedtls/TI_mbedTLS_Users_Guide.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "mbedTLS"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The TI-mbedTLS User's Guide provides information about using the TI-mbedTLS layer in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "TI Drivers Runtime Drivers APIs",
+        "resourceType": "file",
+        "location": "../../docs/drivers/tidriversAPIs.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The TI Drivers Runtime Drivers APIs document provides information about the drivers APIs in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "TI Drivers Power Management",
+        "resourceType": "file",
+        "location": "../../docs/drivers/Power_Management.pdf",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The TI Drivers Power Management document provides information about the power management in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "Simplelink Graphics Library API Guide",
+        "resourceType": "file",
+        "location": "../../docs/grlib/API_Guide.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Graphics Library"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The Simplelink Graphics Library API Guide document provides information about the Simplelink Graphics Library APIs in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "Simplelink Graphics Library Image Reformer Users Guide",
+        "resourceType": "file",
+        "location": "../../docs/grlib/Image_Reformer_Users_Guide.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Graphics Library"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The Simplelink Graphics Library Image Reformer Users Guide document provides information about the Simplelink Graphics Library Image Reformer in the SimpleLink Wi-Fi SDK.</p>"
+    },
+    {
+        "name": "WiFi Toolbox User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/WiFi-toolbox/CC33XX-WiFi-toolbox-User-Guide.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "WiFi Toolbox"
+        ],
+        "resourceClass": [
+            "document"
+        ],
+        "description": "<p>The WiFi Toolbox User's Guide document provides information about the WiFi Toolbox features and usage in the SimpleLink Wi-Fi SDK.</p>"
     },
     {
         "name": "CoreSDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_wff3_9_20_00_18.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_wff3_9_20_00_23.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"
@@ -293,7 +356,7 @@
     {
         "name": "mbedtls Release Notes",
         "resourceType": "file",
-        "location": "../../docs/mbedtls/release_notes_mbedtls_3_06_03_15.html",
+        "location": "../../docs/mbedtls/release_notes_mbedtls_3_06_03_17_eng.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"

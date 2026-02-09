@@ -55,6 +55,7 @@
 
 extern Cme_STA_states_e gCmeDeviceFlowState_ull;
 extern int CmeDeviceFlowIsSMIdle();
+extern void set_finish_wlan_sta_roleup();
 
 
 typedef enum
@@ -260,6 +261,10 @@ int cme_role_switch_manager(Cme_Users_e _deactivating_user, uint32_t deactivatio
         {
             CME_PRINT_REPORT("\n\rCME_WlanSetMode: signal role status change done, status :%d\r\n",
                              g_signal_role_change_state_done.cme_signalWhenRoleStateChanged_status);
+            if (needed_activation_roles & BIT_x(ROLE_STA))
+            {
+                set_finish_wlan_sta_roleup();
+            }        
             if (OSI_OK != osi_SyncObjSignal(&gCmeCommandBlockingSyncObject))
             {
                 ASSERT_GENERAL(0);

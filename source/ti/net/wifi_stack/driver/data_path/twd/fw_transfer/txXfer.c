@@ -43,10 +43,6 @@
 
 
 #define __FILE_ID__  FILE_ID_78
-#if 0 //TODO remove
-#include "tidef.h"
-#include "public_types.h"
-#endif
 #include "osi_kernel.h"
 #include "trnspt_thread.h"
 #include "public_share.h"
@@ -55,21 +51,14 @@
 #include "trnspt_if.h"
 #include "tx.h"
 
-//#include "wl18xx_public_host_int.h"
 #include "fw_event_handle.h"
-//#include "wl18xx_register.h"
-//#include "TwIf.h"
-//#include "TWDriver.h"
-//#include "txXfer_api.h"
+#include "txXfer.h"
 #include "tw_driver.h"
 
-#ifdef TI_DBG
-#define DBG_MAX_AGGREG_PKTS     TWD_TX_AGGREG_PKTS_LIMIT_MAX + 1
-#endif
 
-uint32_t txXfer_Restart (void);
-void txXfer_SetDefaults (void);
-void txXfer_SetBusParams (uint32_t uDmaBufLen);
+static uint32_t txXfer_Restart (void);
+static void txXfer_SetDefaults (void);
+static void txXfer_SetBusParams (uint32_t uDmaBufLen);
 
 
 
@@ -77,23 +66,8 @@ void txXfer_SetBusParams (uint32_t uDmaBufLen);
  * Types
  ************************************************************************/
 /* The TxXfer module object. */
-typedef struct
-{
-    uint32_t             uAggregMaxPkts;          /* Max number of packets that may be aggregated */
-    uint32_t             uAggregMaxLen;           /* Max length in bytes of a single aggregation */
-    uint32_t             uAggregPktsNum;          /* Number of packets in current aggregation */
-    uint32_t             uAggregPktsLen;          /* Aggregated length of current aggregation */
-    TTxCtrlBlk *         pAggregFirstPkt;         /* Pointer to the first packet of current aggregation */
-    TTxCtrlBlk *         pAggregLastPkt;          /* Pointer to the last packet of current aggregation */
-    uint32_t             uSdioBlkSizeShift;       /* In block-mode:  uBlkSize = (1 << uBlkSizeShift)   */
-    uint16_t             uSdioBlkAlignMask;       /* Mask used for packets alignment to SDIO block size */
-    uint32_t             uHostIfCfgBitmap;        /* Host interface configuration bitmap */
-#ifdef TI_DBG
-    uint32_t             aDbgCountPktAggreg[DBG_MAX_AGGREG_PKTS];
-#endif
-} TTxXferObj;
 
-static ETxnStatus txXfer_SendAggregatedPkts (TTxXferObj *pTxXfer, Bool_e bLastPktSentNow);
+ETxnStatus txXfer_SendAggregatedPkts (TTxXferObj *pTxXfer, Bool_e bLastPktSentNow);
 
 
 
@@ -129,6 +103,7 @@ uint32_t txXfer_Destroy(void)
 }
 
 
+//inits the TxXfer
 uint32_t txXfer_Init (void)
 {
     TTxXferObj *pTxXfer = txXfer_Create();
@@ -147,7 +122,7 @@ uint32_t txXfer_Restart (void)
     TTxXferObj *pTxXfer = gTxXferCB;
 
     txXfer_SetDefaults();
-    txXfer_SetBusParams(MAX_BUS_TXN_SIZE);
+    txXfer_SetBusParams(MAX_BUS_TXN_SIZE/*not used*/);
     pTxXfer->uAggregPktsNum    = 0;
 
     return OK;
@@ -158,7 +133,7 @@ void txXfer_SetDefaults (void)
 {
     TTxXferObj *pTxXfer = gTxXferCB;
 
-    pTxXfer->uAggregMaxPkts    = TWD_TX_AGGREG_PKTS_LIMIT_DEF; //pInitParams->tGeneral.uTxAggregPktsLimit;
+    pTxXfer->uAggregMaxPkts    = 1; //no aggregation;
     pTxXfer->uHostIfCfgBitmap  = TWD_HOST_IF_CFG_BITMAP_DEF; //pInitParams->tGeneral.uHostIfCfgBitmap;
     pTxXfer->uSdioBlkSizeShift = SDIO_BLK_SIZE_SHIFT_DEF; //pInitParams->tGeneral.uSdioBlkSizeShift;
 
@@ -190,48 +165,15 @@ ETxnStatus txXfer_SendPacket (TTxCtrlBlk *pPktCtrlBlk)
     uPaddingLength = pPktCtrlBlk->tTxnStruct.uPaddingSize = uAlignedLength - uPktLen;
 
     /* If starting a new aggregation, prepare it, and send packet if aggregation is disabled. */
-    if (pTxXfer->uAggregPktsNum == 0)
-    {
-        pTxXfer->uAggregPktsNum  = 1;
-        pTxXfer->uAggregPktsLen  = uAlignedLength;
-        pTxXfer->pAggregFirstPkt = pPktCtrlBlk;
-        pTxXfer->pAggregLastPkt  = pPktCtrlBlk;
-        pPktCtrlBlk->pNextAggregEntry = pPktCtrlBlk;  /* First packet points to itself */
-        if (pTxXfer->uAggregMaxPkts <= 1)
-        {
-            TX_DATA_SEND_PRINT("\n\rtxXfer_SendPacket:txXfer_SendAggregatedPkts \r\n");
-            eStatus = txXfer_SendAggregatedPkts (pTxXfer, TRUE);//TXN_STATUS_COMPLETE for success
-            pTxXfer->uAggregPktsNum = 0;
-        }
-        else
-        {
-            eStatus = TXN_STATUS_PENDING;
-        }
-    }
+    pTxXfer->uAggregPktsNum  = 1;
+    pTxXfer->uAggregPktsLen  = uAlignedLength;
+    pTxXfer->pAggregFirstPkt = pPktCtrlBlk;
+    pTxXfer->pAggregLastPkt  = pPktCtrlBlk;
+    pPktCtrlBlk->pNextAggregEntry = pPktCtrlBlk;  /* First packet points to itself */
+    TX_DATA_SEND_PRINT("\n\rtxXfer_SendPacket:txXfer_SendAggregatedPkts \r\n");
+    eStatus = txXfer_SendAggregatedPkts (pTxXfer, TRUE);//TXN_STATUS_COMPLETE for success
+    pTxXfer->uAggregPktsNum = 0;
 
-    /* Else, if new packet can be added to aggregation, add it and set status as Pending. */
-    else if ((pTxXfer->uAggregPktsNum + 1 <= pTxXfer->uAggregMaxPkts)  &&
-             (pTxXfer->uAggregPktsLen + uPktLen <= pTxXfer->uAggregMaxLen))
-    {
-        pTxXfer->uAggregPktsNum++;
-        pTxXfer->uAggregPktsLen += uAlignedLength;
-        pTxXfer->pAggregLastPkt->pNextAggregEntry = pPktCtrlBlk;  /* Link new packet to last */
-        pTxXfer->pAggregLastPkt = pPktCtrlBlk;                    /* Save new packet as last */
-        pPktCtrlBlk->pNextAggregEntry = pTxXfer->pAggregFirstPkt; /* Point from last to first */
-        eStatus = TXN_STATUS_PENDING;
-    }
-
-    /* Else, we can't add the new packet, so send current aggregation and start a new one */
-    else
-    {
-        txXfer_SendAggregatedPkts (pTxXfer, FALSE);
-        eStatus = TXN_STATUS_PENDING;  /* The current packet is not sent yet so return Pending */
-        pTxXfer->uAggregPktsNum  = 1;
-        pTxXfer->uAggregPktsLen  = uAlignedLength;
-        pTxXfer->pAggregFirstPkt = pPktCtrlBlk;
-        pTxXfer->pAggregLastPkt  = pPktCtrlBlk;
-        pPktCtrlBlk->pNextAggregEntry = pPktCtrlBlk;  /* First packet points to itself */
-    }
 
     trnspt_unlockTxXfer();
     /* Return the Txn result - COMPLETE or PENDING. */
@@ -239,22 +181,6 @@ ETxnStatus txXfer_SendPacket (TTxCtrlBlk *pPktCtrlBlk)
     return eStatus;
 }
 
-
-void txXfer_EndOfBurst (void)
-{
-    TTxXferObj *pTxXfer = gTxXferCB;
-
-    trnspt_lockTxXfer();
-    //verify that aggregation is enabled
-    if ((pTxXfer->uAggregMaxPkts > 1) && (pTxXfer->uAggregPktsNum > 0) )
-    {
-        /* No more packets from TxDataQ so send any aggregated packets and clear aggregation */
-        txXfer_SendAggregatedPkts (pTxXfer, FALSE);
-        pTxXfer->uAggregPktsNum = 0;
-    }
-    trnspt_unlockTxXfer();
-
-}
 
 
 /********************************************************************************
@@ -277,12 +203,12 @@ void txXfer_EndOfBurst (void)
  * \return COMPLETE if transaction completed in this context, PENDING if not, ERROR if failed
  * \sa
  */
-static ETxnStatus txXfer_SendAggregatedPkts (TTxXferObj *pTxXfer, Bool_e bLastPktSentNow)
+ETxnStatus txXfer_SendAggregatedPkts (TTxXferObj *pTxXfer, Bool_e bLastPktSentNow)
 {
     TTxCtrlBlk  *pCurrPktCtrlBlk;
     TTxnStruct  *pTxn;
     ETxnStatus   eStatus = TXN_STATUS_COMPLETE;
-    uint32_t     i;
+    int32_t     i;
     uint16_t     uAlignedLength;
 
     /* Prepare and send all aggregated packets (combined and sent in one transaction by the BusDrv) */
@@ -292,13 +218,14 @@ static ETxnStatus txXfer_SendAggregatedPkts (TTxXferObj *pTxXfer, Bool_e bLastPk
         pTxn = (TTxnStruct *)pCurrPktCtrlBlk;
 
         /* If not last packet, set aggregation flag, clear completion CB and progress to next packet */
-        if (i < pTxXfer->uAggregPktsNum - 1)
+        if (i < (int32_t)((int32_t)pTxXfer->uAggregPktsNum - 1))
         {
             /* Indicate the host-slave HW that it's not the last frame within an aggregation */
             pCurrPktCtrlBlk->tTxDescriptor.extraMemBlks = 0;
-            pCurrPktCtrlBlk->tTxDescriptor.extraMemBlks |= BIT_7;
+            //pCurrPktCtrlBlk->tTxDescriptor.extraMemBlks |= BIT_7;
             TXN_PARAM_SET_AGGREGATE(pTxn, TXN_AGGREGATE_ON);
             pCurrPktCtrlBlk = pCurrPktCtrlBlk->pNextAggregEntry;
+
         }
         /* If last packet, clear aggregation flag and set completion CB (exist only if registered) */
         else
@@ -318,7 +245,6 @@ static ETxnStatus txXfer_SendAggregatedPkts (TTxXferObj *pTxXfer, Bool_e bLastPk
             /* No need for "else" - if the alignment is not to SDIO block than it is to 4-bytes. */
             /* This was already taken care of by "txXfer_SendPacket".                            */
 
-            pCurrPktCtrlBlk->tTxDescriptor.extraMemBlks = 0;  /* Indicate this is the last packet in an aggregation (or a single packet) */
             TXN_PARAM_SET_AGGREGATE(pTxn, TXN_AGGREGATE_OFF);
         }
 

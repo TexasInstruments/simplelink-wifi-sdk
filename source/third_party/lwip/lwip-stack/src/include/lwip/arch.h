@@ -94,8 +94,8 @@ extern int Report(const char *pcFormat,...);
 #ifndef LWIP_PLATFORM_ASSERT
 #define LWIP_PLATFORM_ASSERT(x) do {Report("\n\r"); Report("Assertion \"%s\" failed at line %d in %s\n", \
                                      x, __LINE__, __FILE__); fflush(NULL); abort();} while(0)
-// #define LWIP_PLATFORM_ASSERT(x) do {printf("Assertion \"%s\" failed at line %d in %s\n", \
-//                                      x, __LINE__, __FILE__); fflush(NULL); abort();} while(0)
+/* #define LWIP_PLATFORM_ASSERT(x) do {printf("Assertion \"%s\" failed at line %d in %s\n", \
+                                      x, __LINE__, __FILE__); fflush(NULL); abort();} while(0) */
 #include <stdio.h>
 #include <stdlib.h>
 #endif

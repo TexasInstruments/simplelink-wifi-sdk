@@ -68,6 +68,7 @@
 #define ELP_CTRL_REG_ADDR		        (0x1FFFC)   /* ELP control register address */
 #define REGISTER_SIZE               4
 
+//#define TI_DBG_TRANSACATION_SINGLE_THREAD_TEST
 
 /************************************************************************
  * Types
@@ -160,10 +161,14 @@ extern uint32_t gIsRecovery;
 /************************************************************************
  * Internal functions prototypes
  ************************************************************************/
+#ifdef TWIF_FW_NEED_WAKE_UP
 static void        WriteElpReg        ();
+#endif
 static ETxnStatus  InsertTransaction  (TTwIfObj *pTwIf, TTxnStruct *pTxn);
 static ETxnStatus  SendTransactions   (TTwIfObj *pTwIf, TTxnStruct *pCurrContextTxn);
+#ifdef TWIF_FW_NEED_WAKE_UP
 static void        HandleSmEvent      (TTwIfObj *pTwIf, ESmEvent eEvent);
+#endif
 
 
 
@@ -194,11 +199,12 @@ int twIf_Destroy()
     {
         busDrv_Destroy();
 
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
         if (pTwIf->hTransactionsQueue)
         {
             que_Destroy(pTwIf->hTransactionsQueue);
         }
-
+#endif
         os_free(gTwIF);
         gTwIF = NULL;
     }
@@ -231,11 +237,12 @@ void twIf_Restart()
      */
     pTwIf->eState               = SM_STATE_SLEEP;
     pTwIf->bSendingTransactions = FALSE;
-
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
     trnspt_EnterCriticalSection();
     /* Clear Txn queue */
     while (que_Dequeue(pTwIf->hTransactionsQueue) != NULL)  { }
     trnspt_LeaveCriticalSection();
+#endif
 
 }
 
@@ -259,7 +266,9 @@ void twIf_Restart()
 int twIf_Init()
 {
     TTwIfObj   *pTwIf;
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
     uint32_t   uNodeHeaderOffset;
+#endif
     TTxnStruct *pTxnHdr;   /* The ELP transactions header (as used in the BusDrv API) */
 
     gTwIF = os_malloc(sizeof(TTwIfObj));
@@ -294,6 +303,8 @@ int twIf_Init()
     TXN_PARAM_SET_SINGLE_STEP(pTxnHdr, 1);  /* ELP write is always single step (use bytes transaction)! */
     BUILD_TTxnStruct(pTxnHdr, ELP_CTRL_REG_ADDR, &(pTwIf->tElpTxnAwake.uElpData), sizeof(uint8_t), NULL, NULL)
 
+
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
     /* Create the transactions queue. */
     uNodeHeaderOffset = FIELD_OFFSET(TTxnStruct, tTxnQNode);
     pTwIf->hTransactionsQueue = que_Create(TXN_QUE_SIZE, uNodeHeaderOffset);
@@ -302,22 +313,24 @@ int twIf_Init()
         ASSERT_GENERAL(0);
         return OSI_MEMORY_ALLOCATION_FAILURE;
     }
-
+#endif
     /* Restart TwIf */
     twIf_Restart();
 
 	busDrv_Init();
 
+#ifdef TWIF_FW_NEED_WAKE_UP
 	twIf_Awake();
 	//signal HW available because this is the begining of the world
 	//sleep will be available once sleep command will be raised
     twIf_HwAvailable();
-
+#endif
     return OSI_OK;
 }
 
 
 
+#ifdef TWIF_FW_NEED_WAKE_UP
 /** 
  * \fn     WriteElpReg
  * \brief  write ELP register
@@ -330,6 +343,7 @@ static void WriteElpReg()
 {
  //reserved for future use
 }
+#endif
 
 
 /** 
@@ -435,6 +449,7 @@ void twIf_Sleep()
  * \return void
  * \sa     
  */ 
+#ifdef TWIF_FW_NEED_WAKE_UP
 void twIf_HwAvailable()
 {
     TTwIfObj *pTwIf = gTwIF;
@@ -444,7 +459,7 @@ void twIf_HwAvailable()
     /* Issue HW_AVAILABLE event to the SM */
     HandleSmEvent(pTwIf, SM_EVENT_HW_AVAILABLE);
 }
-
+#endif
 
 /** 
  * \fn     twIf_Transact
@@ -518,6 +533,10 @@ ETxnStatus twIf_TransactReadFwStatus( TTxnStruct *pTxn)
 static ETxnStatus InsertTransaction(TTwIfObj *pTwIf, TTxnStruct *pTxn)
 {
     ETxnStatus eStatus;
+#ifdef TI_DBG_TRANSACATION_SINGLE_THREAD_TEST
+    static void* owner = NULL;
+    void* currentTask  = NULL;
+#endif
 
 #ifdef TI_DBG
     /* Verify that the Txn HW-Address is 4-bytes aligned */
@@ -528,7 +547,24 @@ static ETxnStatus InsertTransaction(TTwIfObj *pTwIf, TTxnStruct *pTxn)
 	}	
     pTwIf->uDbgCountTxn++;
 #endif
+#ifdef TI_DBG_TRANSACATION_SINGLE_THREAD_TEST
+    //the function is written with the assumption that it is been called  only be the same thread
+    {
+        currentTask = (void *)osi_GetCurrentThread();
 
+        if (owner == NULL) {
+            owner = currentTask;   // first caller becomes the owner
+        } else {
+            if(owner != currentTask)
+            {
+                TWIF_PRINT_ERROR("\n\rERROR function is been called from different threads");
+            }
+            ASSERT_GENERAL(owner == currentTask);
+        }
+
+    }
+#endif
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
     trnspt_EnterCriticalSection();
     /* Enqueue current transaction */
     if(que_Enqueue(pTwIf->hTransactionsQueue, (void *)pTxn)< 0)
@@ -536,10 +572,13 @@ static ETxnStatus InsertTransaction(TTwIfObj *pTwIf, TTxnStruct *pTxn)
         TWIF_PRINT_ERROR("\n\rERROR InsertTransaction***No room in queue hTransactionsQueue");
     }
     trnspt_LeaveCriticalSection();
+#endif
 
+#ifdef TWIF_FW_NEED_WAKE_UP
 
     /* If SM state is AWAKE, send all queued transactions */
     if (pTwIf->eState == SM_STATE_AWAKE)
+#endif
     {
         eStatus = SendTransactions(pTwIf, pTxn);
         if(eStatus != TXN_STATUS_COMPLETE)
@@ -549,12 +588,13 @@ static ETxnStatus InsertTransaction(TTwIfObj *pTwIf, TTxnStruct *pTxn)
         return eStatus;
     }
 
+#ifdef TWIF_FW_NEED_WAKE_UP
     /* Else if state is SLEEP, issue Start event to the SM to awake the device */
     else if (pTwIf->eState == SM_STATE_SLEEP)
     {
         HandleSmEvent(pTwIf, SM_EVENT_START);
     }
-
+#endif
     /* If we are here (not awake), the current transaction is not sent yet, so return PENDING */
     return TXN_STATUS_PENDING;
 }
@@ -581,10 +621,13 @@ static ETxnStatus SendTransactions(TTwIfObj *pTwIf, TTxnStruct *pCurrContextTxn)
     TTxnStruct *pTxn;
     ETxnStatus eCurrStatus;
 
-    trnspt_EnterCriticalSection();//critical section is important in here see OSPREY_LDB-2074
-
     /* While we have transactions in the queue */
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
+    trnspt_EnterCriticalSection();//critical section is important in here see OSPREY_LDB-2074
     while ((pTxn = (TTxnStruct *)que_Dequeue(pTwIf->hTransactionsQueue)) != NULL)
+#else
+    pTxn = pCurrContextTxn;
+#endif
     {
         /* Send the dequeued transaction to the BusDrv */
         if(!gIsRecovery)
@@ -605,19 +648,25 @@ static ETxnStatus SendTransactions(TTwIfObj *pTwIf, TTxnStruct *pCurrContextTxn)
             ASSERT_GENERAL(0);
             return eCurrStatus;
         }
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
 
         /* If the sent Txn is the one inserted in the current context, save status for the return value */
         if (pTxn == pCurrContextTxn)
         {
             eReturnStatus = eCurrStatus;
         }
+#endif
         /* Else, the sent Txn was PENDING so if Xfer CB is available call it */
         /* Note: From the CB, more transactions may be issued, so we prevent recursion - see above */
         else if (pTxn->fTxnDoneCb != NULL)
         {
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
             trnspt_LeaveCriticalSection();
+#endif
             ((TTxnDoneCb)(pTxn->fTxnDoneCb))(pTxn->hCbHandle, pTxn);
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
             trnspt_EnterCriticalSection();
+#endif
 
         } 
 
@@ -625,8 +674,9 @@ static ETxnStatus SendTransactions(TTwIfObj *pTwIf, TTxnStruct *pCurrContextTxn)
     } 
 
 
+#ifdef TRANSACTION_SUPPORT_MULTI_THREAD
     trnspt_LeaveCriticalSection();
-
+#endif
     /* Return the status of current context transaction (COMPLETE or ERROR) */
     return eReturnStatus;
 }
@@ -644,6 +694,7 @@ static ETxnStatus SendTransactions(TTwIfObj *pTwIf, TTxnStruct *pCurrContextTxn)
  * \return void
  * \sa     
  */ 
+#ifdef TWIF_FW_NEED_WAKE_UP
 static void HandleSmEvent(TTwIfObj *pTwIf, ESmEvent eEvent)
 {
 	ESmState eState = pTwIf->eState;  /* The state before handling the event */
@@ -666,6 +717,7 @@ static void HandleSmEvent(TTwIfObj *pTwIf, ESmEvent eEvent)
             pTwIf->eState = SM_STATE_WAIT_HW;
             WriteElpReg();
         }
+
         /* HW_AVAILABLE event:  SLEEP ==> AWAKE,  set ELP reg to wake-up */
         else if (eEvent == SM_EVENT_HW_AVAILABLE)
         {
@@ -685,7 +737,7 @@ static void HandleSmEvent(TTwIfObj *pTwIf, ESmEvent eEvent)
 
 	TWIF_PRINT("HandleSmEvent: <currentState = %d, event = %d> --> nextState = %d\n\r", eState, eEvent, pTwIf->eState);
 }
-
+#endif
 
 uint32_t twIf_IsValidMemoryAddr( uint32_t Address, uint32_t Length)
 {

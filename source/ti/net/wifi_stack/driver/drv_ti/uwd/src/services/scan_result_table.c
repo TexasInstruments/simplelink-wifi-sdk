@@ -2888,6 +2888,13 @@ Bool_e scan_result_ssid_match(dot11_SSID_t*        apSsidIe,
 
        //Filter the result in case the security does not match and we also don't have a match in wep type.
        //In any other case, we have a match and we don't filter the result, we go on and check the ssid or bssid.
+      if ((pList[ssidIndex].secType == CME_SEC_TYPE_OPEN) && (securityType != CME_SEC_TYPE_OPEN))
+      {
+          GTRACE(GRP_DRIVER_MX, "filter scan results:security OPEN  AP security type: ENUM(CMESecType_e, %d), profile security type: ENUM(CMESecType_e, %d), dropping this one",
+                                   (CMESecType_e) securityType, (CMESecType_e) pList[ssidIndex].secType);
+
+          continue;
+      }
        if ((securityType != pList[ssidIndex].secType) && (!isWep) && (!isWPA2) && (!isWPA2WPA3) && (!isENT))
        {
            GTRACE(GRP_DRIVER_MX, "filter scan results: AP security type: ENUM(CMESecType_e, %d), profile security type: ENUM(CMESecType_e, %d), dropping this one",
@@ -2900,9 +2907,9 @@ Bool_e scan_result_ssid_match(dot11_SSID_t*        apSsidIe,
        if (apSsidIe->hdr.eleLen == pList[ssidIndex].ssid.mSsidLen)
        {
            //if SSID is the same AND BSSID is the same or should be ignored
-           if (    (memcmp(apSsidIe->serviceSetId, &(pList[ssidIndex].mSSID[0]), apSsidIe->hdr.eleLen) == 0)
-                && (    (IRQ_UtilCompareMacAddress (apBssid, pList[ssidIndex].mBssid) ) //MAC is equal
-                     || (IRQ_UtilCompareMacAddress (macZero,pList[ssidIndex].mBssid) ) //MAC is not relevant
+           if (    (os_memcmp(apSsidIe->serviceSetId, &(pList[ssidIndex].mSSID[0]), apSsidIe->hdr.eleLen) == 0)
+                 && (  (IRQ_UtilCompareMacAddress (macZero,pList[ssidIndex].mBssid) ) ||//MAC is not relevant
+                         (IRQ_UtilCompareMacAddress (apBssid, pList[ssidIndex].mBssid) ) //MAC is equal
                    )
               )
            {
@@ -2913,8 +2920,8 @@ Bool_e scan_result_ssid_match(dot11_SSID_t*        apSsidIe,
        }
        // For WPS / connect to BSSID
        else if (    (0 == pList[ssidIndex].ssid.mSsidLen)
-                 && (    (IRQ_UtilCompareMacAddress (apBssid, pList[ssidIndex].mBssid) ) //MAC is equal
-                      || (IRQ_UtilCompareMacAddress (macZero,pList[ssidIndex].mBssid) ) //MAC is not relevant
+                 && (  (IRQ_UtilCompareMacAddress (macZero,pList[ssidIndex].mBssid) ) ||//MAC is not relevant
+                         (IRQ_UtilCompareMacAddress (apBssid, pList[ssidIndex].mBssid) ) //MAC is equal
                     )
                )
        {

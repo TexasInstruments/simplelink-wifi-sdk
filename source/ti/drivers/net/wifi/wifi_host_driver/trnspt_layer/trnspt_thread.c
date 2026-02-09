@@ -252,7 +252,7 @@ int trnspt_Destroy(uint32_t uDestroyClientId)
  * \return void
  * \sa     trnspt_RequestSchedule
  */
-void trnspt_Task()
+void trnspt_Task(void* pParam)
 {
     TTransport       *pTransport;
     TTransportCbFunc  fCbFunc;

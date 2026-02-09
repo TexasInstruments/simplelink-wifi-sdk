@@ -147,6 +147,21 @@ int ti_driver_set_ap(void *apPriv, struct wpa_driver_ap_params *apParams)
        return -1;
     }
 
+    // set here anti-clogging threshold
+    // since at this point hapd->conf is allocated and set with supplicants' default bss values
+    // overwrite here if it is not the same
+    if (wpa_key_mgmt_sae(apParams->key_mgmt_suites))
+    {
+        uint8_t antiCloggingThreshold = cfgGetApSaeAntiCloggingThreshold();
+        CME_CC3XX_PORT_PRINT("\n\rti_driver_set_ap: anticlogging threshold=%d, new threashold=%d",
+            hapd->conf->anti_clogging_threshold, antiCloggingThreshold);
+        if (antiCloggingThreshold != hapd->conf->anti_clogging_threshold)
+        {
+            hapd->conf->anti_clogging_threshold = antiCloggingThreshold;
+        }
+    
+    }
+
     //Prepare the ap params and beacon on the global gApRoleParams
 
     CME_CC3XX_PORT_PRINT("\n\r ti_driver_set_ap: setApRates");

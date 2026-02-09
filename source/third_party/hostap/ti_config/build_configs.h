@@ -137,7 +137,7 @@
 #define CONFIG_DEBUG_SYSLOG
 
 // Determine the HOSTAP log level, e.g. MSG_EXCESSIVE for full logs
-#define WPA_DEBUG_LEVEL MSG_INFO // MSG_DEBUG //MSG_EXCESSIVE /MSG_INFO
+#define WPA_DEBUG_LEVEL MSG_DEBUG // MSG_DEBUG //MSG_EXCESSIVE /MSG_INFO
 
 // Enable GTRACE for CME debug messages
 //#define GTRACE_ENABLE
@@ -446,6 +446,7 @@
 
 
 #define CONFIG_SHA256
+#define CONFIG_SHA384
 #define CONFIG_DES
 #define CONFIG_SUITEB
 #define CONFIG_SUITEB192

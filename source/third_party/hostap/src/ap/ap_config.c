@@ -234,6 +234,9 @@ struct hostapd_config * hostapd_config_defaults(void)
 	// TI - cc33xx compilation - set anti clogging threshold to 0
 	//bss->anti_clogging_threshold = 0;
 
+	// TI - cc33xx compilation - set sae require mfp to 1
+	bss->sae_require_mfp = 1;
+
 	conf->num_bss = 1;
 
 	conf->beacon_int = 100;

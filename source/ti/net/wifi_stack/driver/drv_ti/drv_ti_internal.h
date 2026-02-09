@@ -52,7 +52,7 @@
 #include <driver/drv_core.h>
 #include "public_share.h"
 #include "udata_api.h"
-
+#include "drivers/driver.h"
 
 
 // ============================================================================
@@ -134,7 +134,6 @@ typedef enum
 
 } aesBroadcastKeysArrEntry_e;
 
-typedef enum wpa_event_type  wpaEventType_e;
 
 typedef enum
 {
@@ -1115,7 +1114,7 @@ rxMngPackNextOperation_e ti_drv_rxDisassocPacket(
  Return code:   none
 ---------------------------------------------------------------------------- */
 void drv_sendConnectTimeoutEvent(ti_driver_ifData_t  *apDrv,
-                                     wpaEventType_e        aType,
+                                     enum wpa_event_type        aType,
                                      uint8_t                 *apBssid);
 
 
