@@ -1,7 +1,7 @@
 {
     "name": "simplelink_wifi_sdk",
     "displayName": "SimpleLink WiFi SDK",
-    "version": "9.22.00.12",
+    "version": "9.22.00.15",
     "documentationPath": "../docs",
     "includePaths": [
         "../source",

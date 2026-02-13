@@ -7,7 +7,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -37,10 +40,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -79,10 +85,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -117,7 +126,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -147,10 +159,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -189,10 +204,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -227,7 +245,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -257,10 +278,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -299,10 +323,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -337,7 +364,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -367,10 +397,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -409,10 +442,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -447,7 +483,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -477,10 +516,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -519,10 +561,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -557,7 +602,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -587,10 +635,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -629,10 +680,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -667,7 +721,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -697,10 +754,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -739,10 +799,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -777,7 +840,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -807,10 +873,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -849,10 +918,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -887,7 +959,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -917,10 +992,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -959,10 +1037,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -997,7 +1078,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -1027,10 +1111,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1069,10 +1156,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1107,7 +1197,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -1137,10 +1230,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1179,10 +1275,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1217,7 +1316,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -1247,10 +1349,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1289,10 +1394,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1327,7 +1435,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -1357,10 +1468,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1399,10 +1513,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1437,7 +1554,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -1467,10 +1587,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1509,10 +1632,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1547,7 +1673,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -1577,10 +1706,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1619,10 +1751,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1657,7 +1792,10 @@
             "LP_EM_CC35X1"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "mainCategories": [
             [
@@ -1687,10 +1825,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"
@@ -1729,10 +1870,13 @@
             "example.general"
         ],
         "devices": [
-            "CC35X1"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E"
         ],
         "coreTypes": [
-            "Cortex M.CC35X1"
+            "Cortex M.Cortex M.CC35X1E"
         ],
         "devtools": [
             "LP_EM_CC35X1"

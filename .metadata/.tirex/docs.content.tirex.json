@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_wifi_sdk_9_22_00_12.html",
+        "location": "../../release_notes_simplelink_wifi_sdk_9_22_00_15.html",
         "devices": [
             "CC3500E",
             "CC3501E",

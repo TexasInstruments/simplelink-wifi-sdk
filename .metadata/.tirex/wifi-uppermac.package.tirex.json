@@ -3,7 +3,7 @@
         "metadataVersion": "3.1.0",
         "id": "com.ti.SIMPLELINK_WIFI_SDK_WIFI-UPPERMAC_MODULE",
         "name": "TI WiFi Stack",
-        "version": "9.22.00.12",
+        "version": "9.22.00.15",
         "type": "software",
         "devices": [
             "CC3500E",

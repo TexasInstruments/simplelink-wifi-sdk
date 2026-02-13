@@ -7,7 +7,7 @@ comprehensive software package for developing 2.4 GHz applications.
 The WIFI SDK delivers components that enable engineers to develop applications
 on the Texas Instruments CC35xx Wi-Fi and BLE combo MCU devices. 
 
-This is version 9.22.00.12 of the SimpleLink Wi-Fi SDK.
+This is version 9.22.00.15 of the SimpleLink Wi-Fi SDK.
 
 ## What's New
 
@@ -43,7 +43,7 @@ it available as a Git repository to cater to various use cases:
 * **Simplified workflow for rebasing**: Git makes it simpler for you to rebase
   your changes to new releases.
 
-One temporary, notable difference in this WIFI 9.22.00.12 SDK GitHub
+One temporary, notable difference in this WIFI 9.22.00.15 SDK GitHub
 distribution when compared to the classic installer above, is the exclusion of
 the **tools/ble/ble_agent/ble_toolbox/** directory. This has been temporarily
 done as the ble_toolbox executable currently exceeds GitHub's file size limit.
@@ -110,8 +110,8 @@ Dependency download locations:
 
 Please consider creating a post on [TI's E2E forum](https://e2e.ti.com).
 
-[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_WIFI_SDK__58mgN04__9.22.00.12
-[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_WIFI_SDK__58mgN04__9.22.00.12
+[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_WIFI_SDK__58mgN04__9.22.00.15
+[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_WIFI_SDK__58mgN04__9.22.00.15
 [sysconfig download]: https://www.ti.com/tool/SYSCONFIG
 [ticlang download]: https://www.ti.com/tool/download/ARM-CGT-CLANG
 [gcc download]: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
