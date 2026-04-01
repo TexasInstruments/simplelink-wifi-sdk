@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2026 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,9 +58,9 @@ function getLibs(mod)
     };
 
     if (!system.modules["/ti/utils/TrustZone"]) {
-        if (deviceId.match(/CC27.{3}1/)) {
+        if (deviceId.match(/CC27..(R|P)(10|7)/)) {
             libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xxx10_its.a"));
-        } else if (deviceId.match(/CC27.{3}2/)) {
+        } else if (deviceId.match(/CC27..(R|P)(20|15)/)) {
             libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xxx20_its.a"));
         } else if (deviceId.match(/CC35/)) {
             libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc35xx_its.a"));

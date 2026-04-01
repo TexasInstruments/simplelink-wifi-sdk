@@ -9,7 +9,7 @@ set(CMAKE_ONLY_WRAPPER_COMPONENTS 1)
 set(CMAKE_ONLY_LOCAL_PLATFORMS 1)
 
 # Setup the CMake build environment
-set(CMAKE_COMMON_INSTALL_DIR ${CMAKE_SOURCE_DIR})
+set(CMAKE_COMMON_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 include(source/cmake/scripts/cmake-common/Configure.cmake)
 project(coresdk LANGUAGES)
 
@@ -33,13 +33,13 @@ set(CMAKE_STATIC_LIBRARY_PREFIX_CXX "")
 # Set the CoreSDK root
 set(CORESDK_WFF3 "${CMAKE_CURRENT_LIST_DIR}")
 
-###########################################
+#Determine if SDK is being built as a subproject using add_subdirectory()
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    file(RELATIVE_PATH REL_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+    set(TI_SDK_ROOT_DIR "${REL_PATH}/")
+endif()
 
-#macro to define a variable both in local and parent scope
-macro(set_global NAME VALUE)
-    set(${NAME} ${VALUE})
-    set(${NAME} ${VALUE}  PARENT_SCOPE)
-endmacro()
+###########################################
 
 # Include directories that participate in the library build
 add_subdirectory(kernel/nortos)

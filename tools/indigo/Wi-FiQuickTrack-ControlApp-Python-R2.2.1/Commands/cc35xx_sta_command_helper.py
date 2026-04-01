@@ -74,6 +74,7 @@ class _StaConfig:
     client_cert_filename: str = ""
     ca_cert_filename: str = ""
     private_key_filename: str = ""
+    suiteb192 = 0        
 
 _STA_CONFIG = _StaConfig()
 
@@ -101,14 +102,21 @@ class CC35xx_StaCommandHelper:
         _STA_CONFIG.eap_phase1 = ""
         _STA_CONFIG.eap_phase2 = ""
         _STA_CONFIG.private_key_filename = ""
+        _STA_CONFIG.suiteb192 = 0
+                                
         _STA_CONFIG.ca_cert_filename = ""
         _STA_CONFIG.client_cert_filename = ""
 
         _STA_CONFIG.sec_type = ""
         
+        group = params.get("group") 
         val = params.get("key_mgmt")    
         if val == "NONE":
             _STA_CONFIG.sec_type = "OPEN"
+        elif val == "WPA-PSK" and group == "TKIP":
+            _STA_CONFIG.sec_type = "WPA-ONLY"
+        elif val == "WPA-PSK" and group == "CCMP TKIP":
+            _STA_CONFIG.sec_type = "WPA-PSK"
         elif val == "WPA-PSK":
             _STA_CONFIG.sec_type = "WPA2_PLUS"
         elif val == "WPA2-PSK":
@@ -121,13 +129,16 @@ class CC35xx_StaCommandHelper:
             _STA_CONFIG.sec_type = "WPA3"
         elif val == "SAE WPA-PSK":
             _STA_CONFIG.sec_type = "WPA2-WPA3"
-        elif val == "WPA-EAP" or val == "WPA-EAP-SHA256":
+        elif val == "WPA-EAP" or val == "WPA-EAP-SHA256" or val == "WPA-EAP-SUITE-B-192":
             if val == "WPA-EAP":
                 _STA_CONFIG.sec_type = "WPA2-PSK"
-            if val == "WPA-EAP-SHA256":
+                        
+            elif val == "WPA-EAP-SHA256" or val == "WPA-EAP-SUITE-B-192":
                 _STA_CONFIG.sec_type = "WPA3"
-
-            eap = params.get("eap", "")
+                if val == "WPA-EAP-SUITE-B-192":
+                    _STA_CONFIG.suiteb192 = 1
+                
+            eap = params.get("eap", "")            
             eap_phase1= params.get("phase1", "") 
 
             if eap == "TLS":
@@ -162,7 +173,9 @@ class CC35xx_StaCommandHelper:
         if is_active_from_env:
             CommandHelper.device.wlan_set_power_management_mode(mode="0") #for 10092
         
-
+        CommandHelper.device.wlan_sta_role_up() 
+        CommandHelper.device.wlan_sta_del_profile(255) # delete all profiles
+        CommandHelper.device.wlan_sta_set_connection_policy(False, True, False) # enable Auto
 
         return "Wpa supplicant successfully configured.", None
 
@@ -185,23 +198,24 @@ class CC35xx_StaCommandHelper:
                                         ca_cert_filename=_STA_CONFIG.ca_cert_filename,
                                         private_key_filename=_STA_CONFIG.private_key_filename,
                                         timeout=10,
-                                        flags=0
+                                        flags=0,
+                                        suiteb192 = _STA_CONFIG.suiteb192
                                         )
         else:
             if not is_reassociate: # skip on reconnection
                 
-                CommandHelper.device.wlan_sta_role_up() 
-                CommandHelper.device.wlan_sta_del_profile(255) # delete all profiles
-                CommandHelper.device.wlan_sta_set_connection_policy(False, True, False) # enable Auto
+                #CommandHelper.device.wlan_sta_role_up() 
+                #CommandHelper.device.wlan_sta_del_profile(255) # delete all profiles
+                #CommandHelper.device.wlan_sta_set_connection_policy(False, True, False) # enable Auto
                 #CommandHelper.pause_execution(1)
-                CommandHelper.device.wlan_sta_disconnect() #  https://jira.itg.ti.com/browse/OSPREY_LDB-2578
+                CommandHelper.device.wlan_sta_disconnect() 
                 #CommandHelper.pause_execution(1)
                 CommandHelper.device.wlan_sta_add_profile(_STA_CONFIG.ssid,_STA_CONFIG.sec_type, _STA_CONFIG.key,bssid)
                 #CommandHelper.pause_execution(3)
 
                 #no profiles
                 """CommandHelper.device.wlan_sta_role_up() 
-                CommandHelper.device.wlan_sta_disconnect() #  https://jira.itg.ti.com/browse/OSPREY_LDB-2578
+                CommandHelper.device.wlan_sta_disconnect()
                 CommandHelper.pause_execution(1)
                 CommandHelper.device.wlan_sta_set_connection_policy(False,False,False) # enable Auto
                 CommandHelper.device.wlan_sta_connect(_STA_CONFIG.ssid, _STA_CONFIG.sec_type, _STA_CONFIG.key,bssid, 1)"""
@@ -292,7 +306,7 @@ class CC35xx_StaCommandHelper:
 
     @staticmethod
     def sta_reassociate():
-        #if not CC35XX.is_wlan_connected: #shai
+        #if not CC35XX.is_wlan_connected: 
         __class__.sta_associate(True)
 
         return None, None

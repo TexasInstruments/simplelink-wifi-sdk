@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,7 @@
 #include DeviceFamily_constructPath(inc/hw_gptimer.h)
 #include DeviceFamily_constructPath(inc/hw_i2c.h)
 #include DeviceFamily_constructPath(inc/hw_i2s.h)
+#include DeviceFamily_constructPath(inc/hw_prcm_aon.h)
 #include DeviceFamily_constructPath(inc/hw_sdmmc.h)
 #include DeviceFamily_constructPath(inc/hw_spi.h)
 #include DeviceFamily_constructPath(inc/hw_systim.h)
@@ -68,6 +69,7 @@
 #include DeviceFamily_constructPath(inc/hw_sdio_card_fn1.h)
 #include DeviceFamily_constructPath(inc/hw_adc.h)
 #include DeviceFamily_constructPath(driverlib/cpu.h)
+#include DeviceFamily_constructPath(driverlib/prcm.h)
 
 /* Missing defines from hw_hostmcu_aon.h */
 #define HOSTMCU_AON_CFGWICSNS_RTC_EN                       (1U << 13)
@@ -78,6 +80,11 @@
 /* Defines for NVIC bitmasks */
 #define NVIC_IRQ_REG_NUM(num) ((num) >> 5U)
 #define NVIC_IRQ_BIT_POS(num) (uint32_t)(1UL << (((uint32_t)(num)) & 0x1FUL))
+
+/* Define for the RAM address where the TI bootloader (v0.0.0.45+) stores the
+ * reset cause (2 bytes).
+ */
+#define RESET_CAUSE_ADDR 0x28000115U
 
 /* Defines used by PowerWFF3_enterSleep() */
 /* Workaround uses ELP wake-up timer to delay wake-up through problematic
@@ -601,6 +608,51 @@ void PowerWFF3_doWFI(void)
 }
 
 /*
+ *  ======== PowerWFF3_getResetReason ========
+ */
+PowerWFF3_ResetReason PowerWFF3_getResetReason(void)
+{
+    PowerWFF3_ResetReason resetReason;
+    uint16_t resetCause = HWREGH(RESET_CAUSE_ADDR);
+
+    if ((resetCause & PowerWFF3_RESET_DSSM) == PowerWFF3_RESET_DSSM)
+    {
+        resetReason = PowerWFF3_RESET_DSSM;
+    }
+    else
+    {
+        switch (resetCause)
+        {
+            case (uint16_t)PowerWFF3_RESET_PIN_POR:
+                resetReason = PowerWFF3_RESET_PIN_POR;
+                break;
+            case (uint16_t)PowerWFF3_RESET_RVML:
+                resetReason = PowerWFF3_RESET_RVML;
+                break;
+            case (uint16_t)PowerWFF3_RESET_RVMH:
+                resetReason = PowerWFF3_RESET_RVMH;
+                break;
+            case (uint16_t)PowerWFF3_RESET_BOD:
+                resetReason = PowerWFF3_RESET_BOD;
+                break;
+            case (uint16_t)PowerWFF3_RESET_M33WD:
+                resetReason = PowerWFF3_RESET_M33WD;
+                break;
+            case (uint16_t)PowerWFF3_RESET_CPU:
+                resetReason = PowerWFF3_RESET_CPU;
+                break;
+            case (uint16_t)PowerWFF3_RESET_RFCORE:
+                resetReason = PowerWFF3_RESET_RFCORE;
+                break;
+            default:
+                resetReason = PowerWFF3_RESET_UNKNOWN;
+                break;
+        }
+    }
+    return resetReason;
+}
+
+/*
  *  ======== PowerWFF3_enterSleep ========
  *  Low level function used to enter sleep.
  *
@@ -793,4 +845,42 @@ int_fast16_t PowerWFF3_notify(uint_fast16_t eventType)
     }
 
     return Power_SOK;
+}
+
+/*
+ *  ======== PowerWFF3_SelectLFXT ========
+ *  Configure the LFXT using external crystal oscillator
+ *  as the slow-clock source.
+ */
+void PowerWFF3_selectLFXT(void)
+{
+
+    /* Set trim values before turning on the oscillator */
+    PRCMSetLFXTTrims();
+
+    /* Enable LFXT oscillator core */
+    PRCMEnableLFXT();
+
+    /* Set GPIO pull configuration */
+    HWREG(IOMUX_BASE + IOMUX_O_LFXTNPCTL) |= IOMUX_LFXTNPCTL_CTL_UP;
+    HWREG(IOMUX_BASE + IOMUX_O_SCLKIPCTL) |= IOMUX_SCLKIPCTL_CTL_UP;
+
+    /* Wait 500 ms for LFXT to settle, this is the worst case settling time for the LFXT */
+    CPUDelay(30000000);
+
+    /* Verify that 5 clock cycles of LFXT has been detected */
+    while (!PRCMLFXTStatusGood()) {}
+
+    /* Tell HW that LFXT is operational */
+    PRCMSetLFXTGood();
+
+    /* Select LFXT as LF Clock source */
+    PRCMSelectLFXT();
+
+    Log_printf(LogModule_Power,
+                  Log_INFO,
+                  "PowerWFF3_selectLFXT: LFXT selected as LFCLK source");
+
+    /* Turn off LFOSC to save power, as it is no longer needed */
+    PRCMDisableLFOSC();
 }

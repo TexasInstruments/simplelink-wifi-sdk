@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../../canTimeSync.c -> canTimeSync.c",
+            "+../../README.md -> README.md",
+            "+../../README.html -> README.html",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../canTimeSync.syscfg -> canTimeSync.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC35X1ET/Board.html -> Board.html",
+            "+cc35xx_freertos.cmd -> cc35xx_freertos.cmd"
+        ]
+    }
+]

@@ -108,7 +108,11 @@ l2CfgCommon_t gL2CommonCfg =
     .mimoEnabled = FALSE,                               // No MIMO support, MCS 8-15 are not supported
     .channelWidth40MHzEnabled = FALSE,                  // Support only 20MHz channles
     .fragThreshold = FRAG_THRESHOLD_DEFUALT,            // default fragmentation threshold
+#ifndef DISABLE_WIFI6
     .heSupport     = TRUE,                              // default He support
+#else
+    .heSupport     = FALSE,
+#endif 
     .heParams.tXMode                      = 2,
     .heParams.txFrag                      = 0,
     .heParams.mngInAggregation            = 0,
@@ -296,13 +300,13 @@ const cfgSta_t gL2StaBasedCfg =
     .consecutivePsPollDeliveryFailureThreshold = CONSECUTIVE_PS_POLL_FAILURE_DEF,
     .maxTxRetriesThreshold = MAX_TX_RETRIES_THRESHOLD_DEFAULT_STA,  // Default max TX retries threshold
     .secondChanceTxTimePeriod = SECOND_CHANCE_TX_TIMER_PERIOD_STA_USEC, //Default second chance tx time period
-    .sched_scan_default_plan    = "4:5 10:5 60",   //Scan plans for scheduled scan,
+    .sched_scan_default_plan = "10",              //Scan plans for scheduled scan,
                                                   //format: <interval:iterations> <interval2:iterations2> ... <interval>
                                                   //(see config.h)
                                                   //Changed to longer intervals after adding 5Ghz scan to plan.
                                                   //Sched scan starts after 3 retries (internal to the supplicant) of normal scan
     .pmf  = TRUE,                                 //pmf is set to capable always
-    .pbac = TRUE                                  //we support pbac, applies only if the connction is pmf and peer supports pbac as well
+    .pbac = FALSE                                 //when enabled, applies only if the connection is pmf and peer supports pbac as well
 };
 
 const qosCfgSta_t gL2StaQosCfg =
@@ -369,7 +373,11 @@ l2DynamicCfg_t gL2DynamicCfg     =
         .maxSpLen         = QOS_MAX_SP_LEN_DEF,
         .ApMaxNumStations = AP_DEFAULT_MAX_NUM_OF_STATIONS,
         .selectedBand     =  L2_CFG_BAND_BOTH,
+#ifndef DISABLE_WIFI6
         .wirelessProtocol = PHY_CFG_WIFI_PROTOCOL_AUTO
+#else
+        .wirelessProtocol = PHY_CFG_WIFI_PROTOCOL_LEGACY
+#endif
 };
 
 
@@ -517,7 +525,11 @@ int l2_cfg_GetStaHeSupport()
 ---------------------------------------------------------------------------- */
 Bool32 l2_cfg_isStaHeEnabled(void)
 {
+#ifndef DISABLE_WIFI6
     return gL2SupportHe;
+#else
+    return FALSE;
+#endif
 }
 
 
@@ -685,6 +697,7 @@ uint32_t cfgGetsecondChanceTxTimePeriod (RoleType_e aRoleType)
     }
 }
 
+#ifndef DISABLE_WIFI6
 // ----------------------------------------------------------------------------
 uint32_t l2_cfgBuildHeCapabilitiesIe(uint32_t aRoleId, uint8_t *apHeCapsIE)
 {
@@ -745,6 +758,7 @@ uint32_t l2_cfgBuildHeCapabilitiesIe(uint32_t aRoleId, uint8_t *apHeCapsIE)
 
     return (DOT11_HE_CAPABILITIES_MIN_TOTAL_LEN + sizeof(dot11_eleHdr_t));
 }
+#endif
 
 void l2_StoreWirelessProto(uint8_t proto)
 {
@@ -752,7 +766,11 @@ void l2_StoreWirelessProto(uint8_t proto)
         DOT11_PROTOCOL_AUTO = 0
         DOT11_PROTOCOL_LEGACY = 1
     */
-   gL2DynamicCfg.wirelessProtocol = proto;
+#ifndef DISABLE_WIFI6
+    gL2DynamicCfg.wirelessProtocol = proto;
+#else
+    gL2DynamicCfg.wirelessProtocol = PHY_CFG_WIFI_PROTOCOL_LEGACY;
+#endif 
 }
 
 uint8_t l2_GetWirelessProto()
@@ -761,7 +779,11 @@ uint8_t l2_GetWirelessProto()
         DOT11_PROTOCOL_AUTO = 0
         DOT11_PROTOCOL_LEGACY = 1
     */
-   return gL2DynamicCfg.wirelessProtocol;
+#ifndef DISABLE_WIFI6
+    return gL2DynamicCfg.wirelessProtocol;
+#else
+    return PHY_CFG_WIFI_PROTOCOL_LEGACY;
+#endif
 }
 
 void l2_StorePhyConfig(uint8_t band_cfg)
@@ -817,6 +839,7 @@ uint32_t l2_cfgBuildOperatingModeNotifcationIe(uint32_t aRoleId, uint8_t *operat
     return (DOT11_OPERATING_MOD_NOTIF_ELE_LEN + sizeof(dot11_eleHdr_t)); 
 }
 
+#ifndef DISABLE_WIFI6
 uint32_t l2_cfgBuildVhtCapabilitiesIe(uint32_t aRoleId, uint8_t *apVhtCapsIE)
 {
     uint16  tNextWord;
@@ -835,6 +858,7 @@ uint32_t l2_cfgBuildVhtCapabilitiesIe(uint32_t aRoleId, uint8_t *apVhtCapsIE)
 
     return (DOT11_VHT_CAPABILITIES_ELE_LEN + sizeof(dot11_eleHdr_t)); 
 }
+#endif
 
 // ----------------------------------------------------------------------------
 uint32_t l2_cfgBuildHtCapabilitiesIe(uint32_t aRoleId, uint8_t *apHtCapsIE)
@@ -892,6 +916,18 @@ uint8_t cfgGetApMaxNumStations (void)
 void cfgSetApMaxNumStations(uint8_t apMaxNumStations)
 {
     gL2DynamicCfg.ApMaxNumStations = apMaxNumStations;
+}
+
+// ----------------------------------------------------------------------------
+uint8_t cfgGetApMaxNumStationsFromConfIni (void)
+{
+    return gL2DynamicCfg.ApMaxNumStationsFromConfIni;
+}
+
+// ----------------------------------------------------------------------------
+void cfgSetApMaxNumStationsFromConfIni(uint8_t apMaxNumStationsFromConfIni)
+{
+    gL2DynamicCfg.ApMaxNumStationsFromConfIni = apMaxNumStationsFromConfIni;
 }
 
 /* ----------------------------------------------------------------------------
@@ -1050,6 +1086,20 @@ Bool32 cfgIsStaPbacEnabled()
 const AcCfg_t* cfgGetDefaultAcCfg(uint8_t ac)
 {
     return &(gpL2StaBasedCfg->pQosCfg->acCfg[ac]);
+}
+
+/* ----------------------------------------------------------------------------
+ cfgGetStaDefaultSchedScanPlans
+ This function returns the default scan plans for scheduled scan.
+
+ Parameters:
+ none
+
+ return: default sched scan plans
+ ---------------------------------------------------------------------------- */
+const char* cfgGetStaDefaultSchedScanPlans()
+{
+    return gpL2StaBasedCfg->pStaCfg->sched_scan_default_plan;
 }
 
 /* ----------------------------------------------------------------------------

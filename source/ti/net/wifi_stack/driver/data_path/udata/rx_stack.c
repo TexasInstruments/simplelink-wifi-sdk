@@ -761,7 +761,7 @@ static void rxData_DataPacketDisptcher(void *pBuffer)
     if (eLinkConnState == LINK_STATE_CLOSED)
     {
         pRxData->rxDataLinkCounters[uHlid].discardHlidClose++;
-        //Report(REPORT_SEVERITY_INFORMATION, "rxData_DataPacketDisptcher: reject packet uHlid = %d in CLOSE state\r\n", uHlid);
+
         rxData_DiscardPacket(pBuffer);
         return;
     }
@@ -811,7 +811,8 @@ static void rxData_DataPacketDisptcher(void *pBuffer)
            DataPacketType = DATA_DATA_PACKET;
        }
 
-       RX_PRINT("\n\rxData_DataPacketDisptcher: : rxData_dispatchBuffer, eapol to :rxData_RcvPacketEapol");
+       RX_PRINT("\n\rxData_DataPacketDisptcher: eLinkConnState=%d, DataPacketType=%d uHlid=%d",
+         eLinkConnState, DataPacketType, uHlid);
        /* dispatch Buffer according to packet type and current rx data port status */
        pRxData->rxData_dispatchBuffer[eLinkConnState][DataPacketType] (pBuffer);//rxData_RcvPacketData
     }
@@ -840,6 +841,7 @@ static void rxData_DiscardPacket(void *pBuffer)
 
     /* free Buffer */
     RxBufFree(pBuffer);
+
 }
 
 
@@ -997,6 +999,26 @@ static void rxData_RcvPacketData(void *pBuffer)
                 sendDataPacketToTx(RX_ETH_PKT_DATA(pBuffer), (uint16_t)RX_ETH_PKT_LEN(pBuffer), uMacLink);
 
                 RxBufFree(pBuffer);
+                return;
+            }
+        }
+        RX_PRINT("\n\r rxData_rcvPacketData(): pRxParams->flags = 0x%x bRxDataExcludeUnencryptedUnicast = %d eRoleType = %d\r\n",
+            pRxParams->flags, pRxData->aRxLinkInfo[pRxParams->hlid].bRxDataExcludeUnencryptedUnicast, pLinkInfo->eRoleType);
+
+        //the link is unencrypted (like global) but data frame has arrived protected - rx from unknown 
+        //case example: during AP role, when station has initiated a disconnection 
+        //              and continues to send a protected data - this is no more a known host
+        if (IS_ROLE_TYPE_AP_OR_P2PGO(pLinkInfo->eRoleType) && 
+            (pRxParams->flags & RX_DESC_ENCRYPT_MASK) && 
+            (pRxData->aRxLinkInfo[pRxParams->hlid].bRxDataExcludeUnencryptedUnicast == 0) )
+        {
+            //protected unicast  to ap role
+            if (pRxData->pUdata->fRxFromUnknownCb)
+            {
+                uint16_t etherType = 0;
+                rxData_ConvertWlanToEthHeader(pBuffer, &etherType);
+
+                pRxData->pUdata->fRxFromUnknownCb(pBuffer);  /* CB handles buffer free */
                 return;
             }
         }

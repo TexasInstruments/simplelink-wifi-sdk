@@ -171,8 +171,16 @@ class CC35xx_CommandHelper:
         __class__.STATIC_IP = dut_static_ip
         if __class__.device._is_wlan_sta_role_up:
             __class__.device.wlan_sta_set_static_ip(dut_static_ip, "255.255.255.0", "0.0.0.0")
-        elif __class__.device._is_wlan_ap_role_up:
+
+        elif __class__.device._is_wlan_ap_role_up or __class__.INTERFACE_LOGICAL_NAME == "wlan1":
+
+            if not __class__.device._is_wlan_ap_role_up : # If assign_static_ip happen before AP_START
+                __class__.device.wlan_ap_role_up(ssid="test", sec_type="OPEN", key="", channel='1', sta_limit="2", regulatory_domain="US")
             __class__.device.wlan_ap_set_static_ip(dut_static_ip, "255.255.255.0", "0.0.0.0")
+
+            if not __class__.device._is_wlan_ap_role_up : # If assign_static_ip happen before AP_START
+                __class__.device.wlan_ap_role_down()
+
         elif 0: #CC3XXX._is_wlan_p2p_role_up:
             status = CC3XXX.wlan_p2p_connection_status
             if not status.is_connected:
@@ -235,25 +243,11 @@ class CC35xx_CommandHelper:
         elif if_name == "wlan1":
             return __class__.device.wlan_get_ip("2")
         elif if_name == "p2p0":
-            return __class__.device.wlan_get_ip("3")      
-            status = CC3XXX.wlan_p2p_connection_status
-
-            if status.is_go:
-                #for _ in range(100):
-                #    leases = DEVICE._get_dhcp_server_leases(DEVICE_AP.alias)
-                #    if leases:
-                #        break
-                #    sleep(1)
-
-                return CC3XXX.ip_v4 # used to be ip_v4_ap, but it doesn't work
-            else:
-                if __class__.device.is_wlan_sta_dynamic_ip:
-                    for i in range(100):
-                        ip = CC3XXX.ip_v4
-                        if ip and ip != "0.0.0.0":
-                            return ip
-                        sleep(1)
-
+            for i in range(100):
+                ip = __class__.device.wlan_get_ip("3")    
+                if ip and ip != "0.0.0.0":
+                    return ip
+                sleep(1)
         raise NotImplementedError
 
     @staticmethod

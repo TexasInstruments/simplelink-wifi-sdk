@@ -71,6 +71,9 @@ int32_t CME_RxEapol(void *aDesc);
 int32_t CME_RxFromUnknown(void *aDesc, uint32_t aRoleId);
 
 //-----------------------------------------------------------------------------
+int32_t CME_RxFromUnknownData(void *aDesc);
+
+//-----------------------------------------------------------------------------
 int32_t CME_RemainOnChannelTimeoutNotify(uint32_t aRoleId);
 
 // ----------------------------------------------------------------------------

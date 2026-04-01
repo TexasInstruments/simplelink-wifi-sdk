@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the DMA peripheral.
  *
- *  Copyright (c) 2022-2025 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -63,7 +63,7 @@ extern "C" {
 #endif
 
 //! Number of available DMA channels
-#define DMA_NUM_CHANNELS            12
+#define DMA_NUM_CHANNELS            14
 //! DMA channel memory map offset, in bytes
 #define DMA_CH_OFFSET               0x1000
 //! DMA channel control field width, in number of bits (CHCTL register)
@@ -139,6 +139,21 @@ typedef enum
 } DMAPeripheral;
 
 // TODO: Update to use DOC release defines when available (LPRFXXWARE-747)
+typedef enum
+{
+    DMA_FSMSTATE_IDLE            = (0x0 << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_EXCEPTION       = (0x2 << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_DRAIN           = (0x3 << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_ABORT           = (0x4 << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_PENDING_ARB     = (0x8 << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_COPY            = (0x9 << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_COPY_LAST       = (0xA << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_DONE            = (0xC << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_SAVE_CTX        = (0xD << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_WAIT_NEXT_TRANS = (0xE << HOST_DMA_CH0STA_FSMSTATE_S),
+    DMA_FSMSTATE_LAST            = (0xF << HOST_DMA_CH0STA_FSMSTATE_S)
+} DMAChannelFsmState;
+
 typedef enum
 {
     DMA_HW_EVT_NO_EVENT   = 0, //!< No pending event // TODO: hw_ doc calls this "processing"
@@ -259,6 +274,17 @@ extern void DMAStartTransaction(uint32_t channel,
 //
 //*****************************************************************************
 extern uint32_t DMAGetChannelStatus(uint32_t channel);
+
+//*****************************************************************************
+//
+//! \brief Returns the FSM status of the specified channel.
+//!
+//! \param channel is the DMA channel.
+//!
+//! \return Returns the DMA channel FSM state.
+//
+//*****************************************************************************
+extern DMAChannelFsmState DMAGetChannelFSMState(uint32_t channel);
 
 //*****************************************************************************
 //

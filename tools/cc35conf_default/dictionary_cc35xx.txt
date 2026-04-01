@@ -26,7 +26,6 @@ OneTimeCalibrationOnly                  phy.one_time_calibration_only
 IsDiplexerPresent                       phy.is_diplexer_present
 NumOfAntennas                           phy.num_of_antennas
 RegDomain                               phy.reg_domain
-IniCrc                                  crc_conf.userChecksum
 TxPsatCompensation_2_4GHz               phy.tx_psat_compensation_2_4GHz
 TxPsatCompensation_5GHz                 phy.tx_psat_compensation_5GHz
 InternalSlowClkDrift_WakeupEarlier      core.internalSlowclk_wakeupEarlier
@@ -62,4 +61,7 @@ ExtSoC_max_grant_time                   core.coex_configuration.ext_soc_max_gran
 ExtSoC_t2_time                          core.coex_configuration.ext_soc_t2_time
 ExtSoC_to_wifi_grant_delay              core.coex_configuration.ext_soc_to_wifi_grant_delay
 ExtSoC_to_ble_grant_delay               core.coex_configuration.ext_soc_to_ble_grant_delay
+ExtSoC_grant_gpio_pin                   core.coex_configuration.ext_soc_grant_pin
+ExtSoC_request_gpio_pin                 core.coex_configuration.ext_soc_request_pin
+ExtSoC_priority_gpio_pin                core.coex_configuration.ext_soc_priority_pin
 XTAL_SettlingTime                       core.xtal_SettlingTime_usec

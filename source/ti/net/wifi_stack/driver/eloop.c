@@ -295,6 +295,15 @@ int eloop_init(void)
 int eloop_is_timeout_registered(eloop_timeout_handler handler,
 				void *eloop_data, void *user_data)
 {
+	struct eloop_timeout *tmp;
+
+	dl_list_for_each(tmp, &eloop.timeout, struct eloop_timeout, list) {
+		if (tmp->handler == handler &&
+		    tmp->eloop_data == eloop_data &&
+		    tmp->user_data == user_data)
+			return 1;
+	}
+
 	return 0;
 }
 

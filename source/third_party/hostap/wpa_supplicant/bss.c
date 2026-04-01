@@ -1397,7 +1397,7 @@ int wpa_bss_ext_capab(const struct wpa_bss *bss, unsigned int capab)
 				    capab);
 }
 
-#ifdef CONFIG_TI_MRSNO
+// TI  compilation: RSN override support from upstream - start
 static bool wpa_bss_supported_cipher(struct wpa_supplicant *wpa_s,
 				     int pairwise_cipher)
 {
@@ -1533,7 +1533,7 @@ const u8 * wpa_bss_get_rsne(struct wpa_supplicant *wpa_s,
 {
 	const u8 *ie;
 
-	if (wpas_rsn_overriding(wpa_s)) {
+	if (wpas_rsn_overriding(wpa_s, ssid)) {
 		if (!ssid)
 			ssid = wpa_s->current_ssid;
 
@@ -1567,7 +1567,7 @@ const u8 * wpa_bss_get_rsnxe(struct wpa_supplicant *wpa_s,
 {
 	const u8 *ie;
 
-	if (wpas_rsn_overriding(wpa_s)) {
+	if (wpas_rsn_overriding(wpa_s, ssid)) {
 		ie = wpa_bss_get_vendor_ie(bss, RSNXE_OVERRIDE_IE_VENDOR_TYPE);
 		if (ie) {
 			const u8 *tmp;
@@ -1576,7 +1576,7 @@ const u8 * wpa_bss_get_rsnxe(struct wpa_supplicant *wpa_s,
 			if (!tmp || tmp[0] == WLAN_EID_RSN) {
 				/* An acceptable RSNE override element was not
 				 * found, so need to ignore RSNXE overriding. */
-				return NULL;
+				goto out;
 			}
 
 			return ie;
@@ -1589,10 +1589,11 @@ const u8 * wpa_bss_get_rsnxe(struct wpa_supplicant *wpa_s,
 			wpa_printf(MSG_DEBUG, "BSS " MACSTR
 				   " advertises RSNXE Override element without RSNE Override 2 element - ignore RSNXE Override element for MLO",
 				   MAC2STR(bss->bssid));
-			return NULL;
+			goto out;
 		}
 	}
 
+out:
 	return wpa_bss_get_ie(bss, WLAN_EID_RSNX);
 }
-#endif //CONFIG_TI_MRSNO
+// TI  compilation: RSN override support from upstream - end

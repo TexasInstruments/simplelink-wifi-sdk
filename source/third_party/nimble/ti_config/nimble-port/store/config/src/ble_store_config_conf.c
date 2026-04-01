@@ -217,7 +217,7 @@ ble_store_config_conf_init(void)
         Report("\n\rCouldn't allocate memory for cccd\n\r");
         return;
     }
-    if (conf_read_one("cccd", ble_store_config_cccds, BLE_STORE_CONFIG_CCCD_SET_ENCODE_SZ) == 0)
+    if (conf_read_one("cccd", cccd_buf, BLE_STORE_CONFIG_CCCD_SET_ENCODE_SZ) == 0)
     {
         ble_store_config_conf_set("cccd", cccd_buf);
     }

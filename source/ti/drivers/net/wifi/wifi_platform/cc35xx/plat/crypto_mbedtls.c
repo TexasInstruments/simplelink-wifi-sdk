@@ -1245,7 +1245,7 @@ typedef struct {
  */
 void *aes_encrypt_init(const u8 *key, size_t len) {
     psa_status_t status;
-    aes_context *ctx = calloc(1, sizeof(aes_context));
+    aes_context *ctx = os_calloc(1, sizeof(aes_context));
 
     psa_key_id_t keyID;
     psa_key_lifetime_t lifetime = PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(PSA_KEY_PERSISTENCE_HSM_ASSET_STORE,
@@ -1258,7 +1258,7 @@ void *aes_encrypt_init(const u8 *key, size_t len) {
     /* Initialize PSA Crypto */
     status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
-        free(ctx);
+        os_free(ctx);
         return NULL;
     }
 
@@ -1280,7 +1280,7 @@ void *aes_encrypt_init(const u8 *key, size_t len) {
 
     status = psa_import_key(&key_attributes, key, len, &ctx->key_id);
     if (status != PSA_SUCCESS) {
-        free(ctx);
+        os_free(ctx);
         return NULL;
     }
 
@@ -1289,7 +1289,7 @@ void *aes_encrypt_init(const u8 *key, size_t len) {
     status = psa_cipher_encrypt_setup(&ctx->operation, ctx->key_id, PSA_ALG_ECB_NO_PADDING);
     if (status != PSA_SUCCESS) {
         psa_destroy_key(ctx->key_id);
-        free(ctx);
+        os_free(ctx);
         return NULL;
     }
 
@@ -1318,7 +1318,7 @@ void aes_encrypt_deinit(void *ctx) {
         os_free(aes_ctx->rawKey);
 
         /* Free the context */
-        free(aes_ctx);
+        os_free(aes_ctx);
 
     }
 }
@@ -1378,7 +1378,7 @@ int aes_encrypt(void *ctx, const u8 *plain, u8 *crypt) {
  */
 void *aes_decrypt_init(const u8 *key, size_t len) {
     psa_status_t status;
-    aes_context *ctx = calloc(1, sizeof(aes_context));
+    aes_context *ctx = os_calloc(1, sizeof(aes_context));
     psa_key_id_t keyID;
     psa_key_lifetime_t lifetime = PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(PSA_KEY_PERSISTENCE_HSM_ASSET_STORE,
                                                        PSA_KEY_LOCATION_HSM_ASSET_STORE);
@@ -1390,7 +1390,7 @@ void *aes_decrypt_init(const u8 *key, size_t len) {
     /* Initialize PSA Crypto */
     status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
-        free(ctx);
+        os_free(ctx);
         return NULL;
     }
 
@@ -1412,7 +1412,7 @@ void *aes_decrypt_init(const u8 *key, size_t len) {
 
     status = psa_import_key(&key_attributes, key, len, &ctx->key_id);
     if (status != PSA_SUCCESS) {
-        free(ctx);
+        os_free(ctx);
         return NULL;
     }
 
@@ -1421,7 +1421,7 @@ void *aes_decrypt_init(const u8 *key, size_t len) {
     status = psa_cipher_decrypt_setup(&ctx->operation, ctx->key_id, PSA_ALG_ECB_NO_PADDING);
     if (status != PSA_SUCCESS) {
         psa_destroy_key(ctx->key_id);
-        free(ctx);
+        os_free(ctx);
         return NULL;
     }
 
@@ -1481,7 +1481,7 @@ void aes_decrypt_deinit(void *ctx) {
         psa_destroy_key(aes_ctx->key_id);
 
         /* Free the context */
-        free(aes_ctx);
+        os_free(aes_ctx);
     }
 }
 

@@ -189,8 +189,37 @@ void cc3xxx_trnspt_cmd_if_event_handle(EventMailBox_t *pWlanFwEvent)
     {
         WlanGetCSIData_t csiData = {0};
     
-        ASSERT_GENERAL(sizeof(WlanGetCSIData_t) == sizeof(CsiData_t));
-        os_memcpy(&csiData, &pWlanFwEvent->csiData, sizeof(WlanGetCSIData_t));
+        //need to copy the data from FW csiData into WlanGetCSIData_t by each parameter
+        CME_CC3XX_EVENT_PRINT("\n\rCSI_EVENT_ID:  ts=0x%x pktLen=%d csiInfoLen=%d rssi=%d rate=%d sig=%d mcs=%d sgi=%d ch=%u ant=%u cw=%u \n\r",
+             pWlanFwEvent->csiData.timestamp, pWlanFwEvent->csiData.packetLength, pWlanFwEvent->csiData.csiInfoLength,
+             pWlanFwEvent->csiData.rssi, pWlanFwEvent->csiData.rate, pWlanFwEvent->csiData.sig_mode, pWlanFwEvent->csiData.mcs,
+             pWlanFwEvent->csiData.sgi, pWlanFwEvent->csiData.channel, pWlanFwEvent->csiData.ant, pWlanFwEvent->csiData.cw);
+
+        CME_CC3XX_EVENT_PRINT("\n\r rMac=%02x:%02x:%02x:%02x:%02x:%02x tMac=%02x:%02x:%02x:%02x:%02x:%02x\n\r",
+             pWlanFwEvent->csiData.rMacAddr[0], pWlanFwEvent->csiData.rMacAddr[1], pWlanFwEvent->csiData.rMacAddr[2],
+             pWlanFwEvent->csiData.rMacAddr[3], pWlanFwEvent->csiData.rMacAddr[4], pWlanFwEvent->csiData.rMacAddr[5],
+             pWlanFwEvent->csiData.tMacAddr[0], pWlanFwEvent->csiData.tMacAddr[1], pWlanFwEvent->csiData.tMacAddr[2],
+             pWlanFwEvent->csiData.tMacAddr[3], pWlanFwEvent->csiData.tMacAddr[4], pWlanFwEvent->csiData.tMacAddr[5]);
+
+        /* Copy fields that match */
+        csiData.timestamp = pWlanFwEvent->csiData.timestamp;
+        csiData.packetLength = pWlanFwEvent->csiData.packetLength;
+        csiData.csiInfoLength = pWlanFwEvent->csiData.csiInfoLength;
+        os_memcpy(csiData.csiDataBuf, pWlanFwEvent->csiData.csiDataBuf, sizeof(uint32_t) * CSI_FW_MAX_DATA_LENGTH);
+        os_memcpy(csiData.tMacAddr, pWlanFwEvent->csiData.tMacAddr, MAC_ADDR_LEN);
+        os_memcpy(csiData.rMacAddr, pWlanFwEvent->csiData.rMacAddr, MAC_ADDR_LEN);
+        csiData.rssi = pWlanFwEvent->csiData.rssi;
+        csiData.rate = pWlanFwEvent->csiData.rate;
+        csiData.sig_mode = pWlanFwEvent->csiData.sig_mode;
+        csiData.mcs = pWlanFwEvent->csiData.mcs;
+        csiData.sgi = pWlanFwEvent->csiData.sgi;
+        csiData.channel = pWlanFwEvent->csiData.channel;
+
+        /* Copy fields that don't match */
+        csiData.ant = 0;
+        csiData.cw = 0;
+        csiData.seqNum =  ((uint16_t)pWlanFwEvent->csiData.cw << 8) |
+                           (uint16_t)pWlanFwEvent->csiData.ant;
         
         CSI_PushMessage(&csiData);
     }
@@ -1484,7 +1513,11 @@ int cc3xxx_trnspt_cmd_if_config_tx_param (void *apPriv, AcCfg_t *pParamAc, uint8
     // --------------------------
     param.roleID   = pDrv->roleId;
     param.psScheme = (uint8_t)(PSScheme_e)psScheme;
+#ifndef DISABLE_WIFI6
     param.isMuEdca = isMuEdca;
+#else
+    param.isMuEdca = FALSE;
+#endif
 
 
     param.ac = currAc;
@@ -1511,7 +1544,7 @@ int cc3xxx_trnspt_cmd_if_config_tx_param (void *apPriv, AcCfg_t *pParamAc, uint8
                            param.cwMin,
                            param.txopLimit);
 
-
+#ifndef DISABLE_WIFI6
     // set MU EDCA
     if(FALSE != param.isMuEdca)
     {
@@ -1519,6 +1552,7 @@ int cc3xxx_trnspt_cmd_if_config_tx_param (void *apPriv, AcCfg_t *pParamAc, uint8
         param.muEdca.ecw_min_max    = pParamMuEdca[1];
         param.muEdca.mu_edca_timer  = pParamMuEdca[2];
     }
+#endif
 
 
     retVal = cc3xxx_trnspt_cmd_if_cfg((uint8_t*)&param, TX_PARAMS_CFG, sizeof(TxParamCfg_t));
@@ -1914,7 +1948,9 @@ int8_t trnspt_cmd_send_ies(uint32_t roleID,
     if(ROLE_IS_TYPE_STA_BASED(roleType))
     {
         bWmeEnable = l2_cfgIsStaWmeEnabled();
+#ifndef DISABLE_WIFI6
         axEnable = l2_cfg_isStaHeEnabled() && !(l2_GetWirelessProto());
+#endif
     }
 
     if (bWmeEnable)
@@ -1930,6 +1966,7 @@ int8_t trnspt_cmd_send_ies(uint32_t roleID,
     size += len;
     pBuf += len;
 
+#ifndef DISABLE_WIFI6
     //HE Caps
     if (axEnable)
     {
@@ -1938,6 +1975,7 @@ int8_t trnspt_cmd_send_ies(uint32_t roleID,
         pBuf += len;
 
     }
+#endif
 
     if(apSuppParams != NULL)
     {
@@ -2326,18 +2364,18 @@ int cc3xxx_trnspt_cmd_if_one_shot_scan(void *apPriv, struct wpa_driver_scan_para
     //cc3xxx_trnspt_cmd_if_one_shot_scan
     retVal  = cmd_Send((char *)&cmd,cmd.nabHeader.len, (char *)&(cmdComplete.info.param), 0);//
     cmdComplete.info.status = retVal;
-    if(retVal < 0 )//|| cmdComplete.info.status != CMD_STATUS_SUCCESS)
+    if (retVal < 0)//|| cmdComplete.info.status != CMD_STATUS_SUCCESS)
     {
         GTRACE(GRP_GENERAL_ERROR, "ERROR: Failed start scan status ENUM(CommandStatus_e,%d)",
                         retVal);
         CME_CC3XX_PORT_PRINT_ERROR("\n\rERROR: Failed start scan status ENUM(CommandStatus_e,%d)",
                         retVal);
 
-        rc =  CMD_GENERAL_STATUS_ERROR;//rc = -1;
+        rc = -1;
     }
     else
     {
-        rc = cmdComplete.info.status;//rc = 0;
+        rc = 0;
     }
 
 
@@ -2465,15 +2503,18 @@ int cc3xxx_trnspt_cmd_if_sched_scan(void *apPriv,
     pScanCmd->snrThreshold      = 0;
     pScanCmd->useList           = TRUE;
 
-    /* Open AP is supported - do not using Rx Filter */
-    if(pCmeScanDB->mIsOpenProfileSupported != 0 && n_ssid != 0)
-    {
-        pScanCmd->ssidRXFilter = FALSE;
-    }
-    else
-    {
-        pScanCmd->ssidRXFilter = n_ssid ? TRUE : FALSE;
-    }
+    // /* Open AP is supported - do not using Rx Filter */
+    // if(pCmeScanDB->mIsOpenProfileSupported != 0 && n_ssid != 0)
+    // {
+    //     pScanCmd->ssidRXFilter = FALSE;
+    // }
+    // else
+    // {
+    //     pScanCmd->ssidRXFilter = n_ssid ? TRUE : FALSE;
+    // }
+
+    // FW filter is not enabled because it does not support MBSSID
+    pScanCmd->ssidRXFilter = FALSE;
 
     pScanCmd->numOfSSIDEntries = n_ssid ? n_ssid : 0;
 
@@ -2559,15 +2600,15 @@ int cc3xxx_trnspt_cmd_if_sched_scan(void *apPriv,
     retVal  = cmd_Send((char *)&cmd,cmd.nabHeader.len, (char *)&(cmdComplete.info.param), 0);
     cmdComplete.info.status = retVal;
 
-    if(retVal <  0 )//|| cmdComplete.info.status != CMD_STATUS_SUCCESS)
+    if (retVal < 0)//|| cmdComplete.info.status != CMD_STATUS_SUCCESS)
     {
        /* GTRACE(GRP_GENERAL_ERROR, "ERROR: Failed start scan status ENUM(CommandStatus_e,%d)",
                                    cmdComplete.info.status);*/
-        rc =  CMD_GENERAL_STATUS_ERROR;//rc = -1;
+        rc = -1;
     }
     else
     {
-        rc = cmdComplete.info.status;//rc = 0;
+        rc = 0;
     }
 
 out_free:
@@ -2752,7 +2793,7 @@ int cc3xxx_trnspt_cmd_if_site_survey(uint8_t roleID, CMEWlanScanCommon_t* pScanC
     if(OK != status)
     {
         GTRACE(GRP_GENERAL_ERROR, "ERROR: Failed build channel list");
-        CME_CC3XX_PORT_PRINT_ERROR("\n\r ERROR: survey scan RROR: Failed build channel list");
+        CME_CC3XX_PORT_PRINT_ERROR("\n\rERROR: survey scan ERROR: Failed build channel list");
         rc =  CMD_GENERAL_STATUS_ERROR;//rc = -1;
         goto out_fail;
     }
@@ -2782,12 +2823,12 @@ int cc3xxx_trnspt_cmd_if_site_survey(uint8_t roleID, CMEWlanScanCommon_t* pScanC
         GTRACE(GRP_GENERAL_ERROR, "ERROR: Failed start scan status ENUM(CommandStatus_e,%d)",
                                    cmdComplete.info.status);
         CME_CC3XX_PORT_PRINT_ERROR("\n\r ERROR:Failed start scan status ENUM(CommandStatus_e,%d)",cmdComplete.info.status);
-        rc =  CMD_GENERAL_STATUS_ERROR;//rc = -1;
+        rc = -1;
         goto out_fail;
     }
     else
     {
-        rc = cmdComplete.info.status;//rc = 0;
+        rc = 0;
         goto out_success;
     }
 

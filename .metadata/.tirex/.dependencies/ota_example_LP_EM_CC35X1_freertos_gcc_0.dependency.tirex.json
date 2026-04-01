@@ -1,0 +1,39 @@
+[
+    {
+        "files": [
+            "+../../ota_example.c -> ota_example.c",
+            "+../../ota_example.h -> ota_example.h",
+            "+../../ota_fwu.c -> ota_fwu.c",
+            "+../../ota_fwu.h -> ota_fwu.h",
+            "+../../ota_server.c -> ota_server.c",
+            "+../../ota_server.h -> ota_server.h",
+            "+../../ota_wifi.c -> ota_wifi.c",
+            "+../../ota_wifi.h -> ota_wifi.h",
+            "+../../dns_if.c -> dns_if.c",
+            "+../../dns_if.h -> dns_if.h",
+            "+../../led_if.c -> led_if.c",
+            "+../../led_if.h -> led_if.h",
+            "+../../tcpip_if.c -> tcpip_if.c",
+            "+../../tcpip_if.h -> tcpip_if.h",
+            "+../../network_mbedtls.c -> network_mbedtls.c",
+            "+../../uart_term.h -> uart_term.h",
+            "+../../ca_certificate.h -> ca_certificate.h",
+            "+../../README.html -> README.html",
+            "+../../https_client.c -> https_client.c",
+            "+../../https_client.h -> https_client.h",
+            "+../../crc.c -> crc.c",
+            "+../../crc.h -> crc.h",
+            "+../../nvocmp_cc35xx.c -> nvocmp_cc35xx.c",
+            "+../../nvintf.h -> nvintf.h",
+            "+../../nvocmp.h -> nvocmp.h",
+            "+../../adaptation/osi_dpl.c -> adaptation/osi_dpl.c",
+            "+../../adaptation/osi_filesystem.c -> adaptation/osi_filesystem.c",
+            "+../../adaptation/uart_term.c -> adaptation/uart_term.c",
+            "+../../adaptation/syslog.c -> adaptation/syslog.c",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../ota_example.syscfg -> ota_example.syscfg",
+            "+../../syscalls_stubs.c -> syscalls_stubs.c",
+            "+linker_GNU.lds -> linker_GNU.lds"
+        ]
+    }
+]

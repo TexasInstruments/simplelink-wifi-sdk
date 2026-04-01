@@ -3,7 +3,7 @@
  *
  *  Description:    Driver for the peripheral DMA controller
  *
- *  Copyright (c) 2022-2025 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -163,6 +163,23 @@ uint32_t DMAGetChannelStatus(uint32_t channel)
                 HOST_DMA_CH0STA_HWEVENT_S;
 
     return chStatus;
+}
+
+//*****************************************************************************
+//
+// Get channel FSM Status
+//
+//*****************************************************************************
+DMAChannelFsmState DMAGetChannelFSMState(uint32_t channel)
+{
+    uint32_t fsmStatus;
+
+    // Check argument
+    ASSERT(channel < DMA_NUM_CHANNELS);
+
+    fsmStatus = (HWREG(HOST_DMA_TGT_BASE + HOST_DMA_O_CH0STA + (channel * DMA_CH_OFFSET)) & HOST_DMA_CH0STA_FSMSTATE_M);
+
+    return fsmStatus;
 }
 
 //*****************************************************************************

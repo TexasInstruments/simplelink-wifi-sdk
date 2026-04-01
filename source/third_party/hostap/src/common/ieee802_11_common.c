@@ -140,7 +140,7 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			elems->sae_pk = pos + 4;
 			elems->sae_pk_len = elen - 4;
 			break;
-#ifdef CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
         case WFA_RSNE_OVERRIDE_OUI_TYPE:
 			elems->rsne_override = pos;
 			elems->rsne_override_len = elen;
@@ -149,7 +149,20 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			elems->rsne_override_2 = pos;
 			elems->rsne_override_2_len = elen;
 			break;
-#endif //CONFIG_TI_MRSNO
+		case WFA_RSNXE_OVERRIDE_OUI_TYPE:
+			elems->rsnxe_override = pos;
+			elems->rsnxe_override_len = elen;
+			break;
+		case WFA_RSN_SELECTION_OUI_TYPE:
+			if (elen < 4 + 1) {
+				wpa_printf(MSG_DEBUG,
+					   "Too short RSN Selection element ignored");
+				return -1;
+			}
+			elems->rsn_selection = pos + 4;
+			elems->rsn_selection_len = elen - 4;
+			break;
+		// TI  compilation: RSN override support from upstream - end
 		default:
 			wpa_printf(MSG_MSGDUMP, "Unknown WFA "
 				   "information element ignored "

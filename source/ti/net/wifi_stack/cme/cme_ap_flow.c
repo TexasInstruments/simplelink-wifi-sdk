@@ -420,8 +420,16 @@ void CmeSetApParams(void *apParams)
 
     gCmeSsid.ht = cfgIs11nEnabled();
 
+    if(cfgGetApMaxNumStationsFromConfIni() < pParams->sta_limit)
+    {
+        pParams->sta_limit = cfgGetApMaxNumStationsFromConfIni();
+        CME_PRINT_REPORT_ERROR("\n\rWARNING! sta_limit is higher than the limit configure by the conf.ini , setting it to :%d",pParams->sta_limit);
+    }
+    
     //SetAP max number of stations
     cfgSetApMaxNumStations(pParams->sta_limit);
+    CME_PRINT_REPORT("\n\r sta_limit is set to :%d",pParams->sta_limit);
+    
 
     cfgSetWpsMode(pParams->wpsDisabled);
     if (pParams->wpsDisabled)

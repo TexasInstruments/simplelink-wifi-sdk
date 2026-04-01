@@ -439,7 +439,6 @@ typedef struct
 	authInfo_t	*pAuthInfo;
 	assocInfo_t	*pAssocInfo;
 
-	Bool_e		 encrypted;			// If TRUE, connection is encrypted
 	Bool_e       associated;		// If TRUE, STA is associated with remote AP
 	Bool_e       connected;			// Set to TRUE when connection sequence is fully completed.
 	Bool_e       connectTimeout;    // Set to TRUE on authentication/association timeout
@@ -1163,6 +1162,16 @@ void destroyAuthData(ti_driver_ifData_t *apDrv, Bool32 aClearBssid);
  Return code:	none
 ---------------------------------------------------------------------------- */
 void destroyAssocData(ti_driver_ifData_t *apDrv, Bool32 aDisassoc);
+
+/* ----------------------------------------------------------------------------
+ clear_assoc_req_ies
+      This function frees the association request IEs buffer and resets its length.
+
+ Parameters: 	apDrv - pointer to drive instance
+
+ Return code:	none
+---------------------------------------------------------------------------- */
+void clear_assoc_req_ies(ti_driver_ifData_t *apDrv);
 
 /* ----------------------------------------------------------------------------
  finalizeStaDisconnect

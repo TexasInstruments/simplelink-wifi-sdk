@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,15 @@ let Common = system.getScript("/ti/drivers/Common.js");
 /* Get /ti/drivers family name from device object */
 let family = Common.device2Family(system.deviceData, "Board");
 
-let config = [];
+let config = [
+    {
+        name: "generateBoardInit",
+        displayName: "Generate Board_init() and Board_initHook()",
+        description: "Generate generic initialization functions.",
+        default: true,
+        hidden: true
+    }
+];
 
 function getLinkerDefs()
 {
@@ -192,11 +200,13 @@ function modules(mod)
 {
     let reqs = [];
 
+    if (system.getRTOS() != "zephyr") {
     reqs.push({
         name      : "GPIO",
         moduleName: "/ti/drivers/GPIO",
         hidden    : false
     });
+    }
 
     reqs.push({
         name      : "Driverlib",

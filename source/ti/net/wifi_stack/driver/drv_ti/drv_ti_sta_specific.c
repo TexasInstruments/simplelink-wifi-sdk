@@ -325,7 +325,6 @@ int ti_driver_authenticate(void *apPriv, struct wpa_driver_auth_params *apParams
         destroyAuthData(pDrv, TRUE);
     }
     pDrv->pAuthInfo = pAuthInfo;
-    pDrv->encrypted = pDrv->pAuthInfo->authType != AUTH_ALG_TYPE_OPEN_SYSTEM ? 1:0;
 
     if (TRUE == pDrv->associated)
     {
@@ -425,6 +424,10 @@ int ti_driver_deauthenticate(void *apPriv, const u8 *apBssid, u16 aReasonCode)
         MLME_REPORT_PRINT_ERROR("\n\rti_driver_deauthenticate:destroyAssocData");
         ASSERT_GENERAL(FALSE == pDrv->associated);
         destroyAssocData(pDrv, FALSE);
+    }
+    if (NULL != pDrv->assoc_req_ies)
+    {
+        clear_assoc_req_ies(pDrv);
     }
 
     // If we're already associated, tear down BA session (if exists) and send a
@@ -720,6 +723,7 @@ void ti_drv_AssocTimeout(void *apDrv, void *apData2)
         IRQ_UtilCopyMacAddress(pDrv->pAssocInfo->peerInfo.bssid, bssid);
         MLME_REPORT_PRINT("\n\rti_drv_AssocTimeout:destroyAssocData");
         destroyAssocData(apDrv, TRUE);
+        clear_assoc_req_ies(pDrv);
 
         drv_sendConnectTimeoutEvent(pDrv, EVENT_ASSOC_TIMED_OUT, bssid);
         return;
@@ -1157,6 +1161,14 @@ void destroyAssocData(ti_driver_ifData_t *apDrv, Bool32 aDisassoc)
 }
 
 // ----------------------------------------------------------------------------
+void clear_assoc_req_ies(ti_driver_ifData_t *apDrv)
+{
+    os_free(apDrv->assoc_req_ies);
+    apDrv->assoc_req_ies = NULL;
+    apDrv->assoc_req_ies_len = 0;
+}
+
+// ----------------------------------------------------------------------------
 int32_t try2authenticate(ti_driver_ifData_t *apDrv)
 {
     char macStr[MAC_STR_LEN];
@@ -1378,6 +1390,7 @@ void setPeerHtCapabilities(uint8_t            *apHtCapabilitiesPos,
     }
 }
 
+#ifndef DISABLE_WIFI6
 /******************************************************************************
   Function          : setPeerHeCapabilities
 
@@ -1483,6 +1496,7 @@ void setPeerHeCapabilities(uint8_t                        *pHeCapabilitiesPos,
        }
 
 }
+#endif
 
 
 // ------------------------------------------------------------------------
@@ -1622,10 +1636,12 @@ void ti_drv_setApInfo(ti_driver_ifData_t    *apDrv,
                           &apDrv->bssCap.htCfgInBss, &apDrv->peerCap.htPeerCap);
 
     os_memcpy(&heBssCap, &apDrv->bssCap.heCfgInBss, sizeof(heBssCap_t));
+#ifndef DISABLE_WIFI6
     setPeerHeCapabilities((uint8_t *)apParsedElems->he_capabilities,
                           (uint8_t *)apParsedElems->he_operation, muEcdaPos,
                           &heBssCap, &apDrv->peerCap.hePeerCap,
                           apDrv->assocParams.muEdca, apDrv->currBssid);
+#endif
 }
 
 //after associate and connect
@@ -1642,8 +1658,12 @@ void ti_drv_setApAssocInfo(ti_driver_ifData_t    *apDrv)
     uint8_t ac = 0;
     for(ac = 0; ac < NUM_ACCESS_CATEGORIES; ac++)
     {
+#ifndef DISABLE_WIFI6
         os_memcpy(apDrv->apHeMuEdcaAcParams[ac]._byte, apDrv->assocParams.muEdca[ac]._byte,HE_MU_EDCA_FIELD_BYTES);
         apDrv->ops->tx_param(apDrv, &apDrv->assocParams.acParameters[ac], apDrv->assocParams.psScheme, TRUE, (uint8_t *)&apDrv->assocParams.muEdca[ac], ac);
+#else
+        apDrv->ops->tx_param(apDrv, &apDrv->assocParams.acParameters[ac], apDrv->assocParams.psScheme, FALSE, NULL, ac);
+#endif
     }
 
 }
@@ -1756,7 +1776,7 @@ void DenyList_clearList(DenyList_LinkedList_t* list)
     {
         DenyList_Node_t* temp = current;
         current = current->next;
-        free(temp);
+        os_free(temp);
     }
 
     list->head = NULL;
@@ -1809,7 +1829,7 @@ int DenyList_elementExists(DenyList_LinkedList_t* list, uint8_t macAddr[6], Deny
             CME_PRINT_REPORT("\n\rDenyList_elementExists: Mac address %02x:%02x:%02x:%02x:%02x:%02x expiry %d removed from list\n\r",  
             temp->macAddr[0], temp->macAddr[1], temp->macAddr[2], temp->macAddr[3], temp->macAddr[4], temp->macAddr[5], temp->expiryTime);
 
-            free(temp);
+            os_free(temp);
             list->size--;
         } 
         else
@@ -1890,7 +1910,7 @@ void DenyList_findAndRemoveSoonestExpiry(DenyList_LinkedList_t* list)
     soonestNode->macAddr[0], soonestNode->macAddr[1], soonestNode->macAddr[2], soonestNode->macAddr[3], soonestNode->macAddr[4], soonestNode->macAddr[5], soonestNode->expiryTime);
 
     // Free the memory of the removed node
-    free(soonestNode);
+    os_free(soonestNode);
 }
 
 /******************************************************************************
@@ -1941,7 +1961,7 @@ int DenyList_addElement(DenyList_LinkedList_t* list, uint8_t macAddr[6], uint32_
     }
 
     // Create a new node
-    DenyList_Node_t* newNode = (DenyList_Node_t*)malloc(sizeof(DenyList_Node_t));
+    DenyList_Node_t* newNode = (DenyList_Node_t*)os_malloc(sizeof(DenyList_Node_t));
     if (newNode == NULL) 
     {
         return -3; // Memory allocation failed
@@ -2013,7 +2033,7 @@ int DenyList_removeElement(DenyList_LinkedList_t* list, uint8_t macAddr[6])
             GTRACE(GRP_DRIVER_CC33, "DenyList_removeElement: Mac address %02x:%02x:%02x:%02x:%02x:%02x removed from list", 
             macAddr[0], macAddr[1], macAddr[2], macAddr[3], macAddr[4], macAddr[5]);
 
-            free(current);
+            os_free(current);
             list->size--;
             return 0; // Success
         }
@@ -2071,7 +2091,7 @@ void DenyList_verifyAndRemoveExpiredElements(DenyList_LinkedList_t* list)
             CME_PRINT_REPORT("\n\rDenyList_verifyAndRemoveExpiredElements: Mac address %02x:%02x:%02x:%02x:%02x:%02x expiry %d removed from list\n\r",  
             temp->macAddr[0], temp->macAddr[1], temp->macAddr[2], temp->macAddr[3], temp->macAddr[4], temp->macAddr[5], temp->expiryTime);
 
-            free(temp);
+            os_free(temp);
             list->size--;
 
             if (list->size == 0)

@@ -1206,12 +1206,12 @@ struct wpa_driver_associate_params {
 	 */
 	int sae_pwe;
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     /**
 	 * rsn_overriding - wpa_supplicant RSN overriding support
 	 */
 	bool rsn_overriding;
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 };
 
 enum hide_ssid {

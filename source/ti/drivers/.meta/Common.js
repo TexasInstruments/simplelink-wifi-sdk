@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -313,6 +313,7 @@ function device2Family(device, mod)
         {prefix: "CC13",     family: "CC26XX"},
         {prefix: "CC26",     family: "CC26XX"},
         {prefix: "CC23.0",   family: "CC23X0"},
+        {prefix: "CC23.1",   family: "CC23X1"},
         {prefix: "CC27",     family: "CC27XX"},
         {prefix: "CC283",    family: "CC283X"},
         {prefix: "CC35",     family: "CC35XX"}
@@ -365,6 +366,23 @@ function device2Family(device, mod)
         "RNG"  :         "LPF3RF"
     };
 
+    /* CC23X1 specific module delegates
+     * Note, the default family name returned below is LPF3, so this list must
+     * contain all CC23X1 specific modules
+     */
+    let cc23x1Mods = {
+        "Board" :        "CC23X1",
+        "CAN" :          "CC23X0",
+        "CCFG" :         "CC23X1",
+        "Power" :        "CC23X1",
+        "ECDH" :         "LPF3HSM",
+        "ECDSA" :        "LPF3HSM",
+        "SHA2" :         "LPF3HSM",
+        "TRNG":          "LPF3HSM",
+        "RNG"  :         "LPF3HSM",
+        "AESGCM":        "LPF3HSM"
+    };
+
     /* CC27XX specific module delegates
      * Note, the default family name returned below is LPF3, so this list must
      * contain all CC27XX specific modules
@@ -406,6 +424,7 @@ function device2Family(device, mod)
         "AESCCM":          "LPF3",
         "AESCMAC":         "LPF3",
         "AESCTR":          "LPF3",
+        "CAN" :            "WFF3",
         "SHA2":            "LPF3HSM"
     };
 
@@ -444,6 +463,14 @@ function device2Family(device, mod)
             else if (d2f.prefix == "CC23.0") {
                 if (mod in cc23x0Mods) {
                     return (cc23x0Mods[mod]);
+                }
+                else {
+                    return ("LPF3");
+                }
+            }
+            else if (d2f.prefix == "CC23.1") {
+                if (mod in cc23x1Mods) {
+                    return (cc23x1Mods[mod]);
                 }
                 else {
                     return ("LPF3");
@@ -910,12 +937,12 @@ function newConfig()
  */
 function numPriorityBits()
 {
-    if (system.deviceData.deviceId.match(/CC23.0/)) {
-        /* CC23X0 devices have two NVIC priority bits available */
+    if (system.deviceData.deviceId.match(/CC23.0|CC23.1/)) {
+        /* CC23X0 and CC23X1 devices have two NVIC priority bits available */
         return 2;
     }
-    else if (system.deviceData.deviceId.match(/CC27..|CC35../)) {
-        /* CC27XX and CC35XX devices have four NVIC priority bits available */
+    else if (system.deviceData.deviceId.match(/CC27..|CC35..|CC283./)) {
+        /* These devices have four NVIC priority bits available */
         return 4;
     }
     else {

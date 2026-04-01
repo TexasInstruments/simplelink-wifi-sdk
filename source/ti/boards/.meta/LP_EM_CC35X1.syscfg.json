@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
  */
 {
     "name"        : "LP_EM_CC35X1",
-    "displayName" : "CC3501 LaunchPad",
+    "displayName" : "CC35X1 LaunchPad",
     "gpn": "CC3551E",
     "pkg": "VQFN (RSH)",
     "variant": "Default",
@@ -264,16 +264,22 @@
                 },
                 {
                     /* Controls RED_LED if jumper J19 is enabled */
+                    /* Marked in schematics as: DCAN_RX (GPIO 34) */
                     "number" : 31,
                     "ball"   : "9",
-                    "name"   : "GPIO34"
+                    "name"   : "GPIO34",
+                    "preferredType": [
+                        "CAN_RX"
+                    ]
                 },
                 {
-                    /* Marked in schematics as: DCAN_TX (GPIO !) */
+                    /* Marked in schematics as: DCAN_TX (GPIO 30) */
                     "number" : 32,
-                    "name"   : "NC"  // Mounting option: [DEFAULT] R24=NC, R24 != 0 ohm, R24=0 ohm
-                                     // Note: If R24 != NC, this BP pin gets connected to GPIO30 ball 14 through R24
-                                     // Info: GPIO30 ball 14 is by default connected to BP.17
+                    "ball"   : "14",
+                    "name"   : "GPIO30",
+                    "preferredType": [
+                        "CAN_TX"
+                    ]
                 },
                 {
                     /* Marked in schematics as: UART1_RX (GPIO !) */
@@ -412,6 +418,17 @@
         },
         "BUTTON1": {
             "link": "BTN-2"
+        },
+
+        "LP_CAN_BUS": {
+            "displayName": "LaunchPad CAN Bus",
+            "description": "Standard BoosterPack header CAN",
+            "longDescription": "Standard BoosterPack header CAN",
+            "definition": "/ti/boards/components/can.json",
+            "connections": {
+                "RX": "9",  // GPIO34
+                "TX": "14"  // GPIO30
+            }
         },
 
         "LP_SPI0_BUS": {

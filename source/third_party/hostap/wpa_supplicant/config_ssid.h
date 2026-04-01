@@ -72,6 +72,22 @@ enum sae_pk_mode {
 	SAE_PK_MODE_DISABLED = 2,
 };
 
+// TI  compilation: RSN override support from upstream - start
+/**
+ * rsn_overriding - RSN overriding
+ *
+ * 0 = Disabled
+ * 1 = Enabled automatically if the driver indicates support
+ * 2 = Forced to be enabled even without driver capability indication
+ */
+enum wpas_rsn_overriding {
+	RSN_OVERRIDING_NOT_SET = -1,
+	RSN_OVERRIDING_DISABLED = 0,
+	RSN_OVERRIDING_AUTO = 1,
+	RSN_OVERRIDING_ENABLED = 2,
+};
+// TI  compilation: RSN override support from upstream - end
+
 /**
  * struct wpa_ssid - Network configuration data
  *
@@ -304,6 +320,8 @@ struct wpa_ssid {
 #ifdef IEEE8021X_EAPOL
 #define EAPOL_FLAG_REQUIRE_KEY_UNICAST BIT(0)
 #define EAPOL_FLAG_REQUIRE_KEY_BROADCAST BIT(1)
+#define EAPOL_FLAG_SUITEB_ONLY BIT(2) // inserted in here in order to preserve backward copetability
+
 	/**
 	 * eapol_flags - Bit field of IEEE 802.1X/EAPOL options (EAPOL_FLAG_*)
 	 */
@@ -1178,6 +1196,14 @@ struct wpa_ssid {
 	 * 2 = both hunting-and-pecking loop and hash-to-element enabled
 	 */
 	int sae_pwe;
+
+	// TI  compilation: RSN override support from upstream - start
+	/**
+	 * rsn_overriding - RSN overriding (per-network override for the global
+	 *	parameter with the same name)
+	 */
+	enum wpas_rsn_overriding rsn_overriding;
+	// TI  compilation: RSN override support from upstream - end
 };
 
 #endif /* CONFIG_SSID_H */

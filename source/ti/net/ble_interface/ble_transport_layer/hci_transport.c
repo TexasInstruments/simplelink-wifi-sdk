@@ -182,7 +182,7 @@ void HciThread_Entry(void* params)
     {
         if (HciTransport_ReadHciPacket(threadId, hciPktBuf, &hciPktReadLen) == 0)
         {
-            if (BleIf_VendorEventHandler(hciPktBuf, hciPktReadLen) == 0)
+            if (BleIf_VendorSpecificEventHandler(hciPktBuf, &hciPktReadLen) == 0)
             {
                 if(g_pTransport[threadId].rx_cb != NULL)
                 {

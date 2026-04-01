@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -113,6 +113,10 @@ static void DMAWFF3_initHw(void)
 
     /* Clear interrupt flags for all channels*/
     DMAClearInt(DMA_INT_ALL);
+
+    /* Disconnect all DMA channels */
+    HWREG(HOST_DMA_TGT_BASE + HOST_DMA_O_CHCTL0) = 0xFFFFFFFFU;
+    HWREG(HOST_DMA_TGT_BASE + HOST_DMA_O_CHCTL1) = 0xFFFFFFFFU;
 }
 
 /*
@@ -122,16 +126,6 @@ static void DMAWFF3_initHw(void)
  */
 static void DMAWFF3_issueCmd(uint32_t channel, DMACommand command)
 {
-    uint32_t chOffset = 0;
-
-    /* Adjust channel offset for channel 7 on device rev. 1.0.
-     * TODO: Adjustment might need to be removed for device rev. 2.0.
-     */
-    if (channel == 7)
-    {
-        chOffset = 0x20;
-    }
-
     /* Issue command to write-only register */
-    HWREG(HOST_DMA_TGT_BASE + HOST_DMA_O_CH0TCTL2 + (channel * DMA_CH_OFFSET) + chOffset) = command;
+    HWREG(HOST_DMA_TGT_BASE + HOST_DMA_O_CH0TCTL2 + (channel * DMA_CH_OFFSET)) = command;
 }

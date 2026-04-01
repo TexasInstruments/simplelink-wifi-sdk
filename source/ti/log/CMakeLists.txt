@@ -41,7 +41,7 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
             ADD_SDK_INCLUDE_PATH "source"
         )
     elseif(${TI_PLATFORM} MATCHES "cc283x")
-        set(SOURCES ${SOURCES_COMMON})
+        set(SOURCES ${SOURCES_COMMON} ${SOURCES_TRACE})
         ti_add_package_dependency(DriverlibCC283X)
         ti_add_library(
             log_${TI_PLATFORM} SOURCES ${SOURCES} LINK_PUBLIC Driverlib::${TI_PLATFORM} TiUtils::tiutils

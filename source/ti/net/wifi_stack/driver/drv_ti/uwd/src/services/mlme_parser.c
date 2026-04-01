@@ -56,6 +56,7 @@
 #include "common.h"
 #include "wpa_common.h"   // for security definitions
 #include "ieee802_11_defs.h"
+#include "l2_cfg.h"
 /* Constants */
 
 #define CHECK_PARSING_ERROR_CONDITION_PRINT 0
@@ -223,6 +224,7 @@ static int32_t mlmeParser_parseExtension       (uint8_t *pData,
                                               uint32_t *pReadLen,
                                               scanIEParsingParams_t *pParams);
 
+#ifndef DISABLE_WIFI6
 static int32_t mlmeParser_readHeCapabilitiesIE(uint8_t *pData,
                                              uint16_t dataLen,
                                              uint32_t *pReadLen,
@@ -238,6 +240,7 @@ static int32_t mlmeParser_readHeMuEdcaParamerterSetIE(uint8_t *pData,
                                                     uint16_t dataLen,
                                                     uint32_t *pReadLen, 
                                                     dot11HeMuEdcaAcParams_t *pHeMuEdcaAcParams);
+#endif
 
 //static int32_t mlmeParser_readRMEnabledCapIE(TMlmeParser *pMlmeParser,
 //                                        uint8_t *pData,
@@ -1699,13 +1702,9 @@ static int32_t mlmeParser_readHtInformationIE(uint8_t *pData, uint32_t dataLen, 
 //    return OK;
 //}
 
-int32_t mlmeParser_readRsnIe(uint8_t *pData, uint32_t dataLen, uint32_t *pReadLen, dot11_RSN_t *pRsnIe ,uint8_t* pbac)
+int32_t mlmeParser_readRsnIe(uint8_t *pData, uint32_t dataLen, uint32_t *pReadLen, dot11_RSN_t *pRsnIe)
 {
     HOOK(HOOK_IN_MLME_PARSER);
-
-    uint8_t* rsnStart = pData;
-    struct wpa_ie_data rsnDataOut;
-    int wpa;
 
     pRsnIe->hdr.eleId = *pData;
     pRsnIe->hdr.eleLen = *(pData+1);
@@ -1722,18 +1721,6 @@ int32_t mlmeParser_readRsnIe(uint8_t *pData, uint32_t dataLen, uint32_t *pReadLe
 
     GTRACE(GRP_MGMT_PROTECTION_IMP, "MPF: pRsnIe->hdr.eleId= %d, RSN_IE_ID= %d",pRsnIe->hdr.eleId ,RSN_IE_ID);
 
-    *pbac = FALSE; //Default value
-    if ((RSN_IE_ID == pRsnIe->hdr.eleId))
-    {
-        wpa = wpa_parse_wpa_ie_rsn(rsnStart, pRsnIe->hdr.eleLen + 2 , &rsnDataOut);
-        GTRACE(GRP_MGMT_PROTECTION_IMP, "MPF: wpa_parse_wpa_ie_rsn= %d",wpa);
-
-        if(!wpa)
-        {
-            *pbac = (rsnDataOut.capabilities) & WPA_CAPABILITY_PBAC;
-            GTRACE(GRP_MGMT_PROTECTION_IMP, "MPF:  rsnDataOut.capabilities = %d, pScanResultDesc->pbacEnabled = %d",rsnDataOut.capabilities,  *pbac);
-        }
-    }
     HOOK(HOOK_IN_MLME_PARSER);
 
     return OK;
@@ -2292,7 +2279,7 @@ int32_t scanParser_parseIEs(uint8_t *pData, scanIEParsingParams_t *params, uint8
             {
                 MLME_REPORT_PRINT_PARSER("\n\r RSN_IE_ID, eleLen:%d\n\r",pEleHdr->eleLen);
 
-                if (mlmeParser_readRsnIe(pData, leftDataLen, &readLen, &params->rsnIe,&params->pbacApEnabled) != OK)
+                if (mlmeParser_readRsnIe(pData, leftDataLen, &readLen, &params->rsnIe) != OK)
                 {
                     MLME_ERROR_PRINT("\n\rERROR! RSN_IE_ID failed,leftDataLen:%d pEleHdr->eleLen:%d",leftDataLen,pEleHdr->eleLen);
                     return-1;
@@ -2309,12 +2296,30 @@ int32_t scanParser_parseIEs(uint8_t *pData, scanIEParsingParams_t *params, uint8
                 //else it is vendor specific ie
                 if ((*(pData + 1) > WPA_SELECTOR_LEN) &&  (RSN_SELECTOR_GET((pData + 2)) == WPA_OUI_TYPE))
                 {
-                    if (mlmeParser_readRsnIe(pData, leftDataLen, &readLen, &params->wpaIe,&params->pbacApEnabled) != OK) //Structure of rsnIe and wpaIe is quite similar so use the same parser function
+                    if (mlmeParser_readRsnIe(pData, leftDataLen, &readLen, &params->wpaIe) != OK) //Structure of rsnIe and wpaIe is quite similar so use the same parser function
                     {
                         MLME_ERROR_PRINT("\n\rERROR! VENDOR_SPECIFIC_IE_ID: failed :%d", leftDataLen);
                         return-1;
                     }
                     params->wpaIeLen = params->wpaIe.hdr.eleLen + 2; //data len + 1 byte header + 1 byte len
+                }
+                else if (WPA_GET_BE32(pData + 2) == RSNE_OVERRIDE_IE_VENDOR_TYPE)
+                {
+                    if (mlmeParser_readRsnIe(pData, leftDataLen, &readLen, &params->rsnOverrideIe) != OK)
+                    {
+                        MLME_ERROR_PRINT("\n\rERROR! RSNE_OVERRIDE_IE_VENDOR_TYPE: failed");
+                        return -1;
+                    }
+                    params->rsnOverrideIeLen = params->rsnOverrideIe.hdr.eleLen + 2; //data len + 1 byte header + 1 byte len
+                }
+                else if (WPA_GET_BE32(pData + 2) == RSNE_OVERRIDE_2_IE_VENDOR_TYPE)
+                {
+                    if (mlmeParser_readRsnIe(pData, leftDataLen, &readLen, &params->rsnOverride2Ie) != OK)
+                    {
+                        MLME_ERROR_PRINT("\n\rERROR! RSNE_OVERRIDE_2_IE_VENDOR_TYPE: failed");
+                        return -1;
+                    }
+                    params->rsnOverride2IeLen = params->rsnOverride2Ie.hdr.eleLen + 2; //data len + 1 byte header + 1 byte len
                 }
                 // look for wmm IE
                 else if ( RSN_SELECTOR_GET((pData + 2)) ==  RSN_SELECTOR(0x00, 0x50, 0xf2, 2))
@@ -2334,6 +2339,7 @@ int32_t scanParser_parseIEs(uint8_t *pData, scanIEParsingParams_t *params, uint8
                 readLen = pEleHdr->eleLen + 2;
             }
             break;
+#ifndef DISABLE_WIFI6
             case VHT_CAPABILITY_IE_ID:
 
                 MLME_REPORT_PRINT_PARSER("\n\r VHT_CAPABILITIES_IE_ID, eleLen:%d\n\r",pEleHdr->eleLen);
@@ -2342,6 +2348,7 @@ int32_t scanParser_parseIEs(uint8_t *pData, scanIEParsingParams_t *params, uint8
                 
                 params->vhtCapabilitesPresent = TRUE;
             break;
+#endif
             case HT_CAPABILITIES_IE_ID:
                 MLME_REPORT_PRINT_PARSER("\n\r HT_CAPABILITIES_IE_ID, eleLen:%d\n\r",pEleHdr->eleLen);
 
@@ -2524,6 +2531,7 @@ int32_t mlmeParser_parseExtension(uint8_t *pData, uint16_t bodyDataLen, uint32_t
 
     switch (eleIdExt)
     {
+#ifndef DISABLE_WIFI6
         case MU_EDCA_PARAMETER_SET_IE_ID:
         
             if (mlmeParser_readHeMuEdcaParamerterSetIE(pData, bodyDataLen, readLen, &pParams->heMuEdcaAcParams) != OK)
@@ -2555,6 +2563,7 @@ int32_t mlmeParser_parseExtension(uint8_t *pData, uint16_t bodyDataLen, uint32_t
             GTRACE(GRP_HE_DBG, "MLME_PARSER: pParams->heOperation: %d", pParams->heOperationPresent);
             break;
             //TODO: should we parse MU EDCA, no.38 too?
+#endif
 
 
         default:
@@ -2569,6 +2578,7 @@ int32_t mlmeParser_parseExtension(uint8_t *pData, uint16_t bodyDataLen, uint32_t
 }
 
 
+#ifndef DISABLE_WIFI6
 /******************************************************************************
   Function          : mlmeParser_readHeMuEdcaParamerterSetIE
 
@@ -2720,3 +2730,4 @@ static int32_t mlmeParser_readHeOperationIE(uint8_t *pData, uint16_t dataLen, ui
 
     return OK;
 }
+#endif

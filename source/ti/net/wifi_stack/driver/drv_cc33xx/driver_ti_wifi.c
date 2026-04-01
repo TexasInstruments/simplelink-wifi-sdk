@@ -172,6 +172,8 @@ extern int32_t set_cond_in_process_wlan_one_shot_scan();
 extern int32_t set_cond_in_process_wlan_periodic_scan();
 extern int32_t set_cond_in_process_wlan_ap_roledown();
 extern int32_t set_cond_in_process_wlan_sta_roledown();
+extern void set_finish_wlan_one_shot_scan();
+extern void set_finish_wlan_periodic_scan();
 extern void set_finish_wlan_ap_roledown();
 extern void set_finish_wlan_sta_roledown();
 extern void set_finish_wlan_supplicant_operation();
@@ -1751,8 +1753,8 @@ int ti_driver_send_l2_data(ti_driver_ifData_t *pDrv,
     /* Insert EAPOL packet to the driver Tx Mgmt path (Ethernet format) */
     else if(ETHERTYPE_EAPOL == proto)
     {
-        CME_PRINT_REPORT("\n\rSend L2 packet of type ETHERTYPE_EAPOL dataLen:%d", dataLen);
-
+        CME_PRINT_REPORT("\n\rSend L2 packet of type ETHERTYPE_EAPOL dataLen:%d link=%d",
+            dataLen, link);
 
         pEthHead  = os_malloc(sizeof(TEthernetHeader));
         if (!pEthHead)
@@ -1784,11 +1786,6 @@ int ti_driver_send_l2_data(ti_driver_ifData_t *pDrv,
         /* prepare WLAN header */
         pDot11Header = (dot11_mgmtHeader_t *) pMgmtPkt->header;
 
-        if (pDrv->encrypted)
-        {
-            fc |= DOT11_FC_WEP;
-            pMgmtPkt->flags |= PKTF_ENCRYPT;
-        }
         COPY_WLAN_WORD(&pDot11Header->fc, &fc);
 
         pMgmtPkt->link = link;
@@ -2513,24 +2510,24 @@ int ti_driver_one_shot_scan(void *apPriv, struct wpa_driver_scan_params *apParam
 {
     HOOK(HOOK_IN_DRIVER_TI_WIFI);
 
+    cmeScanSharedInfo_t *pCmeScanDB = scanResultTable_GetCmeScanDbPointer();
     int32_t ret = set_cond_in_process_wlan_one_shot_scan();
 
     if (ret == OSI_OK)
     {
         ti_driver_ifData_t *pDrv = (ti_driver_ifData_t *)apPriv;
 
-        if(pDrv->ops->one_shot(apPriv, apParams) == 0)
+        if (pDrv->ops->one_shot(apPriv, apParams) == OSI_OK)
         {
             CME_PRINT_REPORT("\n\rti_driver: start one shot timer");
             CME_start_one_shot_scan_timer();
         }
         else
         {
-            CME_PRINT_REPORT("\n\rti_driver: starting one shot scan failed, start one shot timer");
-            CME_start_one_shot_scan_timer();
-
+            CME_PRINT_REPORT("\n\rti_driver: starting one shot scan failed");
+            CmeScan_ScanDone(SCAN_REQUEST_ONE_SHOT, pCmeScanDB->roleId, pCmeScanDB, CME_SCAN_STATUS_FAILED, 0, 0);
+            return -1;
         }
-
     }
     else
     {
@@ -2688,17 +2685,24 @@ int ti_driver_sched_scan(void *apPriv, struct wpa_driver_scan_params *apParams)
 {
     HOOK(HOOK_IN_DRIVER_TI_WIFI);
 
+    cmeScanSharedInfo_t *pCmeScanDB = scanResultTable_GetCmeScanDbPointer();
     int32_t ret = set_cond_in_process_wlan_periodic_scan();
 
     if (ret == OSI_OK)
     {
         ti_driver_ifData_t *pDrv = (ti_driver_ifData_t *)apPriv;
 
-        pDrv->ops->sched_scan(apPriv, apParams);
-
-        CME_start_periodic_scan_timer();
-
-        return 0;
+        if (pDrv->ops->sched_scan(apPriv, apParams) == OSI_OK)
+        {
+            CME_start_periodic_scan_timer();
+            return 0;
+        }
+        else
+        {
+            CME_PRINT_REPORT("\n\rti_driver: starting periodic scan failed");
+            CmeScan_ScanDone(SCAN_REQUEST_CONNECT_PERIODIC_SCAN, pCmeScanDB->roleId, pCmeScanDB, CME_SCAN_STATUS_FAILED, 0, 0);
+            return -1;
+        }
     }
     else
     {
@@ -3151,6 +3155,7 @@ int ti_send_mgmt_frame(void *apPriv,
     txCtrl_t           *pTxCtrl = gTxCtrlCB;
 
     struct ieee80211_mgmt* pPayload = (struct ieee80211_mgmt *) apData;
+    uint16_t stype = (pPayload->frame_control >> 4) & 0xF;
 
     if (NULL == pDrv)
     {
@@ -3166,11 +3171,11 @@ int ti_send_mgmt_frame(void *apPriv,
         if((pPayload->frame_control != IEEE80211_FC(WLAN_FC_TYPE_MGMT, WLAN_FC_STYPE_PROBE_REQ))
                 &&(pPayload->frame_control != IEEE80211_FC(WLAN_FC_TYPE_MGMT, WLAN_FC_STYPE_PROBE_RESP)))
         {
-            if((pPayload->frame_control>>4) == WLAN_FC_STYPE_ASSOC_RESP)
+            if(stype == WLAN_FC_STYPE_ASSOC_RESP)
             {
                 CME_PRINT_REPORT("\n\rti_send_mgmt_frame, send_mlme WLAN_FC_STYPE_ASSOC_RESP");
             }
-            if((pPayload->frame_control>>4) == WLAN_FC_STYPE_ACTION)
+            if(stype == WLAN_FC_STYPE_ACTION)
             {
                 CME_PRINT_REPORT("\n\rti_send_mgmt_frame, send_mlme WLAN_FC_STYPE_ACTION roleType:%d aDataLen:%d category:%d action :%d",
                         pDrv->roleType,
@@ -3178,7 +3183,6 @@ int ti_send_mgmt_frame(void *apPriv,
                         pPayload->u.action.category,
                         pPayload->u.action.u.public_action.action);
             }
-
             else
             {
                 CME_PRINT_REPORT("\n\rti_send_mgmt_frame, send_mlme fc:0x%x roleType:%d aDataLen:%d ",
@@ -3220,19 +3224,24 @@ int ti_send_mgmt_frame(void *apPriv,
 
     link = udataNet_GetTxMgmtLink(uNetIfId, (uint8_t *)dst_addr);
 
-     if (INVALID_LINK == link)
-     {
-         GTRACE(GRP_DRIVER_CC33, "ti_driver_send_l2_data: No valid hlid was found!  NetifId = %d", link);
-         CME_PRINT_REPORT_ERROR("\n\rERROR !!!rti_driver_send_l2_data: No valid hlid was found!  NetifId = %d\n\r", link);
-         status = -1;
-         goto fail;
-     }
+    if (INVALID_LINK == link)
+    {
+        GTRACE(GRP_DRIVER_CC33, "ti_driver_send_l2_data: No valid hlid was found!  NetifId = %d", link);
+        CME_PRINT_REPORT_ERROR("\n\rERROR !!!rti_driver_send_l2_data: No valid hlid was found!  NetifId = %d\n\r", link);
+        status = -1;
+        goto fail;
+    }
      //CME_PRINT_REPORT("\n\rti_driver:  roleType:%d hlid:%d  NetifId:%d\n\r", pDrv->roleType,link,uNetIfId);
-     if(pTxCtrl->aEncryptMgmt[link])
-     {
-         SecureHdrLength = RSN_SEC_LEN;
-         CME_PRINT_REPORT_ERROR ("\n\rti_send_mgmt_frame encrypted for link %d", link);
-     }
+
+    if((pTxCtrl->aEncryptMgmt[link]) &&
+        (stype != WLAN_FC_STYPE_ASSOC_RESP) &&
+        (stype != WLAN_FC_STYPE_REASSOC_RESP) &&
+        !(stype == WLAN_FC_STYPE_ACTION &&
+            pPayload->u.action.category == WLAN_ACTION_PUBLIC))
+    {
+        SecureHdrLength = RSN_SEC_LEN;
+        CME_PRINT_REPORT_ERROR("\n\rti_send_mgmt_frame stype %d encrypted for link %d", stype, link);
+    }
 
     extraHThdr += SecureHdrLength;
     /* allocate descriptor and payload */
@@ -3366,7 +3375,6 @@ RoleType_e drv_getDeviceIface(struct wpa_global *apGlobal, struct wpa_supplicant
         CME_PRINT_REPORT_ERROR("\r\nERROR ! apGlobal or apGlobal->ifaces is NULL");
         return ROLE_TYPE_NONE;
     }
-
     wpa_s = apGlobal->ifaces;
     pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
 
@@ -3408,12 +3416,17 @@ struct wpa_supplicant * drv_getIfaceFromRoleID(struct wpa_global *apGlobal, uint
     struct wpa_supplicant *wpa_s;
     ti_driver_ifData_t *pDrv;
 
+    if ((NULL == apGlobal) || (NULL == apGlobal->ifaces))
+    {
+        return NULL;
+    }
+
     // Go over all valid interfaces and verify netIf is related to a valid one
     wpa_s = apGlobal->ifaces;
     while (NULL != wpa_s)
     {
         pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
-        if (aRoleID == pDrv->roleId)
+        if ((NULL != pDrv) && (aRoleID == pDrv->roleId))
             return wpa_s;
 
         wpa_s = wpa_s->next;
@@ -3431,11 +3444,15 @@ int drv_getRoleIdFromType(struct wpa_global *apGlobal,RoleType_e roleType)
     struct wpa_supplicant *wpa_s;
     ti_driver_ifData_t *pDrv;
 
+    if ((NULL == apGlobal) || (NULL == apGlobal->ifaces))
+    {
+        return roleid;
+    }
+
     wpa_s = apGlobal->ifaces;
     pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
-    if(NULL == wpa_s->drv_priv)
+    if (NULL == pDrv)
     {
-        ASSERT_GENERAL(0);
         return roleid;
     }
     if (roleType == ROLE_STA)
@@ -3450,10 +3467,15 @@ int drv_getRoleIdFromType(struct wpa_global *apGlobal,RoleType_e roleType)
             {
                 wpa_s = wpa_s->next;
                 pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
+                if (NULL == pDrv)
+                {
+                    continue;
+                }
 
                 if (ROLE_IS_TYPE_STA_BASED(pDrv->roleType))
                 {
                     roleid = pDrv->roleId;
+                    break;
                 }
             }
         }
@@ -3470,10 +3492,15 @@ int drv_getRoleIdFromType(struct wpa_global *apGlobal,RoleType_e roleType)
             {
                 wpa_s = wpa_s->next;
                 pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
+                if (NULL == pDrv)
+                {
+                    continue;
+                }
 
                 if (ROLE_IS_TYPE_AP_BASED(pDrv->roleType))
                 {
                     roleid = pDrv->roleId;
+                    break;
                 }
             }
         }
@@ -3490,10 +3517,15 @@ int drv_getRoleIdFromType(struct wpa_global *apGlobal,RoleType_e roleType)
             {
                 wpa_s = wpa_s->next;
                 pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
+                if (NULL == pDrv)
+                {
+                    continue;
+                }
 
                 if (ROLE_IS_TYPE_DEVICE(pDrv->roleType))
                 {
                     roleid = pDrv->roleId;
+                    break;
                 }
             }
         }
@@ -3510,10 +3542,15 @@ int drv_getRoleIdFromType(struct wpa_global *apGlobal,RoleType_e roleType)
             {
                 wpa_s = wpa_s->next;
                 pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
+                if (NULL == pDrv)
+                {
+                    continue;
+                }
 
                 if (ROLE_IS_TYPE_STA_BASED(pDrv->roleType))
                 {
                     roleid = pDrv->roleId;
+                    break;
                 }
             }
         }
@@ -3530,17 +3567,18 @@ int drv_getRoleIdFromType(struct wpa_global *apGlobal,RoleType_e roleType)
             {
                 wpa_s = wpa_s->next;
                 pDrv = (ti_driver_ifData_t *)wpa_s->drv_priv;
+                if (NULL == pDrv)
+                {
+                    continue;
+                }
 
                 if (ROLE_IS_TYPE_AP_BASED(pDrv->roleType))
                 {
                     roleid = pDrv->roleId;
+                    break;
                 }
             }
         }
-    }
-    else
-    {
-        ASSERT_GENERAL(0);
     }
 
     HOOK(HOOK_IN_DRIVER_TI_WIFI);
@@ -4006,7 +4044,12 @@ static void sendRxAssocEvent(ti_driver_ifData_t  *apDrv,
 
     event.assoc_info.freq = apDrv->assocFreq;
 
+    event.assoc_info.req_ies = apDrv->assoc_req_ies;
+    event.assoc_info.req_ies_len = apDrv->assoc_req_ies_len;
+
     wpa_supplicant_event(apDrv->ctx, EVENT_ASSOC, &event);
+
+    clear_assoc_req_ies(apDrv);
 
     HOOK(HOOK_IN_DRIVER_TI_WIFI);
 
@@ -4740,6 +4783,7 @@ void drv_handleRxMngPacket(void *descriptor)
                 break;
             }
 
+#ifndef DISABLE_WIFI6
             pHeMuEdcaParamsIE =  (void *)pIE_extension_addr_table[MU_EDCA_PARAMETER_SET_IE_ID];
 
             if(pHeMuEdcaParamsIE && (pDrv->connected))
@@ -4760,6 +4804,7 @@ void drv_handleRxMngPacket(void *descriptor)
                 }
    
             }
+#endif
 
             pWmmParamIE = (void *)pIE_vendorSpecific_addr_table[dot11_WME_OUI_TYPE];
                     
@@ -4775,6 +4820,7 @@ void drv_handleRxMngPacket(void *descriptor)
 
                     for(ac = 0; ac < NUM_ACCESS_CATEGORIES; ac++)
                     {
+#ifndef DISABLE_WIFI6
                         if(pHeMuEdcaParamsIE)
                         {
                             pDrv->ops->tx_param(pDrv, &pDrv->assocParams.acParameters[ac], pDrv->assocParams.psScheme, TRUE, (uint8_t *)&pHeMuEdcaParamsIE->heMuEdcaAcParamsIe[ac], ac);
@@ -4783,6 +4829,9 @@ void drv_handleRxMngPacket(void *descriptor)
                         {
                             pDrv->ops->tx_param(pDrv, &pDrv->assocParams.acParameters[ac], pDrv->assocParams.psScheme, TRUE, (uint8_t *)&pDrv->assocParams.muEdca[ac], ac);
                         }
+#else
+                        pDrv->ops->tx_param(pDrv, &pDrv->assocParams.acParameters[ac], pDrv->assocParams.psScheme, FALSE, NULL, ac);
+#endif
                     }
                 }
 
@@ -5116,13 +5165,13 @@ void drv_handleRxMngPacket(void *descriptor)
             CME_PRINT_REPORT("\n\rdrv_handleRxMngPacket : sendEventDeauthDisassoc hange state to :CME_STA_WLAN_PEER_DISCONNECT_REQ");
             sendEventDeauthDisassoc(pDrv, FRAME_TYPE_DEAUTHENTICATION, pMngPack, packLen);
         	CME_PRINT_STATE_CHNGE_REPORT("\n\rCME: RX_MGMT_DEAUTH, change state to CME_STA_WLAN_PEER_DISCONNECT_REQ !!");
-            CmeStationFlowSM(CME_STA_WLAN_PEER_DISCONNECT_REQ, CME_STA_NONE_USER);
+            CmeStationFlowSM(CME_STA_WLAN_PEER_DISCONNECT_REQ, CmeStationFlow_GetCurrentUser());
             break;
         case RX_MGMT_DISASSOC:
             CME_PRINT_REPORT("\n\rdrv_handleRxMngPacket : sendEventDeauthDisassoc state to :CME_STA_WLAN_PEER_DISCONNECT_REQ");
             sendEventDeauthDisassoc(pDrv, FRAME_TYPE_DISASSOCIATION, pMngPack, packLen);
         	CME_PRINT_STATE_CHNGE_REPORT("\n\rCME: RX_MGMT_DISASSOC, change state to CME_STA_WLAN_PEER_DISCONNECT_REQ !!");
-            CmeStationFlowSM(CME_STA_WLAN_PEER_DISCONNECT_REQ, CME_STA_NONE_USER);
+            CmeStationFlowSM(CME_STA_WLAN_PEER_DISCONNECT_REQ, CmeStationFlow_GetCurrentUser());
             break;
         case RX_MGMT_UNPROT_DEAUTH:
             CME_PRINT_REPORT("\n\rdrv_handleRxMngPacket : sendEventUnprotDeauthDisassoc");
@@ -5235,48 +5284,66 @@ fail:
 
 }
 
-void drv_handleRxFromUnknown (void *descriptor, uint32 roleId)
+void drv_handleRxFromUnknown(void *descriptor, uint32 roleId)
 {
     HOOK(HOOK_IN_DRIVER_TI_WIFI);
-    //TODO : handle rx from unknown
-#if 0
+
     RxIfDescriptor_t *desc = (RxIfDescriptor_t *)descriptor;
+    ti_driver_ifData_t *pDrv = NULL;
+    RoleType_e eRoleType;
+    TEthernetHeader *pHdr;
+    union wpa_event_data eventData;
 
-    uint16                  fc, stype;
-    union wpa_event_data    eventData;
-    struct ieee80211_mgmt   *pMngPack;
-    ti_driver_ifData_t      *pDrv;
+    GTRACE(GRP_DRIVER_CC33, "drv_handleRxFromUnknown: roleId=%d, hlid=%d", roleId, desc->hlid);
+    CME_PRINT_REPORT("\n\rdrv_handleRxFromUnknown: roleId=%d, hlid=%d", roleId, desc->hlid);
 
-
-    pDrv   = getDriverForRoleId(roleId, gpSupplicantGlobals);
-
-    if(NULL == pDrv)
+    if (NULL == gpSupplicantGlobals || NULL == gpSupplicantGlobals->ifaces)
     {
-        g_stub_func.ReleaseDeallocDescriptor(desc);
-        return;
+        GTRACE(GRP_DRIVER_CC33, "drv_handleRxFromUnknown: supplicant stopped");
+        CME_PRINT_REPORT_ERROR("\n\rdrv_handleRxFromUnknown: supplicant stopped");
+        goto done;
     }
-    /* Get the mac header location in the packet Buffer */
-    pMngPack = (struct ieee80211_mgmt *)(uint8_t*)RX_BUF_DATA(desc);
 
-    // Handle management packet
-    fc = le_to_host16(pMngPack->frame_control);
-    stype = WLAN_FC_GET_STYPE(fc);
+    /* Get role type from role ID */
+    eRoleType = drv_getRoleTypeFromRoleId(gpSupplicantGlobals, roleId);
 
-    memset(&eventData, 0, sizeof(eventData));
+    /* Only notify supplicant for AP or P2P GO role */
+    if (ROLE_IS_TYPE_AP_BASED(eRoleType) == FALSE)
+    {
+        GTRACE(GRP_DRIVER_CC33, "drv_handleRxFromUnknown: non-AP role %d, drop frame", eRoleType);
+        CME_PRINT_REPORT_ERROR("\n\rdrv_handleRxFromUnknown: non-AP role %d, drop frame", eRoleType);
+        goto done;
+    }
 
-    //Code taken from driver nl80211
-    eventData.rx_from_unknown.bssid = get_hdr_bssid((struct ieee80211_hdr *)pMngPack, desc->length); //Set the bss
-    eventData.rx_from_unknown.addr = pMngPack->sa; //Set the source address
-    eventData.rx_from_unknown.wds = (fc & (WLAN_FC_FROMDS | WLAN_FC_TODS)) == (WLAN_FC_FROMDS | WLAN_FC_TODS); //Set wds
+    pDrv = getDriverForRoleId(roleId, gpSupplicantGlobals);
+    if (NULL == pDrv)
+    {
+        GTRACE(GRP_DRIVER_CC33, "drv_handleRxFromUnknown: driver instance is NULL");
+        CME_PRINT_REPORT_ERROR("\n\rdrv_handleRxFromUnknown: driver instance is NULL");
+        goto done;
+    }
+
+    /* Get source MAC from ethernet header */
+    pHdr = (TEthernetHeader *)RX_ETH_PKT_DATA((uint8_t *)descriptor);
+
+    GTRACE(GRP_DRIVER_CC33, "drv_handleRxFromUnknown: notify supplicant, src=" MACSTR,
+           MAC2STR(pHdr->src));
+
+    CME_PRINT_REPORT("\n\rdrv_handleRxFromUnknown: notify supplicant, src=" MACSTR,
+           MAC2STR(pHdr->src));
+
+    /* Notify supplicant about frame from unknown station */
+    os_memset(&eventData, 0, sizeof(eventData));
+    eventData.rx_from_unknown.bssid = pDrv->macAddr;
+    eventData.rx_from_unknown.addr = pHdr->src;
+    eventData.rx_from_unknown.wds = 0;
 
     wpa_supplicant_event(pDrv->ctx, EVENT_RX_FROM_UNKNOWN, &eventData);
 
-    g_stub_func.ReleaseDeallocDescriptor(desc);
+done:
+    RxBufFree(desc);
 
     HOOK(HOOK_IN_DRIVER_TI_WIFI);
-#endif
-    return;
-
 }
 // ----------------------------------------------------------------------------
 void drv_handleRxEapol(void *aDesc)
@@ -5288,7 +5355,6 @@ void drv_handleRxEapol(void *aDesc)
     uint8_t netif = TIWDRV_NETIF_NUM;
     tiwdrv_if_mode_e netifMode = TIWDRV_IF_MODE_UNKNOWN;
     uint32_t roleId = 0;
-
     uint32_t packLen;
     uint8_t                *pEapolBuff;
     uint32_t               eapolOffset;
@@ -5312,7 +5378,7 @@ void drv_handleRxEapol(void *aDesc)
     if (desc->hlid >= WLANLINKS_MAX_LINKS)
     {
         GTRACE(GRP_DRIVER_CC33, "rolesMngr_ForwardMgmtPacket(): HLID exceeds limits Hlid = %d", desc->hlid);
-        RX_MGMT_PRINT("\n\r drv_handleRxEapol(): rolesMngr_ForwardMgmtPacket(): HLID exceeds limits Hlid = %d", desc->hlid);
+        RX_MGMT_PRINT_ERROR("\n\r drv_handleRxEapol():  HLID exceeds limits Hlid = %d", desc->hlid);
         RxBufFree(desc);
 
         return;
@@ -5384,10 +5450,10 @@ void drv_handleRxEapol(void *aDesc)
 
     if (NULL == pDrv)
     {
-         GTRACE(GRP_DRIVER_CC33_DEBUG, "NOTIFY: driver instance is invalid, dropping packet");
+        GTRACE(GRP_DRIVER_CC33_DEBUG, "NOTIFY: driver instance is invalid, dropping packet");
         RxBufFree(desc);
 
-         return;
+        return;
     }
 
     // PMAC updates descriptor fields before forwarding:

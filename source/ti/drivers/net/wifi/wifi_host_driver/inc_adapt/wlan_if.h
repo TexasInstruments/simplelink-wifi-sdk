@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2024, Texas Instruments Incorporated
+/* Copyright (c) 2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,9 +80,9 @@ extern "C" {
 #define WLAN_DOT11_MAX_SUPPORTED_RATES      (32)
 #define WLAN_DOT11_HT_CAPABILITIES_ELE_LEN  (26)
 #define WLAN_DOT11_ERP_ELE_LEN              (1)
-#define WLAN_MAX_BEACON_BODY_LENGTH         (700)
+#define WLAN_MAX_BEACON_BODY_LENGTH         (1600)
 #define WLAN_DOT11_MAX_RSNE_SIZE            (257)
-#define WLAN_DOT11_MAX_BEACON_BODY_LENGTH   (700)
+#define WLAN_DOT11_MAX_BEACON_BODY_LENGTH   (1600)
 #define WLAN_DOT11_MAX_WPSIE_SIZE           (350)
 
 #define WLAN_LEN_OF_IE_HEADER               (2)
@@ -165,6 +164,8 @@ extern "C" {
 #define WLAN_SEC_TYPE_WPA3                                                        (12) /* Support WPA3 only networks */
 #define WLAN_SEC_TYPE_WPA_PMK                                                     (15)
 #define WLAN_SEC_TYPE_WPA2_WPA3                                                   (16) /*transition mode WPA2 WPA2+PMF WPA3 */
+#define WLAN_SEC_TYPE_WPA2_AES_ONLY_PMF                                           (13) 
+#define WLAN_SEC_TYPE_WPA2_AES_ONLY_NO_PMF                                        (14) 
 
 
 /* AP access List Macros */
@@ -1106,7 +1107,10 @@ typedef enum
     WLAN_SET_CONNECTION_POLICY,
     WLAN_SET_SCAN_DWELL_TIME,
     WLAN_SET_LISTED_CHANNELS_FOR_SCAN,
-    WLAN_SET_WPS_AP_PIN
+    WLAN_SET_WPS_AP_PIN,
+    WLAN_SET_SCHED_SCAN_PLANS,
+    WLAN_SET_CSI_SOLICITATION,
+    WLAN_SET_CSI_SOLICITATION_MAC
 } WlanSet_e;
 
 
@@ -1119,6 +1123,9 @@ typedef enum
     WLAN_GET_CALIBRATOR_RX_STATS,
     WLAN_GET_CALIBRATOR_GET_IO_CFG,
     WLAN_GET_RSSI,
+#ifdef NOISE_FLOOR //not defined on CC3xxx
+    WLAN_GET_NOISE_FLOOR,
+#endif
     WLAN_GET_FWVERSION,
     WLAN_GET_SPVERSION,
     WLAN_GET_DEVICE_INFO,
@@ -1202,6 +1209,12 @@ typedef struct __PACKED__
     int8       rssi_beacon;
 } WlanBeaconRssi_t;
 
+typedef struct __PACKED__
+{
+    uint8      role_id;
+    uint8      pad[2];
+    int8_t     noiseFloorAvg;     /* noise floor indication measurement: average noise power */
+} WlanNoiseFloor_t;
 
 typedef enum
 {
@@ -1527,6 +1540,7 @@ typedef struct
     uint32_t  timestamp;
     uint16_t  packetLength;    // length of packet including Frame Check Sequence(FCS)
     uint16_t  csiInfoLength;
+    uint16_t  seqNum;
     uint8_t   tMacAddr[MAC_ADDRESS_LEN]; // transmitter mac address
     uint8_t   rMacAddr[MAC_ADDRESS_LEN]; // receiver mac address
     int8_t    rssi;
@@ -1545,6 +1559,19 @@ typedef struct
 {
     uint8_t   csiEnable;
 }WlanCfgCsi_t;
+
+typedef struct
+{
+    uint8_t   csiSolEnable;
+    uint8_t   csiSolPeriod;
+    uint8_t   csiSolExpiry;
+}WlanCfgCsiSol_t;
+
+typedef struct
+{
+    uint8_t   csiSolAddRemoveMac;
+    uint8_t   csiSolMacAddress[MAC_ADDRESS_LEN];
+}WlanCfgCsiSolSetMac_t;
 
 typedef struct
 {
@@ -1608,8 +1635,12 @@ typedef struct
     uint32_t            eapIdentityLen; //identity len
     uint8_t             eapAnonymous[WLAN_MAX_ANON_LEN + 1];//anonymous string
     uint32_t            eapAnonUserLen;//anonymous string length
-
+    uint32_t             KeyLength;
 }WlanEapConnectParams_t;
+
+
+
+
 /*****************************************************************************/
 /* Data path CB function                                                     */
 /*****************************************************************************/

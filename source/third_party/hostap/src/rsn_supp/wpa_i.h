@@ -118,11 +118,11 @@ struct wpa_sm {
 	size_t assoc_rsnxe_len;
 	u8 *ap_wpa_ie, *ap_rsn_ie, *ap_rsnxe;
 	size_t ap_wpa_ie_len, ap_rsn_ie_len, ap_rsnxe_len;
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     u8 *ap_rsne_override, *ap_rsne_override_2, *ap_rsnxe_override;
 	size_t ap_rsne_override_len, ap_rsne_override_2_len,
 		ap_rsnxe_override_len;
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
 #ifdef CONFIG_TDLS
 	struct wpa_tdls_peer *tdls;
@@ -221,10 +221,10 @@ struct wpa_sm {
 	struct wpabuf *dpp_z;
 	int dpp_pfs;
 #endif /* CONFIG_DPP2 */
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     bool rsn_override_support;
 	enum wpa_rsn_override rsn_override;
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 };
 
 

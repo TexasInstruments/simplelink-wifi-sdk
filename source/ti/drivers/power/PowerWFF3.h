@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,11 +51,14 @@
 #ifndef ti_drivers_power_PowerWFF3__include
 #define ti_drivers_power_PowerWFF3__include
 
+#include <stdint.h>
+
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/Power.h>
 
 #include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_prcm_scratchpad.h)
 
 #ifdef __cplusplus
 extern "C" {
@@ -221,10 +224,29 @@ typedef struct
  */
 typedef enum
 {
-    /*! Device reset due to pin reset */
-    PowerWFF3_RESET_PIN = 0, // PMCTL_RSTSTA_RESETSRC_PINRESET, // TODO: Implement for WFF3
-    /*! Device booted due to power on reset */
-    PowerWFF3_RESET_POR = 1, // PMCTL_RSTSTA_RESETSRC_PWRON, // TODO: Implement for WFF3
+    /*! Device reset due to pin reset or power on reset */
+    PowerWFF3_RESET_PIN_POR = PRCM_SCRATCHPAD_RSTCAUS_RSTLINE_M | PRCM_SCRATCHPAD_RSTCAUS_POR_M,
+    /*! Device reset due to low side rail voltage monitor tripping */
+    PowerWFF3_RESET_RVML    = PRCM_SCRATCHPAD_RSTCAUS_RSTLINE_M | PRCM_SCRATCHPAD_RSTCAUS_POR_M |
+                           PRCM_SCRATCHPAD_RSTCAUS_RVML_M,
+    /*! Device reset due to high side rail voltage monitor tripping */
+    PowerWFF3_RESET_RVMH = PRCM_SCRATCHPAD_RSTCAUS_RSTLINE_M | PRCM_SCRATCHPAD_RSTCAUS_POR_M |
+                           PRCM_SCRATCHPAD_RSTCAUS_RVMH_M,
+    /*! Device reset due to brownout event*/
+    PowerWFF3_RESET_BOD = PRCM_SCRATCHPAD_RSTCAUS_RSTLINE_M | PRCM_SCRATCHPAD_RSTCAUS_POR_M |
+                          PRCM_SCRATCHPAD_RSTCAUS_BOD_M,
+    /*! Device reset due to debug subsystem reset request */
+    PowerWFF3_RESET_DSSM = PRCM_SCRATCHPAD_RSTCAUS_RSTLINE_M | PRCM_SCRATCHPAD_RSTCAUS_POR_M |
+                           PRCM_SCRATCHPAD_RSTCAUS_DBGSS_M,
+    /*! Device reset due to watchdog timeout */
+    PowerWFF3_RESET_M33WD = PRCM_SCRATCHPAD_RSTCAUS_RSTLINE_M | PRCM_SCRATCHPAD_RSTCAUS_POR_M |
+                            PRCM_SCRATCHPAD_RSTCAUS_M33WD_M,
+    /*! Device reset due to CPU reset event (for example triggered during OTA operation) */
+    PowerWFF3_RESET_CPU     = PRCM_SCRATCHPAD_RSTCAUS_SOCAONH_M,
+    /*! RF core reset */
+    PowerWFF3_RESET_RFCORE  = PRCM_SCRATCHPAD_RSTCAUS_M33CRSLSTA_M,
+    /*! Unknown reset reason */
+    PowerWFF3_RESET_UNKNOWN = UINT16_MAX,
 } PowerWFF3_ResetReason;
 
 /*!
@@ -243,14 +265,8 @@ void PowerWFF3_doWFI(void);
  * @brief Returns the reason for the most recent reset or wakeup
  *
  * @return #PowerWFF3_ResetReason
- * @pre Power_shutdown()
- * @post PowerWFF3_releaseLatches()
  */
-static inline PowerWFF3_ResetReason PowerWFF3_getResetReason(void)
-{
-    // TODO: Implement
-    return PowerWFF3_RESET_PIN;
-}
+PowerWFF3_ResetReason PowerWFF3_getResetReason(void);
 
 /*!
  *  @brief  The SLEEP Power Policy
@@ -278,6 +294,15 @@ static inline PowerWFF3_ResetReason PowerWFF3_getResetReason(void)
 void PowerWFF3_sleepPolicy(void);
 void PowerWFF3_schedulerDisable(void);
 void PowerWFF3_schedulerRestore(void);
+
+/*!
+ *  @brief Select LFXT as the LFCLK source
+ *
+ *  This function configures the LFXT and sets it as the LFCLK source.
+ *
+ *  @pre Power_init()
+ */
+void PowerWFF3_selectLFXT(void);
 
 #ifdef __cplusplus
 }

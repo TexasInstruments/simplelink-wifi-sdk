@@ -2,15 +2,18 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_wifi_sdk_9_22_00_15.html",
+        "location": "../../release_notes_simplelink_wifi_sdk_10_10_00_18.html",
         "devices": [
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -30,10 +33,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -46,6 +52,56 @@
         "description": "<p>The SimpleLink Wi-Fi SDK comes with documentation for all of the supported software libraries included in the SDK. For a good overview of what documentation is available in the SimpleLink Wi-Fi SDK, go to \"Documentation Overview\".</p>"
     },
     {
+        "name": "Quick Start Guide",
+        "resourceType": "file",
+        "location": "../../docs/simplelink_wifi_sdk/SimpleLink-WiFi-Quickstart-Guide.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "SimpleLink Wi-Fi SDK User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/simplelink_wifi_sdk/SimpleLink-WiFi-User-Guide.html",
+        "devices": [
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
+        ],
+        "devtools": [
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
         "name": "TI-POSIX User's Guide",
         "resourceType": "file",
         "location": "../../docs/tiposix/Users_Guide.html",
@@ -53,10 +109,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -79,10 +138,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -105,10 +167,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -131,10 +196,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -157,10 +225,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -168,7 +239,7 @@
             ]
         ],
         "subCategories": [
-            "mbedTLS"
+            "mbedtls"
         ],
         "resourceClass": [
             "document"
@@ -183,10 +254,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -209,10 +283,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -235,10 +312,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -261,10 +341,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -287,10 +370,13 @@
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -308,14 +394,18 @@
     {
         "name": "CoreSDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_wff3_9_20_00_23.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_wff3_9_21_00_18.html",
         "devices": [
-            "CC1352R1F3",
-            "CC2642R1F"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LAUNCHXL-CC13X2R1",
-            "LAUNCHXL-CC26X2R1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -334,12 +424,16 @@
         "resourceType": "file",
         "location": "../../docs/grlib/release_notes_grlib_5_00_00_05.html",
         "devices": [
-            "CC1352R1F3",
-            "CC2642R1F"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LAUNCHXL-CC13X2R1",
-            "LAUNCHXL-CC26X2R1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [
@@ -358,12 +452,16 @@
         "resourceType": "file",
         "location": "../../docs/mbedtls/release_notes_mbedtls_3_06_03_17_eng.html",
         "devices": [
-            "CC1352R1F3",
-            "CC2642R1F"
+            "CC3500E",
+            "CC3501E",
+            "CC3550E",
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "devtools": [
-            "LAUNCHXL-CC13X2R1",
-            "LAUNCHXL-CC26X2R1"
+            "LP-EM-CC35X1",
+            "LP-EM-CC35X1ET"
         ],
         "mainCategories": [
             [

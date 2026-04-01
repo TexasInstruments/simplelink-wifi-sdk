@@ -88,6 +88,7 @@
 // ============================================================================
 //      Debug only - CME tester
 // ============================================================================
+
 extern void cmeTestInit();
 extern bool mx_driver_scan_is_scan_tagged_frame(void *pDesc);
 extern void set_finish_wlan_supplicant_operation();
@@ -98,6 +99,7 @@ extern int32_t is_wlan_periodic_scan_in_progress();
 extern ti_driver_ifData_t * getDriverForRoleId(uint32_t aRoleId, struct wpa_global *apGlobal);
 extern void CME_periodic_scan_timer_stop();
 extern void CME_start_periodic_scan_timer();
+extern TUdata *gUdataCB;
 extern int ti_driver_inact_mili(void *priv, const u8 *addr);
 
 void CME_start_peer_aging_timer(OsiTimer_t* osTimer, uint32_t timeout);
@@ -276,7 +278,9 @@ typedef enum
 
     CME_MESSAGE_ID_PEER_AGING_SAMPLE_TIME,
 
-    CME_MESSAGE_ID_SET_SCAN_DWELL_TIME
+    CME_MESSAGE_ID_SET_SCAN_DWELL_TIME,
+
+    CME_MESSAGE_ID_SET_SCHED_SCAN_PLANS
 
 } CmeMsgsIds_e;
 
@@ -424,6 +428,7 @@ typedef struct
         WlanScanDwellTime_t            dwellTimes;
 
         WlanSetWpsApPinParam_t          wpsApPin;
+        char *                   sched_scan_plans;
 
     } un;
 
@@ -495,6 +500,7 @@ OsiSyncObj_t gCmeThrdDummySleep = NULL;
 OsiSyncObj_t gCmeEapolsStaSyncObject = NULL;
 OsiSyncObj_t gtxCompleteSyncObj = NULL;
 
+extern volatile uint8_t gFwCrashOccurred;
 
 /* save last disconnect info */
 CMEWlanEventDisconnect_t  gLastDisconnectInfo ;
@@ -1307,6 +1313,32 @@ int16_t CME_SetWpsApPin(WlanSetWpsApPinParam_t *pWpsApPinParams)
 
 // ----------------------------------------------------------------------------
 
+int16_t CME_SetSchedScanPlans(char *sched_scan_plans)
+{
+    cmeMsg_t msg;
+
+    msg.msgId = CME_MESSAGE_ID_SET_SCHED_SCAN_PLANS;
+
+    if (NULL == sched_scan_plans)
+    {
+        return -1;
+    }
+
+    uint8 len = strlen(sched_scan_plans);
+    msg.un.sched_scan_plans = os_zalloc(len + 1);
+
+    if (NULL == msg.un.sched_scan_plans)
+    {
+        return -1;
+    }
+
+    os_memcpy(msg.un.sched_scan_plans, sched_scan_plans, len);
+    
+    return pushMsg2Queue(&msg);
+}
+
+// ----------------------------------------------------------------------------
+
 /* Sec type to key management type LUT */
 static const uint32_t SecTypeToWPAkey_lut[] = {
 /* (0) SL_SEC_TYPE_OPEN  */           WPA_KEY_MGMT_NONE,
@@ -1322,8 +1354,8 @@ static const uint32_t SecTypeToWPAkey_lut[] = {
 /* (10) SL_SEC_TYPE_WEP_SHARED */     WPA_KEY_MGMT_NONE,
 /* (11) CME_SEC_TYPE_WPA2_PLUS */     WPA_KEY_MGMT_PSK_SHA256,
 /* (12) CME_SEC_TYPE_WPA3 */          WPA_KEY_MGMT_SAE,
-/* (13) UNEXPECTED */                 WPA_KEY_MGMT_UNEXPECTED,
-/* (14) UNEXPECTED */                 WPA_KEY_MGMT_UNEXPECTED,
+/* (13) WLAN_SEC_TYPE_WPA2_AES_ONLY_PMF */      WPA_KEY_MGMT_PSK,
+/* (14) WLAN_SEC_TYPE_WPA2_AES_ONLY_NO_PMF */   WPA_KEY_MGMT_PSK,
 /* (15) UNEXPECTED */                 WPA_KEY_MGMT_UNEXPECTED,
 /* (16) WLAN_SEC_TYPE_WPA2_WPA3 */    WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_PSK_SHA256 | WPA_KEY_MGMT_SAE
 };
@@ -2496,7 +2528,7 @@ int32_t CME_unprotDeAuthAssocDetected(void *aDesc, uint32_t aRoleId)
     return pushMsg2Queue(&msg);
 }
 #endif
-#if 0
+
 // ----------------------------------------------------------------------------
 int32_t CME_RxFromUnknown(void *aDesc, uint32_t aRoleId)
 {
@@ -2521,7 +2553,30 @@ int32_t CME_RxFromUnknown(void *aDesc, uint32_t aRoleId)
 
     return pushMsg2Queue(&msg);
 }
-#endif
+
+// ----------------------------------------------------------------------------
+int32_t CME_RxFromUnknownData(void *aDesc)
+{
+    HOOK(HOOK_IN_CME);
+
+    RxIfDescriptor_t *pRxParams = (RxIfDescriptor_t *)aDesc;
+    uint8_t uHlid = pRxParams->hlid;
+    TUdata *pUdata = gUdataCB;
+    RoleType_e eRoleType;
+    uint32_t roleId;
+
+    /* Validate HLID bounds */
+    if (uHlid >= WLANLINKS_MAX_LINKS)
+    {
+        RxBufFree(aDesc);
+        return -1;
+    }
+    /* Get role type from link info */
+    eRoleType = pUdata->aLinkInfo[uHlid].eRoleType;
+    roleId = drv_getRoleIdFromType(gpSupplicantGlobals, eRoleType);
+
+    return CME_RxFromUnknown(aDesc, roleId);
+}
 #if 0
 int32_t CME_NotifyMicFailure(void *aDesc)
 {
@@ -3200,6 +3255,14 @@ void cme_Thread(void* apParam)
                             //disconnection initiated by user - we remove pmk cache
                             cmeRemoveWpaPmkCache();
                         }
+                        if (msg.generalData == CME_GENERAL_DATA_DISCONNECT_IS_BSS_LOSS)
+                        {
+                            cmeReassociationParamsStore();
+                        }
+                        else
+                        {
+                            cmeReassociationParamsClear();
+                        }
 
                         //check if disconnection needed:
                         if (! CmeStationFlowIsSMIdle() )
@@ -3562,12 +3625,10 @@ void cme_Thread(void* apParam)
                                 if (0 != CmeStationFlowSM(CME_STA_NETWORK_SEARCH_EVENT,CME_STA_WLAN_CONNECT_USER))
                                 {
                                     GTRACE(GRP_CME,"CME: ERROR!CmeStationFlowSM tried to set scan in STA flow SM and failed!! ");
-                                    ASSERT_GENERAL(0); //TODO: Amir, Happened - Need to debug (log exists)
+                                    ASSERT_GENERAL(0);
                                     //exit point
                                     break;
                                 }
-
-
 
                                 GTRACE(GRP_CME,"cme_InternalEventHandler: WlanConnect event trigger following previous network DISCONNECTEd event");
                                 CME_CON_PRINT("\n\rcme_InternalEventHandler: WlanConnect event trigger following previous network DISCONNECTEd event");
@@ -3865,22 +3926,29 @@ void cme_Thread(void* apParam)
 
                    if (ROLE_IS_TYPE_STA_BASED(role_type))
                    {
-                        // since BSS transition is initiated by the supplicant and not handled by the CME, 
+                        //
+                        //       in case disconnect arrived during connection sequence we
+                        //       should drop this event as it is no longer relevant.
+                        //       This check must run even during BTM to handle race conditions
+                        //       where DISASSOC arrives while COMPLETED message is queued.
+                        //
+                        if (CmeStationFlowIsDisconnecting() || wpa_s->wpa_state == WPA_DISCONNECTED)
+                        {
+                            GTRACE(GRP_CME,"cme_InternalEventHandler: got event CME_MESSAGE_ID_WPA_SUPP_COMPLETED for role ID %d, but SM is in DISCONNECTING state, drop this event (do nothing), supp state %d", msg.roleId,wpa_s->wpa_state);
+                            //verify we are indeed not supplicant complete
+                            ASSERT_GENERAL(wpa_s->wpa_state < WPA_COMPLETED);
+                            if (gBssTransitionState == TRANSITION_IN_PROGRESS)
+                            {
+                                set_finish_wlan_supplicant_operation();
+                                gBssTransitionState = NO_TRANSITION;
+                            }
+                            break;
+                        }
+
+                        // since BSS transition is initiated by the supplicant and not handled by the CME,
                         // we avoid CME internal actions like mode verification and station flow SM update during the reconnection process.
                         if (gBssTransitionState != TRANSITION_IN_PROGRESS)
                         {
-                            //
-                            //       in case disconnect arrived during connection sequence we
-                            //       should drop this event as it is no longer relevant.
-                            //
-                            if (CmeStationFlowIsDisconnecting() || wpa_s->wpa_state == WPA_DISCONNECTED)
-                            {
-                                GTRACE(GRP_CME,"cme_InternalEventHandler: got event CME_MESSAGE_ID_WPA_SUPP_COMPLETED for role ID %d, but SM is in DISCONNECTING state, drop this event (do nothing), supp state %d", msg.roleId,wpa_s->wpa_state);
-                                //verify we are indeed not supplicant complete
-                                ASSERT_GENERAL(wpa_s->wpa_state < WPA_COMPLETED);
-
-                                break;
-                            }
                             //
                             //update station flow SM upon wpa suppilcant completed
                             //
@@ -4503,6 +4571,33 @@ void cme_Thread(void* apParam)
                     os_free(msg.un.nonPrefChannels.channel_list);
                 }
                 break;
+                
+                case CME_MESSAGE_ID_SET_SCHED_SCAN_PLANS:
+                {
+                    struct wpa_supplicant *wpa_s;
+                    uint32_t roleId;
+
+                    roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_STA);
+                    if (roleId != INVALID_ROLE_ID)
+                    {
+                        wpa_s = drv_getIfaceFromRoleID(gpSupplicantGlobals, roleId);
+
+                        if (!((wpa_s == NULL) || (wpa_s->conf == NULL)))
+                        {
+                            wpa_s->conf->sched_scan_plans = msg.un.sched_scan_plans;
+                            wpa_s->conf->changed_parameters |= CFG_CHANGED_SCHED_SCAN_PLANS;
+                            wpa_supplicant_update_config(wpa_s);
+                        }
+                    }
+                    else
+                    {
+                        GTRACE(GRP_CME, "CME: ERROR! Set sched scan plans failed - no sta roleId!!!");
+                        CME_PRINT_REPORT("\n\r CME: ERROR! Set sched scan plans failed - no sta roleId!!!");
+                    }
+
+                    os_free(msg.un.sched_scan_plans);
+                }
+                break;
 
                 case CME_MESSAGE_ID_CONFIGURE_PEER_AGING_TIMEOUT:
                 {
@@ -4890,7 +4985,9 @@ int32_t cme_init()
     //cme_InitAfterSleep();
     gCmeRoleSwitchActive = FALSE;
     gCme_PendingWlanConnect.pConnectCmd = NULL;
-    // TODO need to implement EAP
+
+    /* Clear FW crash flag on init */
+    gFwCrashOccurred = 0;
 #if 0
     gCme_PendingWlanConnect.pConnectEapCmd = NULL;
 

@@ -368,6 +368,11 @@ int rsn_rsnWpaIe2SecurityInfo(dot11_RSN_t *rsnIe, uint8_t rsnIeLen, uint16_t *se
         *securityType |= ((RSN_WLAN_SECURITY_TYPE_BITMAP_WPA & RSN_WLAN_SCAN_RESULT_SEC_TYPE_MASK) << RSN_WLAN_SCAN_RESULT_SEC_TYPE_POSITION);
         DRV_PRINT_REPORT("\n\r WPA_PROTO_WPA securityType:0x%x", *securityType);
     }
+    else if ((parsedSec.proto & WPA_PROTO_RSN) && ((parsedSec.group_cipher == WPA_CIPHER_TKIP) && (parsedSec.pairwise_cipher == WPA_CIPHER_TKIP)))
+    {
+        *securityType |= ((RSN_WLAN_SECURITY_TYPE_BITMAP_WPA & RSN_WLAN_SCAN_RESULT_SEC_TYPE_MASK) << RSN_WLAN_SCAN_RESULT_SEC_TYPE_POSITION);
+        DRV_PRINT_REPORT("\n\r TKIP - securityType:0x%x", *securityType);
+    }
     else if ((parsedSec.proto & WPA_PROTO_RSN) && ((parsedSec.key_mgmt == (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK)) || (parsedSec.key_mgmt == (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256))))
     {
         // WPA2/3
@@ -440,22 +445,26 @@ int rsn_rsnWpaIe2SecurityInfo(dot11_RSN_t *rsnIe, uint8_t rsnIeLen, uint16_t *se
  * Params: uint16_t dot11CapabilityInfo
  *         uint8_t *payload - pointer to the beginning of the IE. Beacon or probe response payload
  *         uint8_t payloadLen
- *         uint8_t *securityType [out] - returned security type
+ *         uint8_t *securityType [out] - returned security type from WPA/RSN IE
+ *         uint8_t *securityTypeOverride [out] - returned security type from RSN Override IE
+ *         uint8_t *securityTypeOverride2 [out] - returned security type from RSN Override 2 IE
  *
  * Return - 0 on success, negative on error
  *
  */
-int rsn_getSecurityType(uint16_t dot11CapabilityInfo, dot11_RSN_t *pDotRsn, dot11_RSN_t *pDotWpa ,uint8_t *securityType)
+int rsn_getSecurityTypes(uint16_t dot11CapabilityInfo, dot11_RSN_t *pDotRsn, dot11_RSN_t *pDotWpa, dot11_RSN_t *pDotRsnOverride, dot11_RSN_t *pDotRsnOverride2, uint8_t *securityType, uint8_t *securityTypeOverride, uint8_t *securityTypeOverride2)
 {
     int result = 0;
     uint8_t secType = 0xff; //0xff - security type not found
+    uint8_t secTypeOverride = 0xff; //0xff - security type not found
+    uint8_t secTypeOverride2 = 0xff; //0xff - security type not found
 
     if (0 == (dot11CapabilityInfo & DOT11_CAPABILITY_PRIVACY))
     {
         secType = CME_SEC_TYPE_OPEN; //Security type open
     }
     else{        
-        if ((pDotRsn == NULL) && (pDotWpa == NULL))
+        if ((pDotRsn == NULL) && (pDotWpa == NULL) && (pDotRsnOverride == NULL) && (pDotRsnOverride2 == NULL))
         {
             //Security type wep
             secType = CME_SEC_TYPE_WEP;
@@ -471,16 +480,28 @@ int rsn_getSecurityType(uint16_t dot11CapabilityInfo, dot11_RSN_t *pDotRsn, dot1
             {
                 rsn_getSecurityTypeFrom_IE(pDotWpa, &secType);
             }
+            
+            //Check RSN Override IEs if present
+            if (pDotRsnOverride)
+            {
+                rsn_getSecurityTypeFrom_IE(pDotRsnOverride, &secTypeOverride);
+            }
+            if (pDotRsnOverride2)
+            {
+                rsn_getSecurityTypeFrom_IE(pDotRsnOverride2, &secTypeOverride2);
+            }
         }
     }
 
-    if (secType == 0xff)
+    if ((secType == 0xff) && (secTypeOverride == 0xff) && (secTypeOverride2 == 0xff))
     {
         result = -1;
     }
 
-    GTRACE(GRP_DRIVER_CC33, "RSN: Security type is ENUM(CMESecType_e,%d)", (CMESecType_e) secType);
+    GTRACE(GRP_DRIVER_CC33, "RSN: Security types are secType: ENUM(CMESecType_e,%d), secTypeOverride: ENUM(CMESecType_e,%d), secTypeOverride2: ENUM(CMESecType_e,%d)", (CMESecType_e) secType, (CMESecType_e) secTypeOverride, (CMESecType_e) secTypeOverride2);
     *securityType = secType;
+    *securityTypeOverride = secTypeOverride;
+    *securityTypeOverride2 = secTypeOverride2;
 
     return (result);
 }
@@ -529,19 +550,37 @@ void rsn_getSecurityTypeFrom_IE(dot11_RSN_t *pDotRsn, uint8_t *secType)
         else if ((parsedSec.key_mgmt & (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_FT_SAE)) == 0) 
         {
             if ((parsedSec.capabilities & (WPA_CAPABILITY_MFPC | WPA_CAPABILITY_MFPR)) == 0)
-            { 
-                *secType = CME_SEC_TYPE_WPA_WPA2;
-                
+            {
+                // Check if WPA-only
+                if (parsedSec.proto == WPA_PROTO_WPA)
+                {
+                    *secType = CME_SEC_TYPE_WPA;
+                }
+                else
+                {
+                    // WPA2-only or WPA-WPA2 mixed mode
+                    *secType = CME_SEC_TYPE_WPA_WPA2;
+                    if (((parsedSec.pairwise_cipher & WPA_CIPHER_TKIP) == 0) && ((parsedSec.group_cipher & WPA_CIPHER_TKIP) == 0))
+                    {
+                        *secType = CME_SEC_TYPE_WPA2_AES_ONLY_NO_PMF;
+                    }
+                }
             }
             else
             {
                 *secType = CME_SEC_TYPE_WPA2_PLUS;
+                if (((parsedSec.pairwise_cipher & WPA_CIPHER_TKIP) == 0) && ((parsedSec.group_cipher & WPA_CIPHER_TKIP) == 0))
+                {
+                    *secType = CME_SEC_TYPE_WPA2_AES_ONLY_PMF;
+                }  
             }
         }
         else
         {
             *secType = CME_SEC_TYPE_WPA2_WPA3;
         }
+
+ 
     }
     else if ((parsedSec.pairwise_cipher & (WPA_CIPHER_WEP40 | WPA_CIPHER_WEP104)) &&
              (parsedSec.group_cipher & (WPA_CIPHER_WEP40 | WPA_CIPHER_WEP104)))
@@ -2202,7 +2241,7 @@ static void setKey(KeyAction_e aAction, securityKeys_t *apSecurityKey, const cha
                 }
             }
         }
-        
+  
         wlanLinks_SetLinkDataEncryption(apSecurityKey->lid, bEncrypt);
         CME_CC3XX_PORT_PRINT("\n\r setting pmf for lid :%d pmf :%d", apSecurityKey->lid, isPmfEnable);
         GTRACE(GRP_DRIVER_CC33,"Setting pmf for lid :%d pmf :%d", apSecurityKey->lid, isPmfEnable);
@@ -2214,6 +2253,11 @@ static void setKey(KeyAction_e aAction, securityKeys_t *apSecurityKey, const cha
         if ( ROLE_IS_TYPE_STA_BASED(pDrv->roleType) || ((apSecurityKey->lidKeyType == KEY_TYPE_BROADCAST) && ROLE_IS_TYPE_AP_BASED(pDrv->roleType)) )
         {
             udata_SetMgmtEncryption(apSecurityKey->lid, isPmfEnable);
+        }
+        
+        if (ROLE_IS_TYPE_AP_BASED(pDrv->roleType) && (apSecurityKey->lidKeyType == KEY_TYPE_UNICAST)) 
+        {
+            udata_SetEapolEncryption(apSecurityKey->lid, bEncrypt);
         }
         
         udata_SetEncryptionType(apSecurityKey->lid, keyType);

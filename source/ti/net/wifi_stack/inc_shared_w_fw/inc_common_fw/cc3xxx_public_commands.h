@@ -107,9 +107,11 @@ typedef enum
     CMD_SET_PS_MODE                     = 40,
     CMD_PERIODIC_CALIBRATION            = 41,   /*internal command. used only in FW*/
     CMD_CSI_ENABLE                      = 42,
-
+    CMD_DOWNLOAD_FIRST_CMD              = 43,
+    CMD_CSI_SOL_ENABLE                  = 44,   /* CSI solution enable command */
+    CMD_CSI_SOL_MAC_EDIT                = 45,   /* CSI solution MAC edit command */
     CMD_LAST_COMMAND,                   // must be the last
-
+    
 
     MAX_COMMAND_ID_OSPREY = 0x7FFF
 } Command_e;
@@ -1331,6 +1333,8 @@ typedef enum
     ENABLE_CHANNEL_UTILIZATION_NEXT_SCAN = 30,
     SET_SEED_CFG                    = 31,
     RESET_STATS                     = 32,
+    PHY_REGDOMAIN_TX_POWER_PARAMS   = 33,
+    CQM_RSSI_CONFIG                 = 34,
 
     LAST_CFG_VALUE                  ,
     MAX_DOT11_CFG = LAST_CFG_VALUE  ,
@@ -2374,6 +2378,19 @@ typedef struct __PACKED__
     uint32_t csi_extra_params; // Saving room for future configuration
 } CsiEnableCmd_t;
 
+typedef struct __PACKED__
+{
+    uint8_t csiSolEnable;
+    uint8_t csiSolPeriod;
+    uint8_t csiSolExpiry;
+} CsiSolEnableCmd_t;
+
+typedef struct __attribute__((packed))
+{
+    uint8_t csiSolAddRemoveMac;
+    uint8_t csiSolMacAddress[MAC_ADDR_LEN];
+} CsiSolEditMacCmd_t;
+
 /******************************************************************************
         ID:     ENABLE_NOTIFY
         Desc:   Enable Flow control Notify
@@ -2549,6 +2566,10 @@ typedef enum
     GET_SP_VERSIONS_INTR                    = 14,
     GET_LINK_INACTIVITY                     = 15,
     GET_DEVICE_SYSTEM_INFO                  = 16,
+    GET_SLOW_CLK_SOURCE                     = 17,
+#ifdef NOISE_FLOOR //not defined on CC3xxx
+    NOISE_FLOOR_INTR                        = 18,// deprecated on cc35xx
+#endif
     LAST_INTR_VALUE                            ,
     MAX_DOT11_INTR = LAST_INTR_VALUE           ,
 
@@ -2622,6 +2643,20 @@ typedef struct __PACKED__
     int8_t        rssi_beacon;
 } BeaconRssi_t;
 
+#ifdef NOISE_FLOOR //not defined on CC3xxx
+/******************************************************************************
+        ID:     NOISE_FLOOR_INTR
+        Desc:   Read the noise floor average values
+        Type:   Interrogate
+******************************************************************************/
+typedef struct __PACKED__
+{
+    uint8       role_id;
+    uint8       pad[2];
+    int8        noise_floor_avg;
+} NoiseFloor_t;
+
+#endif
 /******************************************************************************
         ID:     GET_ANTENNA_SELECT_INTR
         Desc:   Read the antenna selection value from the FW
@@ -2736,11 +2771,27 @@ typedef struct
     uint8 padding[2];
 } LinkInactivity_t;
 
+/******************************************************************************
+        ID:     GET_DEVICE_SYSTEM_INFO
+        Desc:   Get device system info
+        Type:   Interrogate
+******************************************************************************/
 typedef struct __PACKED__
 {
     uint32_t  systemInfoIdx;
     uint32_t  deviceSystemInfoValue;
 } DeviceSystemInfo_t;
+
+/******************************************************************************
+        ID:     GET_SLOW_CLK_SOURCE
+        Desc:   Get source of the SLOW CLK
+        Type:   Interrogate
+******************************************************************************/
+typedef struct __PACKED__
+{
+    uint8   isExternalSlwClk;
+    uint8   padding[3];
+} SlowCLKSource_t;
 
 /******************************************************************************
 * ** ***                                                               *** ** *
@@ -2771,6 +2822,8 @@ typedef union
     FwStatistics_t                     Statistics;                                  // GET_STATISTICS
     SPVersions_t                       SPVersions;                                  // GET_SP_VERSIONS_INTR
     DeviceSystemInfo_t                 DeviceSysInfo;                               // GET_DEVICE_SYSTEM_INFO
+    SlowCLKSource_t                    SlowClkSource;                               // GET_SLOW_CLK_SOURCE
+
 }Interrogate_u;
 /**
  * struct Interrogate_t -Read Interrogate command
@@ -3025,7 +3078,11 @@ typedef enum {
     /*  0x15   */   CC33XX_TEST_CMD_GET_SELECTED_ANT = 0x15,
     /*  0x16   */   CC33XX_TEST_CMD_BLE_ENABLE = 0x16,
     /*  0x17   */   CC33XX_TEST_CMD_SET_IO_CFG = 0x17,
-    /*  0x18   */   CC33XX_TEST_CMD_GET_IO_CFG = 0x18
+    /*  0x18   */   CC33XX_TEST_CMD_GET_IO_CFG = 0x18,
+    /*  0x19   */   CC33XX_TEST_CMD_GET_SP_VERSION = 0x19,
+    /*  0x1A   */   CC33XX_TEST_CMD_SET_EFUSE = 0x1A,
+    /*  0x1B   */   CC33XX_TEST_CMD_GET_EFUSE = 0x1B,
+    /*  0x1C   */   CC33XX_TEST_CMD_LOCK_EFUSE = 0x1C
 } TestCmdID_e;
 
 

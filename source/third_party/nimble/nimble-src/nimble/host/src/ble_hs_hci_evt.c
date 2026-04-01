@@ -200,7 +200,7 @@ ble_hs_hci_evt_disconn_complete(uint8_t event_code, const void *data,
                                 unsigned int len)
 {
     const struct ble_hci_ev_disconn_cmp *ev = data;
-    const struct ble_hs_conn *conn;
+    struct ble_hs_conn *conn;
 
     if (len != sizeof(*ev)) {
         return BLE_HS_ECONTROLLER;
@@ -210,6 +210,7 @@ ble_hs_hci_evt_disconn_complete(uint8_t event_code, const void *data,
     conn = ble_hs_conn_find(le16toh(ev->conn_handle));
     if (conn != NULL) {
         ble_hs_hci_add_avail_pkts(conn->bhc_outstanding_pkts);
+        conn->bhc_flags |= BLE_HS_CONN_F_TERMINATED;
     }
     ble_hs_unlock();
 
@@ -466,15 +467,13 @@ ble_hs_hci_evt_le_adv_rpt_first_pass(const void *data, unsigned int len)
 
         rpt = data;
 
-        len -= sizeof(*rpt) + 1;
-        data += sizeof(rpt) + 1;
-
         if (rpt->data_len > len) {
             return BLE_HS_ECONTROLLER;
         }
 
-        len -= rpt->data_len;
-        data += rpt->data_len;
+        /* extra byte for RSSI after adv data */
+        len -= sizeof(*rpt) + 1 + rpt->data_len;
+        data += sizeof(*rpt) + 1 + rpt->data_len;
     }
 
     /* Make sure length was correct */
@@ -507,7 +506,7 @@ ble_hs_hci_evt_le_adv_rpt(uint8_t subevent, const void *data, unsigned int len)
     for (i = 0; i < ev->num_reports; i++) {
         rpt = data;
 
-        data += sizeof(rpt) + rpt->data_len + 1;
+        data += sizeof(*rpt) + rpt->data_len + 1;
 
         desc.event_type = rpt->type;
         desc.addr.type = rpt->addr_type;

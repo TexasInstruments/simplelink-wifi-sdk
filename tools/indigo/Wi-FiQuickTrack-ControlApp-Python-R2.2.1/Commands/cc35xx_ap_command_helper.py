@@ -31,7 +31,9 @@ from datetime import datetime
 if not CommandHelper.device._is_uart_connect:
     CommandHelper.device.connect_serial(os.environ["CC35XX_PORT"])
     CommandHelper.device.wlan_start()
-    CommandHelper.device.wlan_ap_role_up("test", "open", "", '1', '0', '2', "US", False, sae_pwe='0', transition_disable='0')
+    CommandHelper.device.wlan_ap_role_up(ssid="test", sec_type="OPEN", 
+                                         key="", channel='1', sta_limit="2", regulatory_domain="US", 
+                                         hiddenAP=False, sae_pwe='0', transition_disable='0')
 
 # import cc3xxx
 # CC3XXX = cc3xxx.dev
@@ -42,7 +44,7 @@ if not CommandHelper.device._is_uart_connect:
 
 command_interpreter_obj = CommandInterpreter()
 
-chsoen_ssid = ""
+chosen_ssid = ""
 
 class CC35xx_ApCommandHelper:
     store_test_artifcats = False
@@ -50,7 +52,7 @@ class CC35xx_ApCommandHelper:
     @staticmethod
     def ap_start_up():
         """Starts the hostapd service on the AP."""
-        # CC3XXX.wlan_ap_role_up()
+
         return None, None
 
     @staticmethod
@@ -160,10 +162,10 @@ class CC35xx_ApCommandHelper:
 
     @staticmethod
     def get_wsc_cred():
-        global chsoen_ssid
+        global chosen_ssid
         # Get SSID, key_mgmt and Passphrase from config file
         key_list = ["ssid=", "wpa_passphrase=", "wpa_key_mgmt="]
-        return [chsoen_ssid,"12345678","WPA-PSK"],None
+        return [chosen_ssid,"12345678","WPA-PSK"],None
         config_list = []
         file_path = "/etc/hostapd/{}".format(hostapd_config_files[0])
         with open(file_path, "r") as config_f:
@@ -197,20 +199,21 @@ class CC35xx_ApCommandHelper:
 
     @staticmethod
     def ap_configure_wsc(config_enums: dict):
-        global chsoen_ssid 
+        global chosen_ssid 
 
         CommandHelper.device.wlan_ap_role_down()
         channel = config_enums["channel"] #int(config_enums["channel"])
 
         if "ssid" in config_enums:
-            chsoen_ssid = config_enums["ssid"]
+            chosen_ssid = config_enums["ssid"]
         else:
-            chsoen_ssid = "ap-wps"
+            chosen_ssid = "ap-wps"
 
         wps_er_support = config_enums.get("wps_er_support")
 
-        # CC3XXX.wlan_ap_set_config(chsoen_ssid,"WPA-PSK","12345678",channel,0,2,"US",False)
-        CommandHelper.device.wlan_ap_role_up(chsoen_ssid, "WPA-PSK", "12345678", channel, '0', '2', "US", False)
+        # CC3XXX.wlan_ap_set_config(chosen_ssid,"WPA-PSK","12345678",channel,0,2,"US",False)
+        CommandHelper.device.wlan_ap_role_up(ssid=chosen_ssid, sec_type="WPA-PSK", key="12345678",
+                                             channel=channel, sta_limit="2", regulatory_domain="US", hiddenAP=False)
 
         if (wps_er_support == '1'):
             CommandHelper.device.wlan_ap_set_wps_pin("12345670", 0)
@@ -233,9 +236,9 @@ class CC35xx_ApCommandHelper:
 
     @staticmethod
     def ap_configure(config: dict):
-        global chsoen_ssid 
+        global chosen_ssid 
 
-        chsoen_ssid = config["ssid"]
+        chosen_ssid = config["ssid"]
         key = ""
 
         sec_type = config.get("wpa_key_mgmt")
@@ -267,7 +270,7 @@ class CC35xx_ApCommandHelper:
 
             key = config.get("wpa_passphrase", "")
             
-        if sec_type == "NONE":
+        if sec_type == "NONE" or not sec_type:
                 sec_type = "OPEN"
 
         if wep_key0 is not None:
@@ -283,5 +286,13 @@ class CC35xx_ApCommandHelper:
             sae_pwe = '2' #default is both hunting-and-pecking and h2e
 
         CommandHelper.device.wlan_ap_role_down()
-        CommandHelper.device.wlan_ap_role_up(chsoen_ssid, sec_type, key, channel, '0', '2', country_code, False, sae_pwe=sae_pwe, transition_disable=transition_disable)
+        CommandHelper.device.wlan_ap_role_up(ssid=chosen_ssid, 
+                                             sec_type=sec_type, 
+                                             key=key, 
+                                             channel=channel, 
+                                             sta_limit="2", 
+                                             regulatory_domain=country_code, 
+                                             hiddenAP=False, 
+                                             sae_pwe=sae_pwe, 
+                                             transition_disable=transition_disable)
         return None, None

@@ -592,6 +592,47 @@ void cmeStartSiteSurvey(uint8_t aRoleId, CMEWlanScanCommon_t* pScanCommon);
 void cmeWlanConnectDigest(CMEWlanConnectCommon_t *pConnectCmd,CMEEapWlanConnect_t* pEapConnectCmd, uint32_t keyMgmtType, uint16_t connectReq, Bool_e bReconnect);
 
 /* ----------------------------------------------------------------------------
+    cmeReassociationParamsStore
+        Stores current connection parameters for potential future use during reassociation.
+
+    Parameters:    None
+
+    Return code:   None
+---------------------------------------------------------------------------- */
+void cmeReassociationParamsStore();
+
+/* ----------------------------------------------------------------------------
+    cmeReassociationParamsRestore
+        Restores previously stored connection parameters for reassociation.
+
+    Parameters:    None
+
+    Return code:   None
+---------------------------------------------------------------------------- */
+void cmeReassociationParamsRestore();
+
+/* ----------------------------------------------------------------------------
+    cmeReassociationParamsClear
+        Clears the connection parameters previously stored for reassociation.
+
+    Parameters:    None
+
+    Return code:   None
+---------------------------------------------------------------------------- */
+void cmeReassociationParamsClear();
+
+/* ----------------------------------------------------------------------------
+    cmeAreReassociationParamsValid
+        Checks if stored connection parameters exist and are valid for 
+        reassociation purposes.
+
+    Parameters:    None
+
+    Return code:   TRUE if valid connection parameters exist, FALSE otherwise
+---------------------------------------------------------------------------- */
+Bool_e cmeAreReassociationParamsValid();
+
+/* ----------------------------------------------------------------------------
  CME P2P exported Functions
 ---------------------------------------------------------------------------- */
 void cmeP2pConnect(void *apPriv);

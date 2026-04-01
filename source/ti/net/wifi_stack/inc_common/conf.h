@@ -596,9 +596,9 @@ struct conf_coex_configuration {
 	/* 
 	 * External SoC grant polarity
 	 * 
-	 * 0 - Active Low
+	 * 0 - Active High
 	 *
-	 * 1 - Active High (Default)
+	 * 1 - Active Low (Default)
 	 */
 	uint8_t ext_soc_grant_polarity;
 	/* 

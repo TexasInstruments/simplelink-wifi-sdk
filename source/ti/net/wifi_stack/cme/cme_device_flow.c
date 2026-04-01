@@ -187,12 +187,17 @@ void CmeDeviceDeInit(Cme_Users_e __user)
     HOOK(HOOK_IN_CME_STATION_FLOW);
 
     struct wpa_supplicant *wpa_s;
+    RoleType_e roleType;
 
     CME_PRINT_REPORT("\n\rCME :Device SM: CmeDeviceDeInit, move to :CME_DEVICE_DISABLED_STATE\n\r");
 
-
-    drv_getDeviceIface(gpSupplicantGlobals, &wpa_s);
-
+    roleType = drv_getDeviceIface(gpSupplicantGlobals, &wpa_s);
+    if (roleType == ROLE_TYPE_NONE)
+    {
+        CME_PRINT_REPORT("\n\rdevice role doesn't exist");
+        return;
+    }
+    
     wpa_supplicant_remove_iface(gpSupplicantGlobals,
                                 wpa_s,
                                 1 /* enable print */);

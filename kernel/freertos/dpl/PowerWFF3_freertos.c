@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,17 +79,20 @@ extern int_fast16_t PowerWFF3_notify(uint_fast16_t eventType);
  */
 #define MAX_SYSTIMER_DELTA 0xFFBFFFFFU
 
-/* Clock frequency divider used as a conversion factor when working at a lower
- * clock rate on FPGA.
+/* Number of CPU clock cycles per FreeRTOS tick. In other words, the FreeRTOS
+ * tick period measured in CPU clock cycles.
  */
-#define CLOCK_FREQUENCY_DIVIDER (160000000U / configCPU_CLOCK_HZ)
+#define CPU_CLOCKS_PER_FREERTOS_TICK (configCPU_CLOCK_HZ / configTICK_RATE_HZ)
+
+/* Number of CPU clock cycles per microsecond */
+#define CPU_CLOCKS_PER_US (configCPU_CLOCK_HZ / 1000000U)
 
 #define SYSTIMER_CHANNEL_COUNT 2U
 
 /* This global is used to pass the expected ticks that the OS will sleep from
  * vPortSuppressTicksAndSleep() to the Power policy.
  */
-static volatile uint32_t PowerWFF3_idleTimeOS = 0;
+static volatile uint32_t PowerWFF3_idleTimeOS = 0U;
 
 /* Global to stash the SysTimer timeouts while we enter standby */
 uint32_t sysTimerTimeouts[SYSTIMER_CHANNEL_COUNT];
@@ -116,7 +119,7 @@ void PowerWFF3_sleepPolicy()
     uint32_t ticksAfter;
     uint32_t sleptTicks;
     uint32_t soonestDelta;
-    uint32_t osDelta;
+    uint64_t osDelta;
     uint32_t sysTimerDelta;
     uint32_t sysTimerIMASK;
     uint32_t sysTimerARMSET;
@@ -125,6 +128,14 @@ void PowerWFF3_sleepPolicy()
     uint32_t wakeupSourceStatus;
     uint32_t wakeupSourceMask;
     uint8_t sysTimerIndex;
+    int32_t sysTickValue;      /* The SysTick counter is only 24 bits wide, so
+                                * it will fit in signed 32 bits.
+                                */
+    uint32_t missedTicks = 0U; /* Number of missed SysTick interrupts from the
+                                * time interrupts are disabled until
+                                * sysTickValue is set.
+                                */
+    uint32_t standbyDuration;
     uintptr_t key;
     bool sleepAllowed;
     bool idleAllowed;
@@ -132,7 +143,7 @@ void PowerWFF3_sleepPolicy()
     key = __get_PRIMASK();
     __set_PRIMASK(1);
 
-    /* Final check with FreeRTOS to make sure still OK to go to sleep... */
+    /* Final check with FreeRTOS to make sure it is still OK to go to sleep... */
     eSleep = eTaskConfirmSleepModeStatus();
     if (eSleep == eAbortSleep)
     {
@@ -142,8 +153,8 @@ void PowerWFF3_sleepPolicy()
 
     /* Check state of constraints */
     constraints  = Power_getConstraintMask();
-    sleepAllowed = (constraints & (1 << PowerWFF3_DISALLOW_SLEEP)) == 0;
-    idleAllowed  = (constraints & (1 << PowerWFF3_DISALLOW_IDLE)) == 0;
+    sleepAllowed = (constraints & (1U << PowerWFF3_DISALLOW_SLEEP)) == 0U;
+    idleAllowed  = (constraints & (1U << PowerWFF3_DISALLOW_IDLE)) == 0U;
 
     Log_printf(LogModule_Power,
                Log_VERBOSE,
@@ -189,6 +200,38 @@ void PowerWFF3_sleepPolicy()
 
         /* Get current time in 1us resolution */
         sysTimerCurrTime = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+
+        /* Store current SysTick value, it will be used to restore SysTick
+         * after waking up.
+         */
+        sysTickValue = SysTickGetValue();
+
+        if ((SCB->ICSR & SCB_ICSR_PENDSTSET_Msk) != 0U)
+        {
+            /* The SysTick interrupt is pending. This has happened after
+             * interrupts were disabled earlier in this function. It might
+             * also have happened after reading the current SysTick value
+             * above. So read the SysTick value again, but also the SysTimer
+             * value to ensure they are read in close succession.
+             * This pending interrupt means we have missed a tick, keep track
+             * of that missed tick.
+             * Note, do not clear the pending SysTick interrupt here, that is
+             * done later after sleeping if the SysTick gets disabled.
+             */
+            missedTicks++;
+
+            /* Read SysTimer and SysTick again. */
+            sysTimerCurrTime = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+            sysTickValue     = SysTickGetValue();
+        }
+
+        if (sysTickValue == 0)
+        {
+            /* If SysTick is currently at 0, the next interrupt is actually a
+             * full FreeRTOS tick period in the future.
+             */
+            sysTickValue = CPU_CLOCKS_PER_FREERTOS_TICK;
+        }
 
         /* We only want to check the SysTimer channels if at least one of them
          * is active.
@@ -263,11 +306,41 @@ void PowerWFF3_sleepPolicy()
             sysTimerDelta = MAX_SYSTIMER_DELTA;
         }
 
-        /* Check soonestDelta wake time pending for FreeRTOS in 1us resolution */
-        osDelta = PowerWFF3_idleTimeOS * FREERTOS_TICKPERIOD_US;
+        if (missedTicks >= PowerWFF3_idleTimeOS)
+        {
+            /* If we have already missed the expected idle time, set the OS
+             * delta to 0 to avoid underflow below.
+             */
+            osDelta = 0;
+        }
+        else
+        {
+            /* Check soonestDelta wake time pending for FreeRTOS in 1us
+             * resolution. The next tick is not necessarily a full tick period
+             * in the future. To account for this, the time that has already
+             * passed since the last tick is subtracted.
+             * Also cap value at MAX_SYSTIMER_DELTA to avoid overflow, since
+             * that is the maximum value that can be used for the standby
+             * duration below.
+             * Note, to make sure the multiplication doesn't result in an
+             * overflow, osDelta is declared as a 64-bit value since
+             * PowerWFF3_idleTimeOS can be up to the maximum value of
+             * TickType_t, which can be up to an unsigned 32-bit integer, and
+             * that multiplied by FREERTOS_TICKPERIOD_US can overflow 32 bits.
+             */
+            osDelta = (uint64_t)(PowerWFF3_idleTimeOS - missedTicks) * FREERTOS_TICKPERIOD_US -
+                      ((CPU_CLOCKS_PER_FREERTOS_TICK - sysTickValue) / CPU_CLOCKS_PER_US);
+            if (osDelta > MAX_SYSTIMER_DELTA)
+            {
+                osDelta = MAX_SYSTIMER_DELTA;
+            }
+        }
 
-        /* Get soonestDelta wake time and corresponding ClockP timeout */
-        soonestDelta = Math_MIN(sysTimerDelta, osDelta);
+        /* Get soonestDelta wake time and corresponding ClockP timeout.
+         * Casting osDelta to uint32_t is safe since the value is capped
+         * at MAX_SYSTIMER_DELTA which fits in uint32_t.
+         */
+        soonestDelta = Math_MIN(sysTimerDelta, (uint32_t)osDelta);
 
         /* Check soonestDelta time vs sleep latency */
         if (soonestDelta > PowerWFF3_TOTALTIMESLEEP)
@@ -288,18 +361,15 @@ void PowerWFF3_sleepPolicy()
              */
             soonestDelta -= PowerWFF3_WAKEDELAYSLEEP;
 
-            /* Divide delta until next timeout by CLOCK_FREQUENCY_DIVIDER to
-             * sync with real time since the FPGA is running at a different
-             * clock speed.
-             */
-            soonestDelta /= CLOCK_FREQUENCY_DIVIDER;
-
             /* Save SysTimer tick count before sleep */
             ticksBefore = sysTimerCurrTime;
 
             /* RTC channel 0 compare is automatically armed upon writing the
              * compare value. It will automatically be disarmed when it
              * triggers.
+             * Note, overflow in the addition is possible, but since we
+             * guarantee that soonestDelta is at most MAX_SYSTIMER_DELTA,
+             * this is safe.
              */
             HWREG(RTC_BASE + RTC_O_CH0CC1U) = ticksBefore + soonestDelta;
 
@@ -355,17 +425,86 @@ void PowerWFF3_sleepPolicy()
              */
             PowerWFF3_notify(PowerWFF3_AWAKE_SLEEP);
 
-            /* Get SysTimer tick count after sleep */
+            /* Clear any pending SysTick interrupts, that might have been
+             * triggered before SysTick was disabled before entering sleep.
+             */
+            SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+
+            /* Reset SysTick counter to 0 so it reloads with the remaining
+             * timeout later below. This can be done without knowing the standby
+             * duration, so it is done before reading the SysTimer time, to
+             * reduce the time between reading the SysTimer to enabling SysTick.
+             */
+            SysTick->VAL = 0;
+
+            /* Get SysTimer tick count after sleep. This should be as close to
+             * the SysTickEnable() call as possible.
+             */
             ticksAfter = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
 
-            /* Calculate elapsed FreeRTOS tick periods in sleep */
-            sleptTicks = ((ticksAfter - ticksBefore) * CLOCK_FREQUENCY_DIVIDER) / FREERTOS_TICKPERIOD_US;
+            /* Calculate elapsed time in standby */
+            standbyDuration = (ticksAfter - ticksBefore);
 
-            /* Update FreeRTOS tick count for time spent in sleep */
-            vTaskStepTick(sleptTicks);
+            /* Compute elapsed FreeRTOS tick periods in standby */
+            sleptTicks = standbyDuration / FREERTOS_TICKPERIOD_US;
+
+            /* Some precision is lost in the division when calculating
+             * sleptTicks above. Use the remainder to compute new SysTick
+             * counter value. A negative value will be handled in if statement
+             * below.
+             */
+            sysTickValue -= (standbyDuration % FREERTOS_TICKPERIOD_US) * CPU_CLOCKS_PER_US;
+
+            if (sysTickValue <= 0)
+            {
+                /* The SysTick counter value is computed to be negative or zero,
+                 * meaning the "next" tick would be in the past (or now), which
+                 * is not possible. Instead the counter value is increased by
+                 * one FreeRTOS tick period to make it positive. To account for
+                 * this change, sleptTicks is incremented by one.
+                 */
+                sysTickValue += CPU_CLOCKS_PER_FREERTOS_TICK;
+                sleptTicks++;
+            }
+
+            /* Set initial period since we cannot set the counter value
+             * directly.
+             */
+            SysTickSetPeriod(sysTickValue);
 
             /* Restart FreeRTOS ticks */
             SysTickEnable();
+
+            /* Set the SysTick period back to the FreeRTOS tick period for
+             * the next and all subsequent timeouts.
+             * Interrupts must still be disabled in between re-enabling the
+             * SysTick to force a reload of the counter and changing the period
+             * back to the FreeRTOS tick period.
+             * Otherwise, a small leftover counter value could cause the reload
+             * value to be low enough to infinitely trigger the ISR since we
+             * do not reach the line below before timing out again.
+             * If the timeout was small, it will time out and pend the
+             * interrupt but not vector to it. Until after the new reload value
+             * is applied.
+             * We will only vector to the ISR once regardless of whether the
+             * counter times out more than once.
+             */
+            SysTickSetPeriod(CPU_CLOCKS_PER_FREERTOS_TICK);
+
+            /* Account for missed ticks at the start of this function. */
+            sleptTicks += missedTicks;
+
+            /* Update FreeRTOS tick count for time spent in STANDBY.
+             * This is done after enabling SysTick to reduce time between
+             * reading SysTimer and enabling SysTick.
+             * Note: FreeRTOS expects that the value passed to vTaskStepTick()
+             * is at most PowerWFF3_idleTimeOS. This is true since the wakeup
+             * time is selected such that we wakeup before the scheduled tick.
+             * For the same reason, it is safe to cast to TickType_t here since
+             * sleptTicks is at most PowerWFF3_idleTimeOS, which is at most
+             * the maximum value of TickType_t.
+             */
+            vTaskStepTick((TickType_t)sleptTicks);
 
             /* Re-enable scheduling. Also re-enables interrupts.
              * This must happen only after restoring the SysTimer because

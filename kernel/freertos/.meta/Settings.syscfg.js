@@ -130,15 +130,31 @@ let deviceSettingsTable = {
         iarPortableFiles: ["../portable/IAR/ARM_CM0/port.c"],
         iarPortableASMFile: "../portable/IAR/ARM_CM0/portasm.s"
     },
+    "cc23x1": {
+        defaultHeapSize: 0x4000,
+        defaultCpuFrequency: 48000000,
+        defaultIdleSleepTicks: 2,
+        defaultPortTaskSelection: 0,
+        defaultMaxInterruptPriority: 1,
+        defaultNvicPriBits: 2,
+        defaultFpuEnabled: false,
+        defaultInterruptCount: 47,
+        defaultSvCallHandler: "vPortSVCHandler",
+        defaultPendSvHandler: "xPortPendSVHandler",
+        defaultSysTickHandler: "xPortSysTickHandler",
+        gccPortableFiles: ["../portable/GCC/ARM_CM0/port.c"],
+        iarPortableFiles: ["../portable/IAR/ARM_CM0/port.c"],
+        iarPortableASMFile: "../portable/IAR/ARM_CM0/portasm.s"
+    },
     "cc283x": {
         defaultHeapSize: 0x4000,
         defaultCpuFrequency: 96000000,
         defaultIdleSleepTicks: 2,
         defaultPortTaskSelection: 0,
         defaultMaxInterruptPriority: 1,
-        defaultNvicPriBits: 3,
+        defaultNvicPriBits: 4,
         defaultFpuEnabled: false,
-        defaultInterruptCount: 44,
+        defaultInterruptCount: 47,
         defaultSvCallHandler: "vPortSVCHandler",
         defaultPendSvHandler: "xPortPendSVHandler",
         /* CC283X does not use SysTick for FreeRTOS ticks, so just use
@@ -268,6 +284,15 @@ function getDeviceSettings(tfmEnabled)
     if (deviceId.match(/CC23.0/)) {
         deviceSettings = deviceSettingsTable.cc23x0;
     }
+    else if (deviceId.match(/CC23.1/)) {
+        deviceSettings = deviceSettingsTable.cc23x1;
+
+        /* Adjust CPU frequency if FPGA is used */
+        if (isFPGA)
+        {
+            deviceSettings.defaultCpuFrequency = 12000000;
+        }
+    }
     else if (deviceId.match(/CC13.1.*|CC26.1.*/)) {
         /* CC13X1/CC26X1 */
         deviceSettings = deviceSettingsTable.cc13x1_cc26x1;
@@ -327,7 +352,7 @@ function getDeviceSettings(tfmEnabled)
         /* Adjust CPU frequency if FPGA is used */
         if (isFPGA)
         {
-            deviceSettings.defaultCpuFrequency = 12000000;
+            deviceSettings.defaultCpuFrequency = 24000000;
         }
     }
     return deviceSettings;

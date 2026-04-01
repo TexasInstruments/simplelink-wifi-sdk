@@ -365,6 +365,8 @@ int32_t ti_drv_txAssocReqPacket(ti_driver_ifData_t *apDrv,
     uint8_t   *pPack;
     uint32_t  len,payloadSize,total_len;
     uint32_t  actualSize = 0, extraHThdr;
+    uint8_t   fixedFieldsLen = 0;
+    uint32_t  taggedFieldsLen = 0;
     uint32_t  packType = FRAME_TYPE_ASSOCIATION_REQ;
     uint16_t  capabilities;
     uint32_t  supportedRatesBM = 0, basicRatesBM = 0;
@@ -498,6 +500,7 @@ int32_t ti_drv_txAssocReqPacket(ti_driver_ifData_t *apDrv,
     pMngPack->u.assoc_req.capab_info = capabilities;
     pPack += sizeof(uint16_t);
     actualSize += sizeof(uint16_t);
+    fixedFieldsLen += sizeof(uint16_t);
     GTRACE(GRP_DRIVER_CC33, "added capa actual size %d", actualSize);
 
     //
@@ -506,6 +509,7 @@ int32_t ti_drv_txAssocReqPacket(ti_driver_ifData_t *apDrv,
     pMngPack->u.assoc_req.listen_interval = host_to_le16(LISTEN_INTERVAL_DEF);
     pPack += sizeof(uint16_t);
     actualSize += sizeof(uint16_t);
+    fixedFieldsLen += sizeof(uint16_t);
     GTRACE(GRP_DRIVER_CC33, "added listen int actual size %d", actualSize);
 
 
@@ -520,6 +524,7 @@ int32_t ti_drv_txAssocReqPacket(ti_driver_ifData_t *apDrv,
 
         pPack += MAC_ADDR_LEN;
         actualSize += MAC_ADDR_LEN;
+        fixedFieldsLen += MAC_ADDR_LEN;
 
         GTRACE(GRP_DRIVER_CC33, "added MAC address actual size %d", actualSize);
     }
@@ -602,8 +607,15 @@ int32_t ti_drv_txAssocReqPacket(ti_driver_ifData_t *apDrv,
 
         pDot11PowerCapability->hdr.eleId = DOT11_CAPABILITY_ELE_ID;
         pDot11PowerCapability->hdr.eleLen = DOT11_CAPABILITY_ELE_LEN;
-        pDot11PowerCapability->minTxPower = powerCapability.minTxPower;
-        pDot11PowerCapability->maxTxPower = powerCapability.maxTxPower;
+        pDot11PowerCapability->minTxPower = DBM_DIV_10_2_DBM(MIN_TX_POWER);
+        if (TRUE == regulatoryDomain_getChMaxPower(apChannel, &maxTxPower))
+        {
+            pDot11PowerCapability->maxTxPower = maxTxPower;
+        }
+        else
+        {
+            pDot11PowerCapability->maxTxPower = DBM_DIV_10_2_DBM(MAX_TX_POWER);
+        }
 
         pPack += DOT11_CAPABILITY_ELE_LEN + sizeof(dot11_eleHdr_t);
         actualSize += DOT11_CAPABILITY_ELE_LEN + sizeof(dot11_eleHdr_t);
@@ -644,6 +656,7 @@ int32_t ti_drv_txAssocReqPacket(ti_driver_ifData_t *apDrv,
     }
  
 
+#ifndef DISABLE_WIFI6
     //if channel is 5GHZ, then add VHT Support
     if(!(is_bg_channel(apChannel)))
     {
@@ -690,6 +703,7 @@ int32_t ti_drv_txAssocReqPacket(ti_driver_ifData_t *apDrv,
     {
         GTRACE(GRP_DRIVER_CC33, "Device doesn't support 11ax, no HE capabilities IE");
     }
+#endif
 
     //
     // WMM IE
@@ -783,6 +797,18 @@ int32_t ti_drv_txAssocReqPacket(ti_driver_ifData_t *apDrv,
     /* copy for re-assocation if needed */
     CmeTxDesc_t *cme_pkt = CME_CopyTxDesc((void *)pkt, 0);
     apDrv->pAssocInfo->pDescriptor = (void *)cme_pkt;
+
+    taggedFieldsLen = actualSize - fixedFieldsLen;
+    apDrv->assoc_req_ies = os_zalloc(taggedFieldsLen);
+    if (apDrv->assoc_req_ies == NULL)
+    {
+        apDrv->assoc_req_ies_len = 0;
+    }
+    else
+    {
+        os_memcpy(apDrv->assoc_req_ies, (uint8_t *)&(pMngPack->u.assoc_req.capab_info) + fixedFieldsLen, taggedFieldsLen);
+        apDrv->assoc_req_ies_len = taggedFieldsLen;
+    }
 
     // Arm a timer limiting the time we're waiting for association response
     apDrv->pAssocInfo->timeoutMS = ASSOC_TIMEOUT_MSECS;
@@ -1279,11 +1305,15 @@ rxMngPackNextOperation_e ti_drv_rxAssocResponsePacket(
         COPY_WLAN_32BIT(&tu,parsedElems.timeout_int + 1);
         msecs = tu * 1024 / 1000;
         GTRACE(GRP_DRIVER_CC33,
-               "%s rejected association temporarily; comeback duration %d TU (%d ms)",
+               "%s rejected association temporarily; comeback duration %d TU (%d ms). Adding this MAC to Deny List ",
                macSender, tu, msecs);
-        CME_PRINT_REPORT("\n\r%s rejected association temporarily; comeback duration %d TU (%d ms)",
+        CME_PRINT_REPORT("\n\r%s rejected association temporarily; comeback duration %d TU (%d ms). Adding this MAC to Deny List",
                 macSender, tu, msecs);
 
+        if (DENY_LIST_EN) 
+        {
+            DenyList_addElement(&(apDrv->denyList), apMngPack->sa, msecs + osi_GetTimeMS());
+        }
         eloop_cancel_timeout(ti_drv_AssocTimeout, apDrv, NULL);
 
         eloop_register_timeout(0,                       // seconds
@@ -1722,11 +1752,12 @@ static uint32_t assocQosBuild(uint32_t aRoleId, uint8_t *apWmeIeDest,uint8_t isH
         pDot11_WME_IE->ACInfoField |= (((gL2DynamicCfg.maxSpLen) & MAX_SP_LENGTH_MASK) << MAX_SP_LENGTH_SHIFT);
     }
 
+#ifndef DISABLE_WIFI6
     if(gpL2CommonCfg->heParams.moreDataBit && isHeConnection)
     {
         pDot11_WME_IE->ACInfoField |= (1 << MORE_DATA_ACK_SHIFT);
     }
-
+#endif
 
 
     return (pDot11_WME_IE->hdr.eleLen + sizeof(dot11_eleHdr_t));

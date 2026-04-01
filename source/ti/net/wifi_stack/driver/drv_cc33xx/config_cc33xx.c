@@ -256,11 +256,11 @@ struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp)
 #if 0
 	    //Update WPS parameters - Needed only in station (TODO: validate this...)
 	    cfgBuildWpsParameters_sta (config);
-
-	    //Config default scheduled scan plan
-	    os_free (config->sched_scan_plans);
-	    config->sched_scan_plans = os_strdup (gpL2StaBasedCfg->pStaCfg->sched_scan_default_plan);
 #endif
+
+	    // Config default scheduled scan plans
+	    os_free(config->sched_scan_plans);
+	    config->sched_scan_plans = os_strdup(cfgGetStaDefaultSchedScanPlans());
 
 	    if (TRUE == cfgIsStaPmfEnabled())
 	    {
@@ -287,6 +287,8 @@ struct wpa_config * wpa_config_read(const char *name, struct wpa_config *cfgp)
 
 		// For SAE PMK caching we must include PMKID in association requests
 		config->sae_pmkid_in_assoc = 1;
+
+        config->rsn_overriding = RSN_OVERRIDING_ENABLED;
 	}
 
     //AP specific configuration

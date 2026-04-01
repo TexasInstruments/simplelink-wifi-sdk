@@ -98,6 +98,8 @@ extern size_t gCurrentSSIDLen;
 extern uint8_t cfgGetP2pOperChannel();
 extern uint8_t cfgGetP2pOperRegClass();
 extern int wlanDispatcherSendEvent(uint16_t opcode, uint8_t * args, uint16_t argsLen);
+extern volatile uint8_t gFwCrashOccurred;
+
 
 // TODO - R2 uses different values for AP+SC scan and stand alone scan
 #define CME_SITE_SURVEY_SCAN_RESULTS_AGING_MS	(60*1000)
@@ -153,6 +155,38 @@ typedef struct {
         int8_t                    mProfileId;
         uint8_t                   mScore;
 } SerializedCompactScanframe;
+
+
+// Holds copies of supplicant connection parameters for potential future use during reassociation
+typedef struct {
+    u8              valid;
+    // Parameters from wpa_s->sme (struct sme)
+    u8              prev_bssid[ETH_ALEN];
+    int             prev_bssid_set;
+    int             ft_used;
+    u8              mobility_domain[2];
+    // Parameters from wpa_s->wpa (struct wpa_sm)
+    int             ptk_set;
+    int             tptk_set;
+    size_t          pmk_len;
+    u8              pmk[PMK_LEN_MAX];
+    struct wpa_ptk  ptk;
+    struct wpa_ptk  tptk;
+    struct wpa_gtk  gtk;
+    struct wpa_gtk  gtk_wnm_sleep;
+    struct wpa_igtk igtk;
+    struct wpa_igtk igtk_wnm_sleep;
+#ifdef CONFIG_IEEE80211R
+    u8              xxkey[PMK_LEN_MAX];
+    size_t          xxkey_len;
+    u8              pmk_r0[PMK_LEN_MAX];
+    size_t          pmk_r0_len;
+    u8              pmk_r1[PMK_LEN_MAX];
+    size_t          pmk_r1_len;
+#endif /* CONFIG_IEEE80211R */
+} reassociation_params_t;
+
+reassociation_params_t g_reassociation_params;
 
 // ============================================================================
 //		Modules data base
@@ -282,7 +316,7 @@ _cmeFastConnectionCB_t gCmeFastConnectionCB_ull ;
 
 uint8_t gEnableFastConnectionStoreToFlash = 0; //TODO: Add support for this by user configuration
 
-#define CME_FAST_CONNECTION_TIMEOUT_MILI_SEC  (2500)
+#define CME_FAST_CONNECTION_TIMEOUT_MILI_SEC  (3000)
 
 void wlan_calculate_pmk(int ssid_len,
                 int8_t *ssid,
@@ -330,6 +364,7 @@ static void addProfileEap2DB(uint16_t    SecType,
                              uint32_t    eap_ca_cert_len,
                              const uint8_t*    pEap_private_key,
                              uint32_t    eap_private_key_len,
+                             uint32_t TLSKeyLength,
                              cmeProfileInfo_t * inputProfile);
 
 static struct wpa_ssid * addProfile2Supplicant(const _cme_minimized_wpa_ssid_t *apInputApSsid);
@@ -521,7 +556,14 @@ void cmeMngInitStaDB(void)
 
             if (gCmeFastConnectionCB_ull.cmeFastConnectStatusLabel.fastConnectProfileSsidSet != 0)
             {
-                os_free(gCmeFastConnectionCB_ull.cmeFastConnectionSsid);
+                if (gCmeFastConnectionCB_ull.cmeFastConnectionSsid != NULL)
+                {
+                    if (gCmeFastConnectionCB_ull.cmeFastConnectionSsid != &gAdHocProfile_ull.profile)
+                    {
+                        // Only free if it's NOT pointing to the static profile
+                        os_free(gCmeFastConnectionCB_ull.cmeFastConnectionSsid);
+                    }
+                }
                 //set fast connect profile ssid set
                 gCmeFastConnectionCB_ull.cmeFastConnectStatusLabel.fastConnectProfileSsidSet = 0;
             }
@@ -1801,11 +1843,15 @@ int cmeMarkInvalidFastConnectionData()
         //if only fast connect profile exist - release it
 
         // Oct 25 - optimizing ad-hoc connect case:
-        if (gCmeFastConnectionCB_ull.cmeFastConnectionSsid != &gAdHocProfile_ull.profile)
+        if (gCmeFastConnectionCB_ull.cmeFastConnectionSsid != NULL)
         {
-            GTRACE(GRP_CME, "Freeing fast connection ssid since it (was) profile connection and NOT ad-hoc");
-            //profile connection, we need to free this buffer (if its ad-hoc so its pointing at gAdHocProfile_ull->profile)
-            os_free(gCmeFastConnectionCB_ull.cmeFastConnectionSsid);
+            if (gCmeFastConnectionCB_ull.cmeFastConnectionSsid != &gAdHocProfile_ull.profile)
+            {
+                GTRACE(GRP_CME, "Freeing fast connection ssid since it (was) profile connection and NOT ad-hoc");
+                //profile connection, we need to free this buffer (if its ad-hoc so its pointing at gAdHocProfile_ull->profile)
+                // Only free if it's NOT pointing to the static profile
+                os_free(gCmeFastConnectionCB_ull.cmeFastConnectionSsid);
+            }
         }
         gCmeFastConnectionCB_ull.cmeFastConnectionSsid = NULL;
 
@@ -1849,10 +1895,10 @@ void CME_GetConnectionPolicy(uint8_t* pConnectOpenAp,  // not supported
     //avoid preempting this thread wihle reading the connection policy parameters
     //uint32_t old_preempt = osi_DisablePreemption();
 
-    *pConnectOpenAp     = gCmeConnectionPolicyParams_ull.shouldConnectToOpenAp;
+    //*pConnectOpenAp     = gCmeConnectionPolicyParams_ull.shouldConnectToOpenAp;
     *pUseFastConnect    = gCmeConnectionPolicyParams_ull.shouldUseFastConnect;
     *pAutoStart         = gCmeConnectionPolicyParams_ull.autoStart;
-    *pConnectAnyP2P     = gCmeConnectionPolicyParams_ull.shouldConnectToAnyP2P;
+    //*pConnectAnyP2P     = gCmeConnectionPolicyParams_ull.shouldConnectToAnyP2P;
     *pFastPersistant    = gCmeConnectionPolicyParams_ull.fastPersistent;
     //*pAutoSmartConfig   = gCmeConnectionPolicyParams_ull.autoSmartConfig;
     //*autoProvisioning   = gCmeConnectionPolicyParams_ull.autoProvisioning;
@@ -1860,11 +1906,9 @@ void CME_GetConnectionPolicy(uint8_t* pConnectOpenAp,  // not supported
     //restore preemption
     //osi_RestorePreemption(old_preempt);
 
-    GTRACE(GRP_CME, "CME_GetConnectionPolicy: AutoStart=%d , FastConnect=%d , OpenAP=%d, ShouldConnectToAnyP2P=%d, ",
+    GTRACE(GRP_CME, "CME_GetConnectionPolicy: AutoStart=%d , FastConnect=%d",
                  *pAutoStart ,
-                 *pUseFastConnect,
-                 *pConnectOpenAp,
-                  *pConnectAnyP2P);
+                 *pUseFastConnect);
     CME_PRINT_PROFILE_REPORT("\n\r CME_GetConnectionPolicy: AutoStart=%d , FastConnect=%d, FastPersistant=%d",
                  *pAutoStart ,
                  *pUseFastConnect,
@@ -1889,8 +1933,8 @@ void cmeMngSetConnectionPolicy(uint8_t   should_connect_to_any_p2p_device,
     HOOK(HOOK_IN_CME_CONNECTION_MNG);
 
     gCmeConnectionPolicyParams_ull.shouldUseFastConnect = should_use_fast_connect;
-    gCmeConnectionPolicyParams_ull.shouldConnectToOpenAp = should_connect_to_open_ap;//not supported
-    gCmeConnectionPolicyParams_ull.shouldConnectToAnyP2P = should_connect_to_any_p2p_device;
+    gCmeConnectionPolicyParams_ull.shouldConnectToOpenAp = 0; //not supported
+    gCmeConnectionPolicyParams_ull.shouldConnectToAnyP2P = 0; //not supported
     gCmeConnectionPolicyParams_ull.autoStart = auto_start;
     gCmeConnectionPolicyParams_ull.fastPersistent = fast_persistant;
 
@@ -1899,9 +1943,9 @@ void cmeMngSetConnectionPolicy(uint8_t   should_connect_to_any_p2p_device,
 
 
     GTRACE(GRP_CME,"cmeMngSetConnectionPolicy: AutoStart=%d , FastConnect=%d , OpenAP=%d, ShouldConnectToAnyP2P=%d, ",
-                    auto_start ,should_use_fast_connect, should_connect_to_open_ap, should_connect_to_any_p2p_device);
+                    auto_start ,should_use_fast_connect, 0, 0);
     CME_PRINT_REPORT("\n\rcmeMngSetConnectionPolicy: AutoStart=%d , FastConnect=%d , OpenAP=%d, ShouldConnectToAnyP2P=%d, fastPersistant=%d",
-                    auto_start ,should_use_fast_connect, should_connect_to_open_ap, should_connect_to_any_p2p_device,
+                    auto_start ,should_use_fast_connect, 0, 0,
                     fast_persistant);
 
     //write new configuration to flash according to persistent configuration
@@ -2304,6 +2348,8 @@ void cmeWlanConnect(uint32_t aRoleId, CMEWlanConnectCommon_t *apCmd, CMEEapWlanC
     _cme_minimized_wpa_ssid_t *pSsid = NULL;
     cmeScanCandidateDesc_t *pFastCandidate = NULL;
 
+    Bool_e isReassociate = FALSE;
+
 	ASSERT_GENERAL((apCmd!= NULL) || (apEapCmd!=NULL));
 
 
@@ -2355,6 +2401,12 @@ void cmeWlanConnect(uint32_t aRoleId, CMEWlanConnectCommon_t *apCmd, CMEEapWlanC
 
 	if (ROLE_IS_TYPE_STA_BASED(role))
 	{
+        isReassociate = CMEisSameConnectParams(apCmd, FALSE);
+        if (isReassociate && cmeAreReassociationParamsValid())
+        {
+            cmeReassociationParamsRestore();
+        }
+
         if (isextWPS())
         {
             if ((apCmd->SecType == CME_SEC_TYPE_WPS_PBC) || (apCmd->SecType == CME_SEC_TYPE_WPS_PIN))
@@ -3625,6 +3677,7 @@ static void addAdHocProfile2DB(CMEWlanAddGetProfile_t  *apCmd, uint32_t aKeyMgmt
                 apEapCmd->eap_ca_cert_len,
                 apEapCmd->pEap_private_key,
                 apEapCmd->eap_private_key_len,
+                apEapCmd->TLSKeyLength,
                 &gAdHocProfile_ull);
     }
     else
@@ -3869,6 +3922,7 @@ static void addProfileEap2DB(uint16_t    SecType,
                              uint32_t    eap_ca_cert_len,
                              const uint8_t*    pEap_private_key,
                              uint32_t    eap_private_key_len,
+                             uint32_t    TLSKeyLength,
                              cmeProfileInfo_t * inputProfile)
 {
     int32_t i;
@@ -3942,18 +3996,37 @@ static void addProfileEap2DB(uint16_t    SecType,
 
             break;
         case WLAN_SEC_TYPE_WPA3:
-            //WPA_CIPHER_CCMP_256 not allowed for wPA3
-            inputProfile->profile.pairwise_cipher       =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_GCMP_256;
 
-            inputProfile->profile.group_cipher          =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_GCMP_256;
+            if((eap_phase1_val == TLS) && (TLSKeyLength == 192))
+            {
+                inputProfile->profile.pairwise_cipher       =  WPA_CIPHER_GCMP_256;
+
+                inputProfile->profile.group_cipher          =  WPA_CIPHER_GCMP_256;
+
+                inputProfile->profile.key_mgmt              =  WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
+
+                inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_BIP_CMAC_256| WPA_CIPHER_BIP_GMAC_256;
+
+                //inputProfile->profile.isSuiteb192  = 1;
+                inputProfile->profile.eapol_flags |= EAPOL_FLAG_SUITEB_ONLY;
+                CME_PRINT_REPORT("\n\r TLS WPA3 SUITEB192 only");
+
+            }
+            else
+            {
+                //WPA_CIPHER_CCMP_256 not allowed for wPA3
+                inputProfile->profile.pairwise_cipher       =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_GCMP_256;
+
+                inputProfile->profile.group_cipher          =  WPA_CIPHER_CCMP|WPA_CIPHER_GCMP|WPA_CIPHER_GCMP_256;
 
 
-            inputProfile->profile.key_mgmt              =  WPA_KEY_MGMT_IEEE8021X| WPA_KEY_MGMT_IEEE8021X_SHA256
-                                                           |WPA_KEY_MGMT_IEEE8021X_SUITE_B|WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
+                inputProfile->profile.key_mgmt              =  WPA_KEY_MGMT_IEEE8021X| WPA_KEY_MGMT_IEEE8021X_SHA256
+                                                               |WPA_KEY_MGMT_IEEE8021X_SUITE_B|WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
+                inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_AES_128_CMAC | WPA_CIPHER_BIP_CMAC_256|WPA_CIPHER_BIP_GMAC_128 | WPA_CIPHER_BIP_GMAC_256;
 
-
-            inputProfile->profile.group_mgmt_cipher |= WPA_CIPHER_AES_128_CMAC | WPA_CIPHER_BIP_CMAC_256|WPA_CIPHER_BIP_GMAC_128 | WPA_CIPHER_BIP_GMAC_256|WPA_CIPHER_BIP_CMAC_256;
+            }
             inputProfile->profile.ieee80211w = MGMT_FRAME_PROTECTION_REQUIRED;
+
 
             break;
         case WLAN_SEC_TYPE_WPA2_WPA3:
@@ -4789,8 +4862,8 @@ void cmeFastConnectionTimeoutHandler(void *param)
 {
     HOOK(HOOK_IN_CME_CONNECTION_MNG);
 
-    GTRACE(GRP_CME, "cmeFastConnectionTimeoutHandler: called!");
-    CME_PRINT_REPORT("\n\rFast connect timer expired!");
+    //GTRACE(GRP_CME, "cmeFastConnectionTimeoutHandler: called!");
+    //CME_PRINT_REPORT("\n\rFast connect timer expired!");
 
     CME_fastConnectTimerRelease();
 
@@ -5022,8 +5095,8 @@ void cmeProfileManagerConfigChange(int force_one_shot_profile_search, uint8_t ca
 
                 GTRACE(GRP_CME,"CmeStationFlowIsSMIdle");
                 CME_PRINT_PROFILE_REPORT("\r\n ProfileManagerConfig: CmeStationFlow is IDLE, force_one_shot_profile_search=%d",
-                                         force_one_shot_profile_search);
-                if(isAutoStart(force_one_shot_profile_search))
+                                         force_one_shot_profile_search);                         
+                if((!gFwCrashOccurred) && isAutoStart(force_one_shot_profile_search))
                 {
 
                     //
@@ -5067,7 +5140,7 @@ void cmeProfileManagerConfigChange(int force_one_shot_profile_search, uint8_t ca
                     GTRACE(GRP_CME, "CME: policy/config changes, stopped connection scan, issue network search if needed");
                     CME_PRINT_PROFILE_REPORT("\r\nCME: policy/config changes, stopped connection scan, issue network search if needed");
 
-                    if(isAutoStart(force_one_shot_profile_search))
+                    if((!gFwCrashOccurred) && isAutoStart(force_one_shot_profile_search))
                     {
                         cmeProfileManagerNetworkSearch();
                     }
@@ -5730,6 +5803,22 @@ static void duplicateEapProfile( struct wpa_supplicant *wpa_s,
     apSsid->eap_workaround = apInputApSsid->eap_workaround;
     #endif /* IEEE8021X_EAPOL */
 
+    //if(apInputApSsid->isSuiteb192)
+    if(apInputApSsid->eapol_flags & EAPOL_FLAG_SUITEB_ONLY)
+    {
+
+        // this will be transfered to tls_mbedtls_set_params and will set the ciphers
+        // that will be publish on client hello"
+        apSsid->eap.openssl_ciphers = os_zalloc(strlen("SUITEB192") + 1);
+        if(apSsid->eap.openssl_ciphers == NULL)
+        {
+            CME_ENT_PRINT_REPORT_ERROR("\n\r ERROR! pSsid->eap.penssl_ciphers allocation failed");
+        }
+        else
+        {
+            os_memcpy(apSsid->eap.openssl_ciphers,"SUITEB192",strlen("SUITEB192"));
+        }
+    }
 
     if(apInputApSsid->eap.eap_method != NULL)
     {
@@ -5739,7 +5828,10 @@ static void duplicateEapProfile( struct wpa_supplicant *wpa_s,
         {
             CME_ENT_PRINT_REPORT_ERROR("\n\r ERROR! pSsid->eap.eap_methods allocation failed");
         }
-        os_memcpy(apSsid->eap.eap_methods,apInputApSsid->eap.eap_method,len);
+        else
+        {
+            os_memcpy(apSsid->eap.eap_methods,apInputApSsid->eap.eap_method,len);
+        }
     }
     //apSsid->eap.eap_methods = apInputApSsid->eap.eap_method;//points to const global
 
@@ -6030,9 +6122,10 @@ void duplicateWpaPmksaCache(cmeProfileInfo_t *pProfile, cmeScanCandidateDesc_t *
         }
 
     }
-    else if ((pProfile->profile.eap.eap_entProfileIndex != CME_INVALID_ENT_IDX) &&
-            (pProfile->profile.secType == CME_SEC_TYPE_WPA_ENT) &&    
-            (gAdHocEapPmkidParams_ull.pmkid_set == TRUE))
+    else if ((pProfile->profile.eap.eap_entProfileIndex != CME_INVALID_ENT_IDX) && //Valid ENT index
+            (pProfile->profile.secType == CME_SEC_TYPE_WPA_ENT) &&                 // WPA-ENT
+            (gAdHocEapPmkidParams_ull.pmkid_set == TRUE) &&                        // pmkid is set
+            (pProfile->profile.key_mgmt & gAdHocEapPmkidParams_ull.key_mgmt))     // key mgmt is same
     {
             //check if same bssid
             if (TRUE == IRQ_UtilCompareMacAddress(gAdHocEapPmkidParams_ull.bssid, apCandidate->mScanResult.bssid))
@@ -6051,19 +6144,45 @@ void duplicateWpaPmksaCache(cmeProfileInfo_t *pProfile, cmeScanCandidateDesc_t *
                     apCandidate->mScanResult.bssid[2], apCandidate->mScanResult.bssid[3],
                     apCandidate->mScanResult.bssid[4], apCandidate->mScanResult.bssid[5]);
 #endif
+                wpa_s->wpa->key_mgmt = gAdHocEapPmkidParams_ull.key_mgmt;
 
-                //wpa_s->wpa->key_mgmt = WPA_KEY_MGMT_IEEE8021X;
-                wpa_s->wpa->key_mgmt = pProfile->pmkid_params.key_mgmt;
-
-#ifdef CME_ENT_SUITE_B_PMK_CACHE_SUPPORT 
-                if (cme_is_kck_available() && (CME_IS_ENT_KEY_MGMT_SUITE_B_TYPE(pProfile->profile.key_mgmt)))
+#ifdef CME_ENT_SUITE_B_PMK_CACHE_SUPPORT
+                if (CME_IS_ENT_KEY_MGMT_SUITE_B_TYPE(pProfile->profile.key_mgmt))
                 {
-                    kck = gCmeKck.kck;
-                    kck_len = gCmeKck.kck_len;
+                    // Suite B requires KCK for PMKID derivation
+                    if (cme_is_kck_available())
+                    {
+                        kck = gCmeKck.kck;
+                        kck_len = gCmeKck.kck_len;
+                        CME_PRINT_REPORT("\n\rSuite B PMK cache: restoring with KCK len=%d", kck_len);
+
+                        wpa->cur_pmksa = pmksa_cache_add(wpa->pmksa,
+                                                gAdHocEapPmkidParams_ull.pmk,
+                                                gAdHocEapPmkidParams_ull.pmk_len,
+                                                gAdHocEapPmkidParams_ull.pmkid,
+                                                kck, kck_len,
+                                                gAdHocEapPmkidParams_ull.bssid,
+                                                wpa->own_addr,
+                                                pSupplicantSsid,
+                                                wpa_s->wpa->key_mgmt,
+                                                NULL);
+                        if (wpa->cur_pmksa == NULL)
+                        {
+                            CME_PRINT_REPORT_ERROR("\n\rSuite B PMK cache add failed!");
+                        }
+                    }
+                    else
+                    {
+                        // KCK not available - cannot use PMK cache for Suite B
+                        CME_PRINT_REPORT("\n\rSuite B PMK cache: KCK not available, full auth required");
+
+                        cmeRemoveWpaPmkCache();
+                    }
                 }
-#endif
-                if(!(CME_IS_ENT_KEY_MGMT_SUITE_B_TYPE(pProfile->profile.key_mgmt)))
+                else
+#endif // CME_ENT_SUITE_B_PMK_CACHE_SUPPORT
                 {
+                    // Non-Suite B EAP (standard 802.1X)
                     wpa->cur_pmksa = pmksa_cache_add(wpa->pmksa, gAdHocEapPmkidParams_ull.pmk, gAdHocEapPmkidParams_ull.pmk_len,
                                             gAdHocEapPmkidParams_ull.pmkid, kck, kck_len, gAdHocEapPmkidParams_ull.bssid,
                                             wpa->own_addr, pSupplicantSsid, wpa_s->wpa->key_mgmt, NULL);
@@ -8628,34 +8747,137 @@ void cmeAddWpaPmkCache(struct wpa_supplicant *wpa_s, const uint8_t *pmkid, uint8
 
 void cmeRemoveWpaPmkCache(void)
 {
-    _cme_wpa_pmkid_params_t *pmkid_params;
-    if (gAdHocProfile_ull.uniqueProfileId == CME_INVALID_PROFILE_ID)
+    // Check and clear ENT ad-hoc PMK cache
+    if (gAdHocEapPmkidParams_ull.pmkid_set)
     {
-        CME_PRINT_REPORT("\n\r cmeRemoveWpaPmkCache: it's a profile connection index = %d", gConnectingIndex_ull);
-        if (gConnectingIndex_ull < CME_SCAN_MAX_PROFILES)
-        {
-            pmkid_params = &gPreferredNetworks[gConnectingIndex_ull].pmkid_params;
-            pmkid_params->pmkid_set = 0;
-        }
-    }
-    else
-    {
-        CME_PRINT_REPORT("\n\r cmeRemoveWpaPmkCache: it's ad-hoc connection");
-        pmkid_params = &gAdHocProfile_ull.pmkid_params;
-        if (gAdHocProfile_ull.profile.eap.eap_entProfileIndex != CME_INVALID_ENT_IDX)
-        {
-            CME_PRINT_REPORT("\n\r cmeRemoveWpaPmkCache: it's an ent ad-hoc connection"); 
-            pmkid_params = &gAdHocEapPmkidParams_ull;
+        CME_PRINT_REPORT("\n\r cmeRemoveWpaPmkCache: clearing ENT ad-hoc PMK cache");
 #ifdef CME_ENT_SUITE_B_PMK_CACHE_SUPPORT
-            if (CME_IS_ENT_KEY_MGMT_SUITE_B_TYPE(gAdHocProfile_ull.profile.key_mgmt))
-            {
-                cme_clear_stored_kck();
-            }
-#endif //CME_ENT_SUITE_B_PMK_CACHE_SUPPORT
-            pmkid_params->pmkid_set = 0;
+        if (CME_IS_ENT_KEY_MGMT_SUITE_B_TYPE(gAdHocEapPmkidParams_ull.key_mgmt))
+        {
+            cme_clear_stored_kck();
         }
+#endif //CME_ENT_SUITE_B_PMK_CACHE_SUPPORT
+        gAdHocEapPmkidParams_ull.pmkid_set = 0;
+    }
+
+    // Check and clear regular ad-hoc PMK cache
+    if (gAdHocProfile_ull.pmkid_params.pmkid_set)
+    {
+        CME_PRINT_REPORT("\n\r cmeRemoveWpaPmkCache: clearing ad-hoc PMK cache");
+        gAdHocProfile_ull.pmkid_params.pmkid_set = 0;
+    }
+
+    // Check and clear profile PMK cache
+    if ((gConnectingIndex_ull < CME_SCAN_MAX_PROFILES) &&
+        (gPreferredNetworks[gConnectingIndex_ull].pmkid_params.pmkid_set))
+    {
+        CME_PRINT_REPORT("\n\r cmeRemoveWpaPmkCache: clearing profile PMK cache index=%d", gConnectingIndex_ull);
+        gPreferredNetworks[gConnectingIndex_ull].pmkid_params.pmkid_set = 0;
     }
 }
+
+void cmeReassociationParamsStore()
+{
+    struct wpa_supplicant *wpa_s;
+    drv_getStaIface(gpSupplicantGlobals, &wpa_s);
+
+    if ((wpa_s == NULL) || (wpa_s->wpa == NULL))
+    {
+        GTRACE(GRP_CME, "cmeReassociationParamsStore: wpa_s or wpa_s->wpa is NULL");
+        return;
+    }
+
+    os_memset(&g_reassociation_params, 0, sizeof(g_reassociation_params));
+
+    g_reassociation_params.valid = TRUE;
+
+    os_memcpy(g_reassociation_params.prev_bssid, wpa_s->sme.prev_bssid, ETH_ALEN);
+    g_reassociation_params.prev_bssid_set = wpa_s->sme.prev_bssid_set;
+
+    g_reassociation_params.ft_used = wpa_s->sme.ft_used;
+    os_memcpy(g_reassociation_params.mobility_domain, wpa_s->sme.mobility_domain, MOBILITY_DOMAIN_ID_LEN);
+
+    g_reassociation_params.ptk_set = wpa_s->wpa->ptk_set;
+    g_reassociation_params.tptk_set = wpa_s->wpa->tptk_set;
+    g_reassociation_params.pmk_len = wpa_s->wpa->pmk_len;
+    // For buffers with associated length variables: copy data only when length is valid.
+    // If length is invalid, the buffer remains untouched, and zeroed data will be used during restoration.
+    if (wpa_s->wpa->pmk_len <= PMK_LEN_MAX)
+    {
+        os_memcpy(g_reassociation_params.pmk, wpa_s->wpa->pmk, PMK_LEN_MAX);
+    }
+    os_memcpy(&g_reassociation_params.ptk, &wpa_s->wpa->ptk, sizeof(struct wpa_ptk));
+    os_memcpy(&g_reassociation_params.tptk, &wpa_s->wpa->tptk, sizeof(struct wpa_ptk));
+    os_memcpy(&g_reassociation_params.gtk, &wpa_s->wpa->gtk, sizeof(struct wpa_gtk));
+    os_memcpy(&g_reassociation_params.gtk_wnm_sleep, &wpa_s->wpa->gtk_wnm_sleep, sizeof(struct wpa_gtk));
+    os_memcpy(&g_reassociation_params.igtk, &wpa_s->wpa->igtk, sizeof(struct wpa_igtk));
+    os_memcpy(&g_reassociation_params.igtk_wnm_sleep, &wpa_s->wpa->igtk_wnm_sleep, sizeof(struct wpa_igtk));
+#ifdef CONFIG_IEEE80211R
+    if (wpa_s->wpa->xxkey_len <= PMK_LEN_MAX)
+    {
+        os_memcpy(g_reassociation_params.xxkey, wpa_s->wpa->xxkey, PMK_LEN_MAX);
+    }
+    g_reassociation_params.xxkey_len = wpa_s->wpa->xxkey_len;
+    if (wpa_s->wpa->pmk_r0_len <= PMK_LEN_MAX)
+    {
+        os_memcpy(g_reassociation_params.pmk_r0, wpa_s->wpa->pmk_r0, PMK_LEN_MAX);
+    }
+    g_reassociation_params.pmk_r0_len = wpa_s->wpa->pmk_r0_len;
+    if (wpa_s->wpa->pmk_r1_len <= PMK_LEN_MAX)
+    {
+        os_memcpy(g_reassociation_params.pmk_r1, wpa_s->wpa->pmk_r1, PMK_LEN_MAX);
+    }
+    g_reassociation_params.pmk_r1_len = wpa_s->wpa->pmk_r1_len;
+#endif /* CONFIG_IEEE80211R */
+}
+
+void cmeReassociationParamsRestore()
+{
+    struct wpa_supplicant* wpa_s;
+    drv_getStaIface(gpSupplicantGlobals, &wpa_s);
+
+    if ((wpa_s == NULL) || (wpa_s->wpa == NULL))
+    {
+        GTRACE(GRP_CME, "cmeReassociationParamsRestore: wpa_s or wpa_s->wpa is NULL");
+        return;
+    }
+
+    os_memcpy(wpa_s->sme.prev_bssid, g_reassociation_params.prev_bssid, ETH_ALEN);
+    wpa_s->sme.prev_bssid_set = g_reassociation_params.prev_bssid_set;
+
+    wpa_s->sme.ft_used = g_reassociation_params.ft_used;
+    os_memcpy(wpa_s->sme.mobility_domain, g_reassociation_params.mobility_domain, MOBILITY_DOMAIN_ID_LEN);
+
+    wpa_s->wpa->ptk_set = g_reassociation_params.ptk_set;
+    wpa_s->wpa->tptk_set = g_reassociation_params.tptk_set;
+    wpa_s->wpa->pmk_len = g_reassociation_params.pmk_len;
+    os_memcpy(wpa_s->wpa->pmk, g_reassociation_params.pmk, PMK_LEN_MAX);
+    os_memcpy(&wpa_s->wpa->ptk, &g_reassociation_params.ptk, sizeof(struct wpa_ptk));
+    os_memcpy(&wpa_s->wpa->tptk, &g_reassociation_params.tptk, sizeof(struct wpa_ptk));
+    os_memcpy(&wpa_s->wpa->gtk, &g_reassociation_params.gtk, sizeof(struct wpa_gtk));
+    os_memcpy(&wpa_s->wpa->gtk_wnm_sleep, &g_reassociation_params.gtk_wnm_sleep, sizeof(struct wpa_gtk));
+    os_memcpy(&wpa_s->wpa->igtk, &g_reassociation_params.igtk, sizeof(struct wpa_igtk));
+    os_memcpy(&wpa_s->wpa->igtk_wnm_sleep, &g_reassociation_params.igtk_wnm_sleep, sizeof(struct wpa_igtk));
+#ifdef CONFIG_IEEE80211R
+    os_memcpy(wpa_s->wpa->xxkey, g_reassociation_params.xxkey, PMK_LEN_MAX);
+    wpa_s->wpa->xxkey_len = g_reassociation_params.xxkey_len;
+    os_memcpy(wpa_s->wpa->pmk_r0, g_reassociation_params.pmk_r0, PMK_LEN_MAX);
+    wpa_s->wpa->pmk_r0_len = g_reassociation_params.pmk_r0_len;
+    os_memcpy(wpa_s->wpa->pmk_r1, g_reassociation_params.pmk_r1, PMK_LEN_MAX);
+    wpa_s->wpa->pmk_r1_len = g_reassociation_params.pmk_r1_len;
+#endif /* CONFIG_IEEE80211R */
+}
+
+void cmeReassociationParamsClear()
+{
+    os_memset(&g_reassociation_params, 0, sizeof(g_reassociation_params));
+}
+
+Bool_e cmeAreReassociationParamsValid()
+{
+    return g_reassociation_params.valid;
+}
+
 
 //==================================================================
 //  P2P Related:

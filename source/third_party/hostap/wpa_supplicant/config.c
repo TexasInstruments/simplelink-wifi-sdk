@@ -2644,6 +2644,9 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(beacon_prot, 0, 1) },
 	{ INT_RANGE(transition_disable, 0, 255) },
 	{ INT_RANGE(sae_pk, 0, 2) },
+	// TI  compilation: RSN override support from upstream - start
+	{ INT_RANGE(rsn_overriding, 0, 2)},
+	// TI  compilation: RSN override support from upstream - end
 };
 
 #undef OFFSET
@@ -3157,6 +3160,9 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
 #endif /* CONFIG_MACSEC */
 	ssid->mac_addr = -1;
 	ssid->max_oper_chwidth = DEFAULT_MAX_OPER_CHWIDTH;
+	// TI  compilation: RSN override support from upstream - start
+	ssid->rsn_overriding = RSN_OVERRIDING_NOT_SET;
+	// TI  compilation: RSN override support from upstream - end
 }
 
 

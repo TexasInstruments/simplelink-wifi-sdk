@@ -341,7 +341,7 @@ int rsn_rsnWpaIe2SecurityInfo(dot11_RSN_t *rsnIe, uint8_t rsnIeLen, uint16_t *se
 
 
 
-void rsn_findSecurityIEs(uint8_t * payload, uint16_t payloadLen, dot11_RSN_t **pDotRsn, dot11_RSN_t **pDotWpa);
+void rsn_findSecurityIEs(uint8_t * payload, uint16_t payloadLen, dot11_RSN_t **pDotRsn, dot11_RSN_t **pDotWpa, dot11_RSN_t **pDotRsnOverride, dot11_RSN_t **pDotRsnOverride2);
 /*
  * Parse the payload for RSN ie and WPA IE and return the security type (SL_SEC_TYPE_OPEN / SL_SEC_TYPE_WEP / SL_SEC_TYPE_WPA_WPA2 / CME_SEC_TYPE_WPA_ENT)
  *
@@ -349,12 +349,14 @@ void rsn_findSecurityIEs(uint8_t * payload, uint16_t payloadLen, dot11_RSN_t **p
  * Params: uint16_t dot11CapabilityInfo
  *         uint8_t * payload - Beacon or probe response payload
  *         uint8_t payloadLen
- *         uint8_t *securityType [out] - returned security type
+ *         uint8_t *securityType [out] - returned security type from WPA/RSN IE
+ *         uint8_t *securityTypeOverride [out] - returned security type from RSN Override IE
+ *         uint8_t *securityTypeOverride2 [out] - returned security type from RSN Override 2 IE
  *
  * Return - 0 on success, negative on error
  *
  */
-int rsn_getSecurityType(uint16_t dot11CapabilityInfo, dot11_RSN_t *pDotRsn, dot11_RSN_t *pDotWpa ,uint8_t *securityType);
+int rsn_getSecurityTypes(uint16_t dot11CapabilityInfo, dot11_RSN_t *pDotRsn, dot11_RSN_t *pDotWpa, dot11_RSN_t *pDotRsnOverride, dot11_RSN_t *pDotRsnOverride2, uint8_t *securityType, uint8_t *securityTypeOverride, uint8_t *securityTypeOverride2);
 
 #endif /* RSN_H_ */
 

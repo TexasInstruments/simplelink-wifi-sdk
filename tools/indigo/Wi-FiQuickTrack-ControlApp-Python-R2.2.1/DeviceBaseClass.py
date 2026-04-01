@@ -6,13 +6,14 @@ import serial
 
 SEC_TYPE_VAL = {
     "OPEN": "OPEN",
-    "WPA-PSK": "WPA2_PLUS", #"WPA",
-    "WPA2-PSK": "WPA2_PLUS", #"WPA2",
+    "WPA-ONLY": "WPA",
+    "WPA-PSK": "WPA2",
+    "WPA2-PSK": "WPA2_PLUS",
     "WPA2_PLUS": "WPA2_PLUS",
     "WPA3": "WPA3",
     "WPA2-WPA3": "WPA2/WPA3",  
-    "WPS-PBC": "WPS", #3,  # ask Noam: WPS is PIN? With pass, PBC? Witout pass
-    "WPS-PIN": "WPS", #4,  # ask Noam: WPS is PIN? With pass, PBC? Witout pass
+    "WPS-PBC": "WPS",
+    "WPS-PIN": "WPS",
     "P2P-PBC": 6,
     "P2P-PIN": 7,
     "P2P-PIN-DISPLAY": 8,
@@ -325,7 +326,7 @@ class DeviceBaseClass:
             else:
                 self.logger.error(f"Serial read error - expected 'private key certificate Load successfully', exist '{serial_rd}'")                     
 
-    def wlan_sta_connect_ent(self, ssid, sec_type, key, bssid, eap_phase1, eap_phase2, identity, anonymous_user, client_cert_filename, ca_cert_filename, private_key_filename, timeout=10, flags=0):
+    def wlan_sta_connect_ent(self, ssid, sec_type, key, bssid, eap_phase1, eap_phase2, identity, anonymous_user, client_cert_filename, ca_cert_filename, private_key_filename, timeout=10, flags=0, suiteb192 = 0):
         self.wlan_load_certi_ent(client_cert_filename, ca_cert_filename, private_key_filename)
         try:
             sec_type_val = SEC_TYPE_VAL[sec_type]
@@ -349,7 +350,9 @@ class DeviceBaseClass:
             else:
                 self.serial_write(data=f'wlan_connect -t {sec_type_val} -p "{key}" -e {enterprise} -i "{identity}"\n', info=f'cmd: wlan_connect')
         else:
-            if key:
+            if suiteb192:
+                self.serial_write(data=f'wlan_connect -s "{ssid}" -t {sec_type_val} -k 192 -e {enterprise} -i "{identity}"\n', info=f'cmd: wlan_connect')
+            elif key:
                 self.serial_write(data=f'wlan_connect -s "{ssid}" -t {sec_type_val} -p "{key}" -e {enterprise} -i "{identity}"\n', info=f'cmd: wlan_connect')
             else:
                 self.serial_write(data=f'wlan_connect -s "{ssid}" -t {sec_type_val} -e {enterprise} -i "{identity}"\n', info=f'cmd: wlan_connect')
@@ -365,7 +368,7 @@ class DeviceBaseClass:
         -------------------- AP commands --------------------
     '''
 
-    def wlan_ap_role_up(self, ssid, sec_type, key, channel, tx_power, sta_limit, regulatory_domain, hiddenAP="NO", sae_pwe='2', transition_disable='0'):
+    def wlan_ap_role_up(self, ssid, sec_type, key, channel, sta_limit, regulatory_domain, hiddenAP="NO", sae_pwe='2', transition_disable='0'):
         try:
             sec_type_val = SEC_TYPE_VAL[sec_type]
         except KeyError:
@@ -379,9 +382,9 @@ class DeviceBaseClass:
 
         self.serial_write(data=f'wlan_ap_role_up -s "{ssid}"', info=f'cmd: wlan_ap_role_up ssid')
         self.serial_write(data=f' -t {sec_type_val}', info=f'cmd: wlan_ap_role_up sec type')
-        self.serial_write(data=f' -p "{key}"', info=f'cmd: wlan_ap_role_up key')
+        if sec_type_val != "OPEN":
+            self.serial_write(data=f' -p "{key}"', info=f'cmd: wlan_ap_role_up key')
         time.sleep(1)
-        self.serial_write(data=f' -txp "{tx_power}"', info=f'cmd: wlan_ap_role_up txp')
         self.serial_write(data=f' -c {channel}', info=f'cmd: wlan_ap_role_up channel')
         self.serial_write(data=f' -l {sta_limit}', info=f'cmd: wlan_ap_role_up sta limit')
         self.serial_write(data=f' -w {sae_pwe}', info=f'cmd: wlan_ap_role_up pwe')
@@ -431,7 +434,6 @@ class DeviceBaseClass:
     def wlan_get_ip(self, role_type):
         import re
         ip_address = "0.0.0.0"
-        self.serial_read_block(timeout=1)
         self.serial_write(data=f'wlan_get_if_ip -i {role_type}\n', info=f'cmd: wlan_get_if_ip')
         ip_str = self.serial_read_block()
         match = re.search(r'IP Address:\s*([\d\.]+)', ip_str)
@@ -506,9 +508,9 @@ class DeviceBaseClass:
         if pin_code is None:
             self.serial_write(data=f'p2p_connect -m {mac_addr} -w {wps_type} -t {timeout}\n', info=f'cmd: p2p_connect')
         else:
-            self.serial_write(data=f'p2p_connect -m {mac_addr} -w {wps_type} -p \"{pin_code}\" -t {timeout}\n', info=f'cmd: p2p_connect')
+            self.serial_write(data=f'p2p_connect -m {mac_addr} -w {wps_type} -p {pin_code} -t {timeout}\n', info=f'cmd: p2p_connect')
 
-        self.serial_read_block(timeout=2)
+        self.serial_read_block(timeout=1)
     
     def wlan_p2p_remove_group(self):
         self.serial_write(data='p2p_group_remove \n', info=f'cmd: p2p_group_remove')
@@ -521,7 +523,7 @@ class DeviceBaseClass:
     def wlan_p2p_get_mac(self, role_type='3'):
         self.serial_read_block(timeout=12)
         self.serial_write(data=f'wlan_get_mac -i {role_type}\n', info=f'cmd: wlan_ap_get_mac')
-        mac_str = self.serial_read_block(timeout=2)
+        mac_str = self.serial_read_block(timeout=3)
         mac = mac_str.split(" : ")[1].replace("user:", "").rstrip('\n\r')
         print(f"MAC: {mac}")
         return mac

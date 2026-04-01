@@ -384,7 +384,7 @@ NOTE: We only support packets coming from within the DS (i.e. From DS = 0)
 #define MAX_MGMT_BODY_LENGTH                2312
 /* maximal length of beacon body - increased to 1600 to support WiFi certification
    tests that require handling beacons up to 1500 bytes (e.g., test 10957) */
-#define MAX_BEACON_BODY_LENGTH              850
+   #define MAX_BEACON_BODY_LENGTH              1600
 
 /* length of standart beacon body (maximum for .11N ~230)- note that actual beacons may actually be longer
    than this size, at least according to the spec, but so far no larger beacon was seen */
@@ -594,6 +594,10 @@ typedef struct __PACKED__ //Just make sure it is in continues memory since the i
   dot11_eleHdr_t hdr;
   uint8_t rsnIeData[DOT11_RSN_MAX];
 }  dot11_RSN_t;
+
+/* RSN Override Information Elements */
+#define DOT11_RSN_OVERRIDE_OUI          {0x50, 0x6f, 0x9a, 0x29}
+#define DOT11_RSN_OVERRIDE_2_OUI        {0x50, 0x6f, 0x9a, 0x2a}
 
 /* DS params Information Element */
 #define DOT11_DS_PARAMS_ELE_ID      3

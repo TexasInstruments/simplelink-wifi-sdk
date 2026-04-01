@@ -9,7 +9,7 @@ message(STATUS "Generating target           ${TARGET_NAME}")
 file(READ src/common/version.h hostap_versions)
 #set the hostap version
 string(REGEX MATCH "VERSION_STR[ \t]+\"([0-9|.]+)\"" _ ${hostap_versions})
-set_global(HOSTAP_VERSION       ${CMAKE_MATCH_1})
+set(HOSTAP_VERSION       ${CMAKE_MATCH_1} CACHE INTERNAL "")
 
 #common source files for openssl and mbedTLS
 set(${TARGET_NAME}_SOURCES

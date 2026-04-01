@@ -119,5 +119,6 @@ void 	regulatoryDomain_handlePowerConstraint(ti_driver_ifData_t *pDrv,
 int32_t regulatoryDomain_getCountryString(uint8_t *pCountryStr);
 int32_t regulatoryDomain_SetCustomDomainEntry(WlanSetRegDomainCustomEntry_t *entryParams);
 int32_t regulatoryDomain_GetCustomDomainEntry(WlanSetRegDomainCustomEntry_t *entryParams);
+uint8_t regulatoryDomain_GetCustomDomainEntriesCount(void);
 
 #endif /* __REGULATORY_DOMAIN_API_H__*/

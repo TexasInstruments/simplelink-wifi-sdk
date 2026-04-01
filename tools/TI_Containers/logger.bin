@@ -3057,42 +3057,42 @@ GTRACEBINMAGICHDR28645,48,main.c,__get_PRIMASK,0|Main Init Complete
 232765,281,dma_driver.c,dmaDriver_transCfg,1|DMA driver - ChNo is illegal. ChNo legal values are between 0:4, current ChNo value is %u)
 383335,548,dma_driver.c,dmaDriverIsChannelActive,1|AES driver - incorrect channel %u
 377767,588,dma_driver.c,dmaDriver_getChanEvents,1|AES driver - incorrect channel %u
-362045,492,coex_driver.c,Coex_BLEWIFIInit,3|Coex BLE WIFI Init, IsCoexEnable: %d, IsCoexNeeded: %d, IsCoexBLENeeded: %d
-305279,540,coex_driver.c,Coex_INIParam,3|Coex INI Init, IsCoexEnable: %d, IsCoexNeeded: %d, IsExtSocEnable: %d
-383171,663,coex_driver.c,cancelPTARequest,0|cancelPTARequest - Coex
-137587,685,coex_driver.c,Coex_Init,0|Start Coex Configuration
-137609,701,coex_driver.c,Coex_Init,2|Coex IsCoexNeeded: %d, Disable_coex: %d
-138055,961,coex_driver.c,Coex_Init,0|Coex Configured
-444691,986,coex_driver.c,Coex_IsCoexEnabled,0|Coex_IsCoexEnabled: Coex Enabled
-444739,1001,coex_driver.c,Coex_bleEnabled,0|Coex_bleEnabled: BLE Coex Enabled
-444835,1045,coex_driver.c,Coex_wifiEnabled,0|Coex_wifiEnabled: WiFi Coex Enabled
-444787,1060,coex_driver.c,Coex_externalSoCEnabled,0|Coex_externalSoCEnabled: external SoC Coex Enabled
-273091,1189,coex_driver.c,Coex_maxWiFiPriority,4|Coex_maxWiFiPriority granted, Priority 0x%x, tsf before/after 0x%x / 0x%x diff is %d
-273097,1198,coex_driver.c,Coex_maxWiFiPriority,4|Coex_maxWiFiPriority not granted, Priority 0x%x, tsf before/after 0x%x / 0x%x diff is %d
-356429,2203,coex_driver.c,Coex_printDebug,3|Coex_printDebug: wifi_prio_lvl %d, wifi_grant_m %d, wifi_grant %d
-356445,2210,coex_driver.c,Coex_printDebug,3|Coex_printDebug: ble_prio_lvl  %d, ble_grant_m  %d, ble_grant  %d
-356461,2217,coex_driver.c,Coex_printDebug,3|Coex_printDebug: soc_prio_lvl  %d, soc_grant_m  %d, soc_grant  %d
-362149,1237,coex_driver.c,Coex_addWiFiPriority,3|Coex_addWiFiPriority: WiFi Activity ENUM(COEX_Req_ActivityID_e, %d) priority set to 0x%x, tsf: 0x%x
-346935,1275,coex_driver.c,Coex_removeWiFiPriority,3|Coex_removeWiFiPriority: WiFi Activity ENUM(COEX_Req_ActivityID_e, %d) priority set to 0x%x, tsf: 0x%x
-356325,1377,coex_driver.c,Coex_changeWiFiSignalsAccordingtoPHYmode,3|Coex_changeWiFiSignalsAccordingtoPHYmode: WiFiCoexPrio: 0x%x, ENUM(pwrmgtPowerModes_e,%d), tsf: 0x%x
-161789,1651,coex_driver.c,Coex_requestPTASignal,0|Coex_requestPTASignal
-161819,1668,coex_driver.c,Coex_requestPTASignal,0|GRP_COEX: BLEcmdHighPriority
-161913,1747,coex_driver.c,Coex_requestPTASignal,0|Coex BLE commands priorities extension table is NULL
-161947,1764,coex_driver.c,Coex_requestPTASignal,2|BLEcmdLocInTable is %d, exceeding the range of BLE commands index supported: 0 - %d
-162073,1853,coex_driver.c,Coex_requestPTASignal,4|Coex_requestPTASignal: 0x%x BLE command granted, tsf before/after 0x%x / 0x%x diff is %d
-162089,1844,coex_driver.c,Coex_requestPTASignal,4|Coex_requestPTASignal: 0x%x BLE command not granted, tsf before/after 0x%x / 0x%x diff is %d
-162155,1693,coex_driver.c,Coex_requestPTASignal,0|Coex_requestPTASignal: WiFi scan in progress, Skipping BLE interval
-368341,1882,coex_driver.c,Coex_cancelPTARequest,0|Coex_cancelPTARequest: while WiFi granted
-368361,1891,coex_driver.c,Coex_cancelPTARequest,1|Coex_cancelPTARequest: from IRQ, tsf: 0x%x
-368371,1900,coex_driver.c,Coex_cancelPTARequest,1|Coex_cancelPTARequest: from RF driver, tsf: 0x%x
-368379,1895,coex_driver.c,Coex_cancelPTARequest,1|Coex_cancelPTARequest: from IRQ without flushing the current command, tsf: 0x%x
-452359,1964,coex_driver.c,Coex_printEntityConfiguration,4|Coex_printEntityConfiguration: Coex Configured %d, WiFi Configured %d, BLE Configured %d, Ext Soc Configured %d
-309623,1985,coex_driver.c,Coex_printDebugCounters,4|wifi: request assertion/deassertion: %d/%d | grant assertion/deassertion: %d/%d
-309639,1990,coex_driver.c,Coex_printDebugCounters,3|wifi: prio reject: %d | grant during dual ant assertion/deassertion: %d/%d
-309659,2000,coex_driver.c,Coex_printDebugCounters,4|ble: request assertion/deassertion: %d/%d | grant assertion/deassertion: %d/%d
-309673,2006,coex_driver.c,Coex_printDebugCounters,4|ble: tx high/low prio reject: %d/%d | rx high/low prio reject: %d/%d
-309693,2016,coex_driver.c,Coex_printDebugCounters,4|External SoC: request assertion/deassertion: %d/%d | grant assertion/deassertion: %d/%d
-309707,2019,coex_driver.c,Coex_printDebugCounters,2|External SoC: high/low prio reject: %d/%d
+362045,376,coex_driver.c,Coex_BLEWIFIInit,3|Coex BLE WIFI Init, IsCoexEnable: %d, IsCoexNeeded: %d, IsCoexBLENeeded: %d
+305279,424,coex_driver.c,Coex_INIParam,3|Coex INI Init, IsCoexEnable: %d, IsCoexNeeded: %d, IsExtSocEnable: %d
+383171,547,coex_driver.c,cancelPTARequest,0|cancelPTARequest - Coex
+137587,569,coex_driver.c,Coex_Init,0|Start Coex Configuration
+137609,585,coex_driver.c,Coex_Init,2|Coex IsCoexNeeded: %d, Disable_coex: %d
+138055,845,coex_driver.c,Coex_Init,0|Coex Configured
+444691,870,coex_driver.c,Coex_IsCoexEnabled,0|Coex_IsCoexEnabled: Coex Enabled
+444739,885,coex_driver.c,Coex_bleEnabled,0|Coex_bleEnabled: BLE Coex Enabled
+444835,929,coex_driver.c,Coex_wifiEnabled,0|Coex_wifiEnabled: WiFi Coex Enabled
+444787,944,coex_driver.c,Coex_externalSoCEnabled,0|Coex_externalSoCEnabled: external SoC Coex Enabled
+273091,1073,coex_driver.c,Coex_maxWiFiPriority,4|Coex_maxWiFiPriority granted, Priority 0x%x, tsf before/after 0x%x / 0x%x diff is %d
+273097,1082,coex_driver.c,Coex_maxWiFiPriority,4|Coex_maxWiFiPriority not granted, Priority 0x%x, tsf before/after 0x%x / 0x%x diff is %d
+356429,2087,coex_driver.c,Coex_printDebug,3|Coex_printDebug: wifi_prio_lvl %d, wifi_grant_m %d, wifi_grant %d
+356445,2094,coex_driver.c,Coex_printDebug,3|Coex_printDebug: ble_prio_lvl  %d, ble_grant_m  %d, ble_grant  %d
+356461,2101,coex_driver.c,Coex_printDebug,3|Coex_printDebug: soc_prio_lvl  %d, soc_grant_m  %d, soc_grant  %d
+362149,1121,coex_driver.c,Coex_addWiFiPriority,3|Coex_addWiFiPriority: WiFi Activity ENUM(COEX_Req_ActivityID_e, %d) priority set to 0x%x, tsf: 0x%x
+346935,1159,coex_driver.c,Coex_removeWiFiPriority,3|Coex_removeWiFiPriority: WiFi Activity ENUM(COEX_Req_ActivityID_e, %d) priority set to 0x%x, tsf: 0x%x
+356325,1261,coex_driver.c,Coex_changeWiFiSignalsAccordingtoPHYmode,3|Coex_changeWiFiSignalsAccordingtoPHYmode: WiFiCoexPrio: 0x%x, ENUM(pwrmgtPowerModes_e,%d), tsf: 0x%x
+161789,1535,coex_driver.c,Coex_requestPTASignal,0|Coex_requestPTASignal
+161819,1552,coex_driver.c,Coex_requestPTASignal,0|GRP_COEX: BLEcmdHighPriority
+161913,1631,coex_driver.c,Coex_requestPTASignal,0|Coex BLE commands priorities extension table is NULL
+161947,1648,coex_driver.c,Coex_requestPTASignal,2|BLEcmdLocInTable is %d, exceeding the range of BLE commands index supported: 0 - %d
+162073,1737,coex_driver.c,Coex_requestPTASignal,4|Coex_requestPTASignal: 0x%x BLE command granted, tsf before/after 0x%x / 0x%x diff is %d
+162089,1728,coex_driver.c,Coex_requestPTASignal,4|Coex_requestPTASignal: 0x%x BLE command not granted, tsf before/after 0x%x / 0x%x diff is %d
+162155,1577,coex_driver.c,Coex_requestPTASignal,0|Coex_requestPTASignal: WiFi scan in progress, Skipping BLE interval
+368341,1766,coex_driver.c,Coex_cancelPTARequest,0|Coex_cancelPTARequest: while WiFi granted
+368361,1775,coex_driver.c,Coex_cancelPTARequest,1|Coex_cancelPTARequest: from IRQ, tsf: 0x%x
+368371,1784,coex_driver.c,Coex_cancelPTARequest,1|Coex_cancelPTARequest: from RF driver, tsf: 0x%x
+368379,1779,coex_driver.c,Coex_cancelPTARequest,1|Coex_cancelPTARequest: from IRQ without flushing the current command, tsf: 0x%x
+452359,1848,coex_driver.c,Coex_printEntityConfiguration,4|Coex_printEntityConfiguration: Coex Configured %d, WiFi Configured %d, BLE Configured %d, Ext Soc Configured %d
+309623,1869,coex_driver.c,Coex_printDebugCounters,4|wifi: request assertion/deassertion: %d/%d | grant assertion/deassertion: %d/%d
+309639,1874,coex_driver.c,Coex_printDebugCounters,3|wifi: prio reject: %d | grant during dual ant assertion/deassertion: %d/%d
+309659,1884,coex_driver.c,Coex_printDebugCounters,4|ble: request assertion/deassertion: %d/%d | grant assertion/deassertion: %d/%d
+309673,1890,coex_driver.c,Coex_printDebugCounters,4|ble: tx high/low prio reject: %d/%d | rx high/low prio reject: %d/%d
+309693,1900,coex_driver.c,Coex_printDebugCounters,4|External SoC: request assertion/deassertion: %d/%d | grant assertion/deassertion: %d/%d
+309707,1903,coex_driver.c,Coex_printDebugCounters,2|External SoC: high/low prio reject: %d/%d
 312207,364,system_info.c,systemInfo_IdentifyDeviceFlavour,1|Invalid Device!, Expected Device:CC3%dxx 
 312263,403,system_info.c,systemInfo_IdentifyDeviceFlavour,0|Operational CHIP Detected
 312275,409,system_info.c,systemInfo_IdentifyDeviceFlavour,3|Device is CC3%d, PG Version: %d.%d
@@ -3429,105 +3429,162 @@ GTRACEBINMAGICHDR28645,48,main.c,__get_PRIMASK,0|Main Init Complete
 404413,2061,p2p_ps_client.c,P2pPS_IsPresenceReqExist,4|P2P_PS: PresenceReq flags: isTxRequest=%d isUpsdSP=%d isPsPollSP=%d waitFirstBeacon=%d
 417481,2376,p2p_ps_client.c,P2pPS_RemoveTimer,0|P2pPS_RemoveTimer FAILED
 260319,2842,p2p_ps_client.c,P2P_PS_StopRoleNotify,2|[P2P_PS] Role CL is stopping - remove timers and resume tx queues. A=%d, P=%d
-2109627,73,First_Patch_Patches.c,PatchIntHandler,3|PatchIntHandler before disable trap_status %d,basepri=0x%x,fault=0x%x
-2109807,128,First_Patch_Patches.c,ptc_main_patch_handler,1|PatchIntHandler after enable patch %d
-2109715,151,First_Patch_Patches.c,patch_PrintVersion_handler,0|Running from patch_middle_main_init_first_time_only_handler
-2109929,173,First_Patch_Patches.c,patch_middle_main_init_first_time_only_handler,0|Running from patch PrintVersion
-2103505,387,First_Patch_Hooks.c,hook_Ltxp_IsFrameHeVhtLike,0|HE_CAPABILITIES_IE_ID Found
-2103525,397,First_Patch_Hooks.c,hook_Ltxp_IsFrameHeVhtLike,0|HE_OPERATION_IE_ID Found
-2103545,408,First_Patch_Hooks.c,hook_Ltxp_IsFrameHeVhtLike,0|VHT_CAPABILITIES Found
-2103565,419,First_Patch_Hooks.c,hook_Ltxp_IsFrameHeVhtLike,0|VHT_OPERATION Found
-2105757,447,First_Patch_Hooks.c,hook_LtxpSend_FrameIsWifi6Enabled,0|ERROR! Current Association Request Includes HE/VHT IE while wifi6 is disabled!
-2106285,479,First_Patch_Hooks.c,hook_ScanModule_GetProbeReqIEs,2|ScanModule_GetProbeReqIEs: Scan type ENUM(ScanType_e, %d) IEs len %d
-2105991,514,First_Patch_Hooks.c,hook_ScanModule_ProbeRequestIsWiFi6Enabled,0|ERROR! Current Probe Request Includes HE/VHT IE while wifi6 is disabled!
-2104161,598,First_Patch_Hooks.c,hook_WlanLp_GetLinkInactivity,1|hook_WlanLp_GetLinkInactivity inactivity duration = %d usec
-2105193,634,First_Patch_Hooks.c,hook_WlanLp_ReadDeviceSystemInfo,2|fuse ENUM(SystemInfoIdx_e,%d) = %d
-2105961,664,First_Patch_Hooks.c,hook_handleOMIUpdate,1|transmit QOS NULL frame for OMI change. desc ID: %d
-2104003,737,First_Patch_Hooks.c,hook_of_group_17,1| g_radioBand is  0x%x
-2104023,742,First_Patch_Hooks.c,hook_of_group_17,1|g_roleId is 0x%x
-2104039,747,First_Patch_Hooks.c,hook_of_group_17,0|Error: g_pRoleCtx is NULL
-2104825,781,First_Patch_Hooks.c,hook_of_group_37,0|Entered the hook HOOK_IN_BASICSCAN_SETSSIDFILTER_1
-2104829,785,First_Patch_Hooks.c,hook_of_group_37,0|Forcing SSID filter to be disabled
-2101913,822,First_Patch_Hooks.c,hook_of_group_50,1|5Ghz channel ! g_radioBand is 0x%x - unmask b rates
-2101973,870,First_Patch_Hooks.c,hook_of_group_50,3|buildProbeReq: supportedRatesMask = 0x%X, basicRatesMask = 0x%X, len = %d
-2102063,826,First_Patch_Hooks.c,hook_of_group_50,1| radio band is different then 5Ghz - continue as usual.  g_radioBand is 0x%x
-2102069,847,First_Patch_Hooks.c,hook_of_group_50,0|pProbeExtraIes is NULL!
-2100223,947,First_Patch_Hooks.c,hook_of_group_53,0|Entered HOOK_IN_MMU_IF_INIT_3
-2100287,988,First_Patch_Hooks.c,hook_of_group_53,2|TX memblocks allocation is too low. Calculated value: %d, min value allowed: %d
-2100485,1020,First_Patch_Hooks.c,hook_of_group_53,3|txPoolNumOfMemblks: %d, rxPoolNumOfMemblks: %d, mgmtPoolNumOfMemblks:%d
-2106061,1164,First_Patch_Hooks.c,hook_of_group_92,1|ERROR: Sched State is SCHED_STATE_WAIT_ASU_TERMINATE. Wrong Event = ENUM(schedStateEvent_e,%d)
-2104221,1190,First_Patch_Hooks.c,hook_of_group_114,0|Entered hook HOOK_IN_SECURITYKEYS_SETKEYS_4
-2106309,1306,First_Patch_Hooks.c,hook_of_group_122,0|Entered HOOK_IN_PMACHW_SETRXFILTER_2
-2103589,1336,First_Patch_Hooks.c,hook_of_group_125,0|Entered hook - HOOK_IN_CalibAgent_CalReqEvent_7
-2103619,1351,First_Patch_Hooks.c,hook_of_group_125,0|HOOK_IN_CalibAgent_CalReqEvent_7 - Return calib_agent.c:493 calibAgent_CalReqEvent()
-2103629,1357,First_Patch_Hooks.c,hook_of_group_125,0|HOOK_IN_CalibAgent_CalReqEvent_7 - Return calib_agent.c:499 calibAgent_CalReqEvent()
-2102445,1551,First_Patch_Hooks.c,hook_of_group_168,1|BeaconDtim Broadcast Timer Restart diff from last broadcast above 10ms    MAX LIMIT diff_currTsf_lastBroadcastRxTsfUsec:%d
-2102469,1560,First_Patch_Hooks.c,hook_of_group_168,1|BeaconDtim Broadcast Timer Restart diff from last broadcast above 7ms diff_currTsf_lastBroadcastRxTsfUsec:%d
-2106337,1884,First_Patch_Hooks.c,hook_of_group_256,0|Entered HOOK_IN_GPADCMONITOR_CONSIDERMEASURING_8
-2104301,1913,First_Patch_Hooks.c,hook_of_group_260,1|g_roleId is 0x%x
-2104323,1926,First_Patch_Hooks.c,hook_of_group_260,1|g_radioBand is 0x%x
-2104339,1922,First_Patch_Hooks.c,hook_of_group_260,1|Error: Invalid role context for roleId 0x%x
-2103031,1959,First_Patch_Hooks.c,hook_of_group_272,0|Entered hook - HOOK_IN_ROLES_BSSADDPEER_1
-2103067,1972,First_Patch_Hooks.c,hook_of_group_272,0|hook - HOOK_IN_ROLES_BSSADDPEER_1 - Role_DEVICE
-2103095,1980,First_Patch_Hooks.c,hook_of_group_272,0|hook exit - HOOK_IN_ROLES_BSSADDPEER_1
-2106121,2006,First_Patch_Hooks.c,hook_of_group_278,0|Entered HOOK_IN_GPADCMONITOR_READTEMP_3
-2104081,2315,First_Patch_Hooks.c,hook_of_group_413,0|Entered the hook - HOOK_IN_LRXP_HANDLENEWRXDESC_9
-2104113,2322,First_Patch_Hooks.c,hook_of_group_413,0|Finished the hook, return address changed
-2104573,2395,First_Patch_Hooks.c,hook_of_group_452,0|Entered Hook HOOK_IN_TRANSCEIVER_MANAGER_14
-2101373,2414,First_Patch_Hooks.c,hook_of_group_454,0|Entered Hook HOOK_IN_TRANSCEIVER_MANAGER_16
-2101379,2419,First_Patch_Hooks.c,hook_of_group_454,0|Transceiver_CountRxStat: Received packet start counting statistics!
-2103233,2528,First_Patch_Hooks.c,hook_of_group_456,0|Entered the hook - LRXP_HANDLESWAESDECRYPT_1
-2103257,2545,First_Patch_Hooks.c,hook_of_group_456,0|Protected bit is NOT set
-2103273,2540,First_Patch_Hooks.c,hook_of_group_456,0|Protected bit is SET
-2103289,2550,First_Patch_Hooks.c,hook_of_group_456,0|Finished the hook, return address changed
-2104365,2560,First_Patch_Hooks.c,hook_of_group_457,0|Entered Hook HOOK_IN_TRANSCEIVER_MANAGER_19
-2104451,2682,First_Patch_Hooks.c,hook_of_group_480,0|Entered the hook - HOOK_IN_LINKS_INCREMENTDECRYPTPACKETSCOUNT_2
-2104471,2686,First_Patch_Hooks.c,hook_of_group_480,0|Finished the hook - HOOK_IN_LINKS_INCREMENTDECRYPTPACKETSCOUNT_2
-2103173,2936,First_Patch_Hooks.c,hook_of_group_543,0|CS: Role not found
-2103179,2945,First_Patch_Hooks.c,hook_of_group_543,0|CS: Role not started
-2103185,2954,First_Patch_Hooks.c,hook_of_group_543,0|CS: Role is not supported for channel switch
-2104645,3077,First_Patch_Hooks.c,hook_of_group_585,0|Entered the hook - HOOK_IN_LRXPFRAGS_ACCUMFRAGSLISTADD_1
-2104659,3082,First_Patch_Hooks.c,hook_of_group_585,0|LrxpFrags_AccumFragsListAdd: frag attack, Broadcast fragmented frame detected
-2104675,3086,First_Patch_Hooks.c,hook_of_group_585,0|Finished the hook - HOOK_IN_LRXPFRAGS_ACCUMFRAGSLISTADD_1
-2104725,3125,First_Patch_Hooks.c,hook_of_group_599,0|TWT setup command while WiFi6 is disabled!
-2102925,3169,First_Patch_Hooks.c,hook_of_group_605,0|Entered the hook - HOOK_IN_WLANLP_INTRCMD_2
-2102953,3187,First_Patch_Hooks.c,hook_of_group_605,1|WlanLp_GetLinkInactivity call status is %d
-2102971,3196,First_Patch_Hooks.c,hook_of_group_605,0|Entered hook 605 HOOK_IN_WLANLP_INTRCMD_2
-2100799,3322,First_Patch_Hooks.c,hook_of_group_610,1|transmit OMI: %d
-2100895,3260,First_Patch_Hooks.c,hook_of_group_610,2|uplink Multiuser enable/disable: %d, Old OM field: 0x%x
-2100931,3272,First_Patch_Hooks.c,hook_of_group_610,1|New OM field: 0x%x
-2100947,3289,First_Patch_Hooks.c,hook_of_group_610,1|uplink Multiuser data enable/disable: %d
-2100981,3303,First_Patch_Hooks.c,hook_of_group_610,1|New OM field: 0x%x
-2101009,3373,First_Patch_Hooks.c,hook_of_group_610,0|ERROR! Wifi6 is disabled!
-2101041,3352,First_Patch_Hooks.c,hook_of_group_610,0|TWT setup command while WiFi6 is disabled!
-2104885,3831,First_Patch_Hooks.c,hook_of_group_692,0|Entered HOOK_IN_WLANLPTHREAD_VENDORIESCFG_1
-2104909,3838,First_Patch_Hooks.c,hook_of_group_692,0|Not enough free memblocks to allocate new beacon
-2103761,3864,First_Patch_Hooks.c,hook_of_group_710,0|Entered HOOK_IN_CHECK_INIFILE_1
-2103787,3882,First_Patch_Hooks.c,hook_of_group_710,2|Check_INIFile country code (%x) does not match country code set to customer efuse, while country_code_restriction is set (%x)
-2103811,3893,First_Patch_Hooks.c,hook_of_group_710,0|Check_INIFile country code should be worldwide safe
-2102135,3926,First_Patch_Hooks.c,hook_of_group_721,0|Entered Hook HOOK_IN_DISPATCH_INIPARAMS_3
-2104541,4068,First_Patch_Hooks.c,hook_of_group_757,0|ERROR: ProbeReqIE payload does not exist!
-2105665,4103,First_Patch_Hooks.c,hook_of_group_763,0|ERROR: Invalid Probe Request Payload!!!
-2102713,4137,First_Patch_Hooks.c,hook_of_group_776,0|Entered hook 776 at address HOOK_IN_DISPATCH_INTERROGATE_1
-2102747,4158,First_Patch_Hooks.c,hook_of_group_776,1|Command interrogate Unknown command %d
-2102761,4163,First_Patch_Hooks.c,hook_of_group_776,1|Command interrogate ENUM(Interrogate_e,%d) 
-2102789,4170,First_Patch_Hooks.c,hook_of_group_776,2|Command interrogate status %d len %d
-2103353,4210,First_Patch_Hooks.c,hook_of_group_779,0|ERROR: Transceiver_StartTx: Transmitting HE is not allowed
-2103371,4222,First_Patch_Hooks.c,hook_of_group_779,0|ERROR: Command CC33XX_TEST_CMD_START_RX_SIMULATION with HE preambles while WiFi6 disabled
-2105061,4505,First_Patch_Hooks.c,hook_of_group_913,1|Wifi6 is disabled = %d
-2105065,4506,First_Patch_Hooks.c,hook_of_group_913,1|Restricted INI Key = %x
-2105069,4507,First_Patch_Hooks.c,hook_of_group_913,1|MAC_ADDRESS_OV_LOW  = %x
-2105073,4508,First_Patch_Hooks.c,hook_of_group_913,1|MAC_ADDRESS_OV_HIGH_IDX  = %x
-2105077,4509,First_Patch_Hooks.c,hook_of_group_913,1|CRDA_CODE_ENABLE  = %x
-2105081,4510,First_Patch_Hooks.c,hook_of_group_913,1|CRDA_CODE  = %x
-2103719,4678,First_Patch_Hooks.c,hook_of_group_988,3|pwrmgt_bet: TIM IE length = %d, beacon length chenged to %d, current beacon length %d 
-2101643,4724,First_Patch_Hooks.c,hook_of_group_1008,2|roleid %d buf_len=%d
-2101711,4741,First_Patch_Hooks.c,hook_of_group_1008,4|ScanModule: free 2.4G ProbeRequestTempl=%x roleId=%d, staRoleId=%d buff len %d
-2101749,4751,First_Patch_Hooks.c,hook_of_group_1008,4|ScanModule: roleId=%d, [%d] allocated 2.4G ProbeRequestTempl=%x buff len = %d
-2101801,4767,First_Patch_Hooks.c,hook_of_group_1008,3|ScanModule: free 5G gProbeRequestTempl roleid=%d, staroleId=%d buff len %d
-2101835,4776,First_Patch_Hooks.c,hook_of_group_1008,3|ScanModule: roleId=%d, [%d] allocated 5G gProbeRequestTempl buff len = %d
-2106157,5006,First_Patch_Hooks.c,hook_of_group_327,1|MLBX_M0_CMD_TUNE_FAILED, skip assert using HOOK = 0x%x
-2109095,314,First_Patch_Hooks_BLE.c,hook_BleHciDispatcher_SendBleReadyMessagetoHost,1|BleHciDispatcher_SendBleReadyMessagetoHost totalLength = %d bytes
+2112231,73,First_Patch_Patches.c,PatchIntHandler,3|PatchIntHandler before disable trap_status %d,basepri=0x%x,fault=0x%x
+2112411,128,First_Patch_Patches.c,ptc_main_patch_handler,1|PatchIntHandler after enable patch %d
+2112319,151,First_Patch_Patches.c,patch_PrintVersion_handler,0|Running from patch_middle_main_init_first_time_only_handler
+2112533,173,First_Patch_Patches.c,patch_middle_main_init_first_time_only_handler,0|Running from patch PrintVersion
+2104745,397,First_Patch_Hooks.c,hook_Ltxp_IsFrameHeVhtLike,0|HE_CAPABILITIES_IE_ID Found
+2104765,407,First_Patch_Hooks.c,hook_Ltxp_IsFrameHeVhtLike,0|HE_OPERATION_IE_ID Found
+2104785,418,First_Patch_Hooks.c,hook_Ltxp_IsFrameHeVhtLike,0|VHT_CAPABILITIES Found
+2104805,429,First_Patch_Hooks.c,hook_Ltxp_IsFrameHeVhtLike,0|VHT_OPERATION Found
+2107197,457,First_Patch_Hooks.c,hook_LtxpSend_FrameIsWifi6Enabled,0|ERROR! Current Association Request Includes HE/VHT IE while wifi6 is disabled!
+2107797,489,First_Patch_Hooks.c,hook_ScanModule_GetProbeReqIEs,2|ScanModule_GetProbeReqIEs: Scan type ENUM(ScanType_e, %d) IEs len %d
+2107471,524,First_Patch_Hooks.c,hook_ScanModule_ProbeRequestIsWiFi6Enabled,0|ERROR! Current Probe Request Includes HE/VHT IE while wifi6 is disabled!
+2105401,608,First_Patch_Hooks.c,hook_WlanLp_GetLinkInactivity,1|hook_WlanLp_GetLinkInactivity inactivity duration = %d usec
+2106545,644,First_Patch_Hooks.c,hook_WlanLp_ReadDeviceSystemInfo,2|fuse ENUM(SystemInfoIdx_e,%d) = %d
+2107441,674,First_Patch_Hooks.c,hook_handleOMIUpdate,1|transmit QOS NULL frame for OMI change. desc ID: %d
+2105243,796,First_Patch_Hooks.c,hook_of_group_17,1| g_radioBand is  0x%x
+2105263,801,First_Patch_Hooks.c,hook_of_group_17,1|g_roleId is 0x%x
+2105279,806,First_Patch_Hooks.c,hook_of_group_17,0|Error: g_pRoleCtx is NULL
+2107221,833,First_Patch_Hooks.c,hook_of_group_19,0|Entered from hook HOOK_IN_SCANMODULE_START_5
+2106065,865,First_Patch_Hooks.c,hook_of_group_37,0|Entered the hook HOOK_IN_BASICSCAN_SETSSIDFILTER_1
+2106069,869,First_Patch_Hooks.c,hook_of_group_37,0|Forcing SSID filter to be disabled
+2102913,906,First_Patch_Hooks.c,hook_of_group_50,1|5Ghz channel ! g_radioBand is 0x%x - unmask b rates
+2102973,954,First_Patch_Hooks.c,hook_of_group_50,3|buildProbeReq: supportedRatesMask = 0x%X, basicRatesMask = 0x%X, len = %d
+2103063,910,First_Patch_Hooks.c,hook_of_group_50,1| radio band is different then 5Ghz - continue as usual.  g_radioBand is 0x%x
+2103069,931,First_Patch_Hooks.c,hook_of_group_50,0|pProbeExtraIes is NULL!
+2101143,1032,First_Patch_Hooks.c,hook_of_group_53,0|Entered HOOK_IN_MMU_IF_INIT_3
+2101207,1073,First_Patch_Hooks.c,hook_of_group_53,2|TX memblocks allocation is too low. Calculated value: %d, min value allowed: %d
+2101405,1105,First_Patch_Hooks.c,hook_of_group_53,3|txPoolNumOfMemblks: %d, rxPoolNumOfMemblks: %d, mgmtPoolNumOfMemblks:%d
+2107541,1249,First_Patch_Hooks.c,hook_of_group_92,1|ERROR: Sched State is SCHED_STATE_WAIT_ASU_TERMINATE. Wrong Event = ENUM(schedStateEvent_e,%d)
+2105461,1275,First_Patch_Hooks.c,hook_of_group_114,0|Entered hook HOOK_IN_SECURITYKEYS_SETKEYS_4
+2107821,1391,First_Patch_Hooks.c,hook_of_group_122,0|Entered HOOK_IN_PMACHW_SETRXFILTER_2
+2104829,1421,First_Patch_Hooks.c,hook_of_group_125,0|Entered hook - HOOK_IN_CalibAgent_CalReqEvent_7
+2104859,1436,First_Patch_Hooks.c,hook_of_group_125,0|HOOK_IN_CalibAgent_CalReqEvent_7 - Return calib_agent.c:493 calibAgent_CalReqEvent()
+2104869,1442,First_Patch_Hooks.c,hook_of_group_125,0|HOOK_IN_CalibAgent_CalReqEvent_7 - Return calib_agent.c:499 calibAgent_CalReqEvent()
+2103445,1636,First_Patch_Hooks.c,hook_of_group_168,1|BeaconDtim Broadcast Timer Restart diff from last broadcast above 10ms    MAX LIMIT diff_currTsf_lastBroadcastRxTsfUsec:%d
+2103469,1645,First_Patch_Hooks.c,hook_of_group_168,1|BeaconDtim Broadcast Timer Restart diff from last broadcast above 7ms diff_currTsf_lastBroadcastRxTsfUsec:%d
+2107849,1982,First_Patch_Hooks.c,hook_of_group_256,0|Entered HOOK_IN_GPADCMONITOR_CONSIDERMEASURING_8
+2105541,2011,First_Patch_Hooks.c,hook_of_group_260,1|g_roleId is 0x%x
+2105563,2024,First_Patch_Hooks.c,hook_of_group_260,1|g_radioBand is 0x%x
+2105579,2020,First_Patch_Hooks.c,hook_of_group_260,1|Error: Invalid role context for roleId 0x%x
+2104179,2057,First_Patch_Hooks.c,hook_of_group_272,0|Entered hook - HOOK_IN_ROLES_BSSADDPEER_1
+2104215,2070,First_Patch_Hooks.c,hook_of_group_272,0|hook - HOOK_IN_ROLES_BSSADDPEER_1 - Role_DEVICE
+2104243,2078,First_Patch_Hooks.c,hook_of_group_272,0|hook exit - HOOK_IN_ROLES_BSSADDPEER_1
+2107601,2104,First_Patch_Hooks.c,hook_of_group_278,0|Entered HOOK_IN_GPADCMONITOR_READTEMP_3
+2103579,2172,First_Patch_Hooks.c,hook_of_group_293,1|Hook 293 CSI: WARNING - frame matches but canSendFrame=%d
+2103585,2165,First_Patch_Hooks.c,hook_of_group_293,0|Hook 293 CSI: frame does not match expected CSI frame, skipping
+2103669,2188,First_Patch_Hooks.c,hook_of_group_293,0|Hook 293 CSI: mpduHeader is NULL
+2105321,2493,First_Patch_Hooks.c,hook_of_group_413,0|Entered the hook - HOOK_IN_LRXP_HANDLENEWRXDESC_9
+2105353,2500,First_Patch_Hooks.c,hook_of_group_413,0|Finished the hook, return address changed
+2105813,2573,First_Patch_Hooks.c,hook_of_group_452,0|Entered Hook HOOK_IN_TRANSCEIVER_MANAGER_14
+2102633,2592,First_Patch_Hooks.c,hook_of_group_454,0|Entered Hook HOOK_IN_TRANSCEIVER_MANAGER_16
+2102639,2597,First_Patch_Hooks.c,hook_of_group_454,0|Transceiver_CountRxStat: Received packet start counting statistics!
+2104381,2706,First_Patch_Hooks.c,hook_of_group_456,0|Entered the hook - LRXP_HANDLESWAESDECRYPT_1
+2104405,2723,First_Patch_Hooks.c,hook_of_group_456,0|Protected bit is NOT set
+2104421,2718,First_Patch_Hooks.c,hook_of_group_456,0|Protected bit is SET
+2104437,2728,First_Patch_Hooks.c,hook_of_group_456,0|Finished the hook, return address changed
+2105605,2738,First_Patch_Hooks.c,hook_of_group_457,0|Entered Hook HOOK_IN_TRANSCEIVER_MANAGER_19
+2105691,2885,First_Patch_Hooks.c,hook_of_group_480,0|Entered the hook - HOOK_IN_LINKS_INCREMENTDECRYPTPACKETSCOUNT_2
+2105711,2889,First_Patch_Hooks.c,hook_of_group_480,0|Finished the hook - HOOK_IN_LINKS_INCREMENTDECRYPTPACKETSCOUNT_2
+2100753,3125,First_Patch_Hooks.c,hook_of_group_514,3|Configuring GPIOs for external SOC coexistence: Request GPIO %d, Priority GPIO %d, Grant GPIO %d
+2100781,3088,First_Patch_Hooks.c,hook_of_group_514,0|External SOC coexistence is not enabled, skipping GPIO configuration
+2107015,3245,First_Patch_Hooks.c,hook_of_group_515,0|hook_of_group_515: CSI feature disabled, disabling CSI solicitation
+2107667,3303,First_Patch_Hooks.c,hook_of_group_527,0|Entered hook_of_group_527 - HOOK_IN_WLANLP_STOPROLECLOSEWLANMODULES_1 - notifying CSI solicitation about role stop
+2104469,3383,First_Patch_Hooks.c,hook_of_group_542,4|CSI Solicitation Statistics: NULL-Data Frames Acked: %d, NULL-Data Frames No-Ack: %d, Short Interval (<3ms): %d, Long Interval (>3ms): %d
+2104523,3393,First_Patch_Hooks.c,hook_of_group_542,0|CSI Context - Not initialized
+2104321,3431,First_Patch_Hooks.c,hook_of_group_543,0|CS: Role not found
+2104327,3440,First_Patch_Hooks.c,hook_of_group_543,0|CS: Role not started
+2104333,3449,First_Patch_Hooks.c,hook_of_group_543,0|CS: Role is not supported for channel switch
+2105885,3622,First_Patch_Hooks.c,hook_of_group_585,0|Entered the hook - HOOK_IN_LRXPFRAGS_ACCUMFRAGSLISTADD_1
+2105899,3627,First_Patch_Hooks.c,hook_of_group_585,0|LrxpFrags_AccumFragsListAdd: frag attack, Broadcast fragmented frame detected
+2105915,3631,First_Patch_Hooks.c,hook_of_group_585,0|Finished the hook - HOOK_IN_LRXPFRAGS_ACCUMFRAGSLISTADD_1
+2105965,3694,First_Patch_Hooks.c,hook_of_group_599,0|TWT setup command while WiFi6 is disabled!
+2104073,3738,First_Patch_Hooks.c,hook_of_group_605,0|Entered the hook - HOOK_IN_WLANLP_INTRCMD_2
+2104101,3756,First_Patch_Hooks.c,hook_of_group_605,1|WlanLp_GetLinkInactivity call status is %d
+2104119,3765,First_Patch_Hooks.c,hook_of_group_605,0|Entered hook 605 HOOK_IN_WLANLP_INTRCMD_2
+2102035,3891,First_Patch_Hooks.c,hook_of_group_610,1|transmit OMI: %d
+2102137,3829,First_Patch_Hooks.c,hook_of_group_610,2|uplink Multiuser enable/disable: %d, Old OM field: 0x%x
+2102173,3841,First_Patch_Hooks.c,hook_of_group_610,1|New OM field: 0x%x
+2102189,3858,First_Patch_Hooks.c,hook_of_group_610,1|uplink Multiuser data enable/disable: %d
+2102223,3872,First_Patch_Hooks.c,hook_of_group_610,1|New OM field: 0x%x
+2102241,3921,First_Patch_Hooks.c,hook_of_group_610,0|TWT setup command while WiFi6 is disabled!
+2102269,3942,First_Patch_Hooks.c,hook_of_group_610,0|ERROR! Wifi6 is disabled!
+2107057,4242,First_Patch_Hooks.c,hook_of_group_622,0|hook_of_group_622: WLAN_LP_THREAD_MESSAGE_ID_CSI_SOLICITATION_NULL_DATA_FRAME_TX_COMPLETE
+2106125,4501,First_Patch_Hooks.c,hook_of_group_692,0|Entered HOOK_IN_WLANLPTHREAD_VENDORIESCFG_1
+2106149,4508,First_Patch_Hooks.c,hook_of_group_692,0|Not enough free memblocks to allocate new beacon
+2105001,4534,First_Patch_Hooks.c,hook_of_group_710,0|Entered HOOK_IN_CHECK_INIFILE_1
+2105027,4552,First_Patch_Hooks.c,hook_of_group_710,2|Check_INIFile country code (%x) does not match country code set to customer efuse, while country_code_restriction is set (%x)
+2105051,4563,First_Patch_Hooks.c,hook_of_group_710,0|Check_INIFile country code should be worldwide safe
+2103135,4596,First_Patch_Hooks.c,hook_of_group_721,0|Entered Hook HOOK_IN_DISPATCH_INIPARAMS_3
+2105781,4763,First_Patch_Hooks.c,hook_of_group_757,0|ERROR: ProbeReqIE payload does not exist!
+2107105,4798,First_Patch_Hooks.c,hook_of_group_763,0|ERROR: Invalid Probe Request Payload!!!
+2103861,4832,First_Patch_Hooks.c,hook_of_group_776,0|Entered hook 776 at address HOOK_IN_DISPATCH_INTERROGATE_1
+2103895,4853,First_Patch_Hooks.c,hook_of_group_776,1|Command interrogate Unknown command %d
+2103909,4858,First_Patch_Hooks.c,hook_of_group_776,1|Command interrogate ENUM(Interrogate_e,%d) 
+2103937,4865,First_Patch_Hooks.c,hook_of_group_776,2|Command interrogate status %d len %d
+2104593,4905,First_Patch_Hooks.c,hook_of_group_779,0|ERROR: Transceiver_StartTx: Transmitting HE is not allowed
+2104611,4917,First_Patch_Hooks.c,hook_of_group_779,0|ERROR: Command CC33XX_TEST_CMD_START_RX_SIMULATION with HE preambles while WiFi6 disabled
+2103727,5123,First_Patch_Hooks.c,hook_of_group_799,0|hook_of_group_799: CMD_CSI_SOL_ENABLE
+2103747,5150,First_Patch_Hooks.c,hook_of_group_799,0|hook_of_group_799: CMD_CSI_SOL_MAC_EDIT
+2106413,5282,First_Patch_Hooks.c,hook_of_group_913,1|Wifi6 is disabled = %d
+2106417,5283,First_Patch_Hooks.c,hook_of_group_913,1|Restricted INI Key = %x
+2106421,5284,First_Patch_Hooks.c,hook_of_group_913,1|MAC_ADDRESS_OV_LOW  = %x
+2106425,5285,First_Patch_Hooks.c,hook_of_group_913,1|MAC_ADDRESS_OV_HIGH_IDX  = %x
+2106429,5286,First_Patch_Hooks.c,hook_of_group_913,1|CRDA_CODE_ENABLE  = %x
+2106433,5287,First_Patch_Hooks.c,hook_of_group_913,1|CRDA_CODE  = %x
+2104959,5455,First_Patch_Hooks.c,hook_of_group_988,3|pwrmgt_bet: TIM IE length = %d, beacon length chenged to %d, current beacon length %d 
+2102347,5579,First_Patch_Hooks.c,hook_of_group_1008,3|roleid %d buf_len=%d currentBand=%d
+2102457,5616,First_Patch_Hooks.c,hook_of_group_1008,4|ScanModule: free 2.4G ProbeRequestTempl=%x roleId=%d, staRoleId=%d buff len %d
+2102495,5626,First_Patch_Hooks.c,hook_of_group_1008,4|ScanModule: roleId=%d, [%d] allocated 2.4G ProbeRequestTempl=%x buff len = %d
+2102515,5660,First_Patch_Hooks.c,hook_of_group_1008,1|ScanModule:  pScanCB->pExtraIesBuffer=%x
+2102541,5641,First_Patch_Hooks.c,hook_of_group_1008,3|ScanModule: free 5G gProbeRequestTempl roleid=%d, staroleId=%d buff len %d
+2102575,5650,First_Patch_Hooks.c,hook_of_group_1008,3|ScanModule: roleId=%d, [%d] allocated 5G gProbeRequestTempl buff len = %d
+2107637,5903,First_Patch_Hooks.c,hook_of_group_327,1|MLBX_M0_CMD_TUNE_FAILED, skip assert using HOOK = 0x%x
+2111535,343,First_Patch_Hooks_BLE.c,hook_BleHciDispatcher_SendBleReadyMessagetoHost,1|BleHciDispatcher_SendBleReadyMessagetoHost totalLength = %d bytes
+2114055,131,First_Patch_Csi_Solicitation.c,CsiSol_CheckTimestampForAck,1|CsiSol_CheckTimestampForAck: Invalid, diff=%d
+2114061,117,First_Patch_Csi_Solicitation.c,CsiSol_CheckTimestampForAck,0|CsiSol_CheckTimestampForAck: Invalid descriptor ID
+2112585,289,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|CSI Solicitation disable in progress, cannot enable now
+2112591,272,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|CSI Solicitation cannot be enabled when CSI feature is disabled.
+2112597,279,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|ERROR: No active STA role, cannot send NULL DATA frame
+2112755,515,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|ERROR: fail to allocate descriptor for NULL DATA
+2112761,292,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|CSI Solicitation already enabled, please disable first. I'm doing nothing
+2112767,300,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|ERROR: Failed to allocate CSI Solicitation context
+2112773,494,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|ERROR: No active STA role, cannot send NULL DATA frame
+2112777,319,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|CSI Solicitation: Failed to create NULL DATA frame
+2112811,519,First_Patch_Csi_Solicitation.c,CsiSol_Enable,1|CSI Solicitation allocated descriptor 0x%X for NULL DATA
+2112907,538,First_Patch_Csi_Solicitation.c,CsiSol_Enable,1|ERROR: Failed to get role context for roleId %d
+2112997,327,First_Patch_Csi_Solicitation.c,CsiSol_Enable,0|ERROR: failed to add time event for CSI solicitation
+2113033,340,First_Patch_Csi_Solicitation.c,CsiSol_Enable,2|CSI Solicitation: Set USE_SOLICITATION_CSI flag in PMAC scripter config (0x%X -> 0x%X)
+2113049,344,First_Patch_Csi_Solicitation.c,CsiSol_Enable,1|CSI Solicitation Enabled - Timer set for periodic solicitation every %d usec
+2114233,366,First_Patch_Csi_Solicitation.c,CsiSol_Disable,0|CSI Solicitation moving to disabled state.
+2114247,362,First_Patch_Csi_Solicitation.c,CsiSol_Disable,0|CSI Solicitation already disabled
+2113605,416,First_Patch_Csi_Solicitation.c,CsiSol_DisableInternal,1|CsiSol_DisableInternal: Timer removal failed (result=%d), waiting for timer expiry
+2113611,390,First_Patch_Csi_Solicitation.c,CsiSol_DisableInternal,0|CsiSol_DisableInternal: ERROR - Context already NULL
+2113625,409,First_Patch_Csi_Solicitation.c,CsiSol_DisableInternal,0|CsiSol_DisableInternal: Timer event removed successfully
+2113655,441,First_Patch_Csi_Solicitation.c,CsiSol_DisableInternal,0|CsiSol_DisableInternal: NULL data frame descriptor deallocated
+2113673,434,First_Patch_Csi_Solicitation.c,CsiSol_DisableInternal,0|CsiSol_DisableInternal: Waiting for frame TX complete callback
+2113721,459,First_Patch_Csi_Solicitation.c,CsiSol_DisableInternal,2|CSI Solicitation: Cleared USE_SOLICITATION_CSI flag in PMAC scripter config (0x%X -> 0x%X)
+2113391,600,First_Patch_Csi_Solicitation.c,CsiSol_TimerExpiredCB,1|CSI Solicitation Timer Expired - Invalid currIndex %d, resetting to 0
+2113457,626,First_Patch_Csi_Solicitation.c,CsiSol_TimerExpiredCB,0|CSI Solicitation - LtxpSend was Generated
+2113463,576,First_Patch_Csi_Solicitation.c,CsiSol_TimerExpiredCB,0|CSI Solicitation Timer Expired but context is NULL
+2113469,582,First_Patch_Csi_Solicitation.c,CsiSol_TimerExpiredCB,0|CSI Solicitation Timer Expired - role is stopping, not rescheduling timer
+2113497,631,First_Patch_Csi_Solicitation.c,CsiSol_TimerExpiredCB,0|CSI Solicitation - previous NULL DATA frame not sent - skipping this interval
+2113533,647,First_Patch_Csi_Solicitation.c,CsiSol_TimerExpiredCB,0|CRITICAL ERROR: Failed to reschedule CSI solicitation timer - disabling feature
+2113955,919,First_Patch_Csi_Solicitation.c,CsiSol_CheckdisableComplete,1|CsiSol_CheckdisableComplete: Still waiting for operations. Bitmask = 0x%X
+2113983,900,First_Patch_Csi_Solicitation.c,CsiSol_CheckdisableComplete,0|CsiSol_CheckdisableComplete: All operations complete, context freed
+2113989,905,First_Patch_Csi_Solicitation.c,CsiSol_CheckdisableComplete,0|CsiSol_CheckdisableComplete: Notifying WLAN LP Thread
+2113821,712,First_Patch_Csi_Solicitation.c,CsiSol_ProcessTxComplete,0|CSI Solicitation TX Complete but context is NULL
+2113889,756,First_Patch_Csi_Solicitation.c,CsiSol_ProcessTxComplete,0|CSI Solicitation - NULL DATA TX complete during role stop, deallocating descriptor
+2113111,806,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,0|CsiSol_EditMacList: Cannot add MAC address, list is full
+2113117,791,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,0|CsiSol_EditMacList: Invalid null parameter
+2113123,797,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,0|CsiSol_EditMacList: CSI Solicitation not enabled
+2113271,811,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,0|CsiSol_EditMacList: Cannot remove MAC address, list is empty
+2114137,936,First_Patch_Csi_Solicitation.c,CsiSol_StopRoleNotify,1|CsiSol_StopRoleNotify: roleId = %d
+2114147,941,First_Patch_Csi_Solicitation.c,CsiSol_StopRoleNotify,0|CsiSol_StopRoleNotify: CSI solicitation is enabled, cleaning up resources
+2114163,951,First_Patch_Csi_Solicitation.c,CsiSol_StopRoleNotify,0|CsiSol_StopRoleNotify: CSI solicitation not enabled, completing immediately
+2114201,241,First_Patch_Csi_Solicitation.c,CsiSol_NotifyWlanLpIfStaBased,2|CsiSol: Notifying WLAN LP Thread (role %d is STA-based type %d)
+2114219,246,First_Patch_Csi_Solicitation.c,CsiSol_NotifyWlanLpIfStaBased,2|CsiSol: NOT notifying WLAN LP Thread (role %d is not STA-based, type %d)
 469173,50,ble_crypto_porting.c,BleCryptoPorting_init,0|BLE Crypto Porting Layer Init
 469185,56,ble_crypto_porting.c,BleCryptoPorting_init,1|ERROR: fail to create sync object ! ENUM(OsiReturnVal_e,%d)
 422081,78,ble_crypto_porting.c,BleCryptoPorting_setInitialSeed,0|BLE Crypto Porting Layer: Set initial seed
@@ -3697,7 +3754,7 @@ GTRACEBINMAGICHDR28645,48,main.c,__get_PRIMASK,0|Main Init Complete
 
 170193,133,ll_scan_end_causes.c,llExtScan_PostProcess,2|CTRL: llExtScan_PostProcess RAT=0x%08X, phyMode=0x%x
 
-4294967295,0,0,0,1|1769612726
+4294967295,0,0,0,1|1774428973
 ***GTRACE_STRINGS
 
 
@@ -3866,9 +3923,19 @@ GTRACEBINMAGICHDR28645,48,main.c,__get_PRIMASK,0|Main Init Complete
 182451,702,p2p_ps_client.c,P2pPS_BuildScheduler,5|NoA scheduler data [idx %d] duration 0x%x, interval 0x%x, count 0x%x startTSF=0x%x
 243713,1277,p2p_ps_client.c,P2pPS_GetOppositeGOState,5|[P2P_PS] max_search_limit=0x%x, tested_go_state=ENUM(P2pPsGoStateType_e,%d)|given_go_state=ENUM(P2pPsGoStateType_e,%d), next eventTsf=0x%x|givenTsf=0x%x
 186877,1813,p2p_ps_client.c,P2pPS_SetGOStatePresent,6|P2P PS: Set_GO_State_Present: [tsf 0x%x] role %d, beaconInt=%d, currentGO state=ENUM(P2pPsGoStateType_e,%d)  current-nextstate-eventTSF=0x%x, isEmptySchedule=%d
-2109769,158,First_Patch_Patches.c,patch_PrintVersion_handler,8|FP Main Init finished successfully, Firmware version %s, HW version 0x%X, Wifi lower mac version %s, Wsoc version %s, Bootloader rom version %s, Bootloader ram version %s, BLE version %s, UpperMac version %s
-2104197,593,First_Patch_Hooks.c,hook_WlanLp_GetLinkInactivity,6|NOTIFY: Can't find link ID for peer %02x:%02x:%02x:%02x:%02x:%02x
-2101777,4787,First_Patch_Hooks.c,hook_of_group_1008,2|ScanModule: pScanCB->extraIeLen=%d, pScanCB->pExtraIesBuffer=%x
+2112373,158,First_Patch_Patches.c,patch_PrintVersion_handler,8|FP Main Init finished successfully, Firmware version %s, HW version 0x%X, Wifi lower mac version %s, Wsoc version %s, Bootloader rom version %s, Bootloader ram version %s, BLE version %s, UpperMac version %s
+2105437,603,First_Patch_Hooks.c,hook_WlanLp_GetLinkInactivity,6|NOTIFY: Can't find link ID for peer %02x:%02x:%02x:%02x:%02x:%02x
+2103663,2212,First_Patch_Hooks.c,hook_of_group_293,6|Hook 293 CSI: Modified frame header for CSI solicitation, destAddr=%02X:%02X:%02X:%02X:%02X:%02X
+2104517,3389,First_Patch_Hooks.c,hook_of_group_542,6|CSI Context - Enabled:       %d, Send Counter: %d, Interval (us): %d, Last TSF: 0x%08X, Can Send: %d, MAC List Len: %d
+2112899,534,First_Patch_Csi_Solicitation.c,CsiSol_Enable,6|CSI Solicitation: Cached local MAC %02X:%02X:%02X:%02X:%02X:%02X
+2113867,747,First_Patch_Csi_Solicitation.c,CsiSol_ProcessTxComplete,5|CSI Solicitation - NULL DATA TX Complete, descId=0x%X, status=%d, counter=%d, tsf=%d, delta=%d
+2113235,839,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,6|Added MAC address %02X:%02X:%02X:%02X:%02X:%02X
+2113243,839,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,6|Added MAC address %02X:%02X:%02X:%02X:%02X:%02X
+2113265,826,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,6|MAC address already exists %02X:%02X:%02X:%02X:%02X:%02X
+2113277,868,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,6|MAC address not found in list %02X:%02X:%02X:%02X:%02X:%02X
+2113285,868,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,6|MAC address not found in list %02X:%02X:%02X:%02X:%02X:%02X
+2113343,860,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,6|Removed MAC address %02X:%02X:%02X:%02X:%02X:%02X
+2113351,860,First_Patch_Csi_Solicitation.c,CsiSol_EditMacList,6|Removed MAC address %02X:%02X:%02X:%02X:%02X:%02X
 303265,3022,ll_common.c,llEnqueueCtrlPkt,2|CTRL: llEnqueueCtrlPkt connId=%d, ctrlType=%s
 
 251129,2252,ll_isr.c,llRxEntryDoneEventHandleConnectRequest,2|CTRL: ll_isr llState=%d, RF_PDU=%s
@@ -4505,15 +4572,15 @@ GTRACEBINMAGICHDR28645,48,main.c,__get_PRIMASK,0|Main Init Complete
 377769,589,dma_driver.c,dmaDriver_getChanEvents|0
 289965,113,wgcm_gns.c,GNS_registerForNotification|0
 385681,154,wgcm_gns.c,GNS_unRegisterNotification|0
-273109,1204,coex_driver.c,Coex_maxWiFiPriority|0
-326989,1301,coex_driver.c,Coex_changeExtSoCGPIOsAndCoexmode|*gpioAddress <= (0x4116c008)
-337573,1450,coex_driver.c,Coex_BeaconDtimAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << ((COEX_ACTIVITY_ID_WLAN_BEACON_RX_STA_URGENT + staRoleId))))
-337597,1458,coex_driver.c,Coex_BeaconDtimAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << ((COEX_ACTIVITY_ID_WLAN_BEACON_RX_STA + staRoleId))))
-422277,1548,coex_driver.c,Coex_BasicScanAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << (COEX_ACTIVITY_ID_WLAN_SCAN)))
-422291,1540,coex_driver.c,Coex_BasicScanAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << (COEX_ACTIVITY_ID_WLAN_SCAN_HIGH)))
-429637,1586,coex_driver.c,Coex_apBeaconAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << (COEX_ACTIVITY_ID_WLAN_BEACON_TX_AP)))
-161915,1748,coex_driver.c,Coex_requestPTASignal|0
-161955,1767,coex_driver.c,Coex_requestPTASignal|0
+273109,1088,coex_driver.c,Coex_maxWiFiPriority|0
+326989,1185,coex_driver.c,Coex_changeExtSoCGPIOsAndCoexmode|*gpioAddress <= (0x4116c008)
+337573,1334,coex_driver.c,Coex_BeaconDtimAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << ((COEX_ACTIVITY_ID_WLAN_BEACON_RX_STA_URGENT + staRoleId))))
+337597,1342,coex_driver.c,Coex_BeaconDtimAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << ((COEX_ACTIVITY_ID_WLAN_BEACON_RX_STA + staRoleId))))
+422277,1432,coex_driver.c,Coex_BasicScanAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << (COEX_ACTIVITY_ID_WLAN_SCAN)))
+422291,1424,coex_driver.c,Coex_BasicScanAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << (COEX_ACTIVITY_ID_WLAN_SCAN_HIGH)))
+429637,1470,coex_driver.c,Coex_apBeaconAddWiFiPriority|!(gCoex_WiFiClientList.Coex_ActivityID_bitmap & (1U << (COEX_ACTIVITY_ID_WLAN_BEACON_TX_AP)))
+161915,1632,coex_driver.c,Coex_requestPTASignal|0
+161955,1651,coex_driver.c,Coex_requestPTASignal|0
 312223,368,system_info.c,systemInfo_IdentifyDeviceFlavour|0
 383605,821,gpadc_if.c,gpadc_SetGpadcThermalProtectionSensSel|0
 383517,867,gpadc_if.c,gpadc_SetGpadcLogAlpha|0
@@ -4712,10 +4779,13 @@ GTRACEBINMAGICHDR28645,48,main.c,__get_PRIMASK,0|Main Init Complete
 274503,111,worker_threads_builder.c,worker_threads_builder_create|WORKER_THREAD_STATIC_MEM_LAST > workerID
 282909,1712,p2p_ps_client.c,P2pPS_SetGOStateAbsent|nextSchedulersResult.stateData.goState != (-1)
 417411,2747,p2p_ps_client.c,P2P_PS_NotifyOutOfSynch|pRoleCtx && ((ROLE_P2P_CL == (pRoleCtx->type))||(ROLE_STA == (pRoleCtx->type)))
-2101979,872,First_Patch_Hooks.c,hook_of_group_50|len <= 32
-2100289,989,First_Patch_Hooks.c,hook_of_group_53|0
-2103043,1967,First_Patch_Hooks.c,hook_of_group_272|pBssId
-2105327,2376,First_Patch_Hooks.c,hook_of_group_446|regs->r5 <= 1
+2102979,956,First_Patch_Hooks.c,hook_of_group_50|len <= 32
+2101209,1074,First_Patch_Hooks.c,hook_of_group_53|0
+2104191,2065,First_Patch_Hooks.c,hook_of_group_272|pBssId
+2106679,2554,First_Patch_Hooks.c,hook_of_group_446|regs->r5 <= 1
+2100775,3133,First_Patch_Hooks.c,hook_of_group_514|((uint32_t )socRequestGpioAddress_ctl0 <= (uint32_t )(0x4117100c)) && ((uint32_t )socPriorityGpioAddress_ctl0 <= (uint32_t )(0x4117100c)) && ((uint32_t )socGrantGpioAddress_ctl0 <= (uint32_t )(0x4117100c)) && ((uint32_t )socRequestGpioAddress_mux <= (uint32_t )(0x4117100c)) && ((uint32_t )socPriorityGpioAddress_mux <= (uint32_t )(0x4117100c)) && ((uint32_t )socGrantGpioAddress_mux <= (uint32_t )(0x4117100c))
+2111459,831,First_Patch_Hooks_BLE.c,hook_llSetupNextCentralEvent_1|llConns.currentConn != 0xFF
+2111249,888,First_Patch_Hooks_BLE.c,hook_LL_PRIV_CheckRLPeerIdEntry_1|0
 469187,57,ble_crypto_porting.c,BleCryptoPorting_init|0
 422117,91,ble_crypto_porting.c,BleCryptoPorting_setInitialSeed|0
 474247,135,ble_crypto_porting.c,BleCryptoPorting_aesDma_callBack|0
@@ -4752,6 +4822,8 @@ GTRACEBINMAGICHDR28645,48,main.c,__get_PRIMASK,0|Main Init Complete
 281859,115,ble_main.c,ble_main|0
 281903,134,ble_main.c,ble_main|0
 296037,207,ble_main.c,ble_main_thread|0
+230841,648,ble.c,llSetupRATChanCompare|0
+230927,689,ble.c,llSetupRATChanCompare|0
 94501,4069,ll_ae.c,llProcessExtScanRxFIFO|0
 91917,5629,ll_ae.c,llSetupExtAdv|pAdvSet != ((void*)0)
 92041,5724,ll_ae.c,llSetupExtAdv|pAdvSet->pAdvParam->primPhy != 0x02
@@ -4914,8 +4986,6 @@ GTRACEBINMAGICHDR28645,48,main.c,__get_PRIMASK,0|Main Init Complete
 346597,297,ble_hci_dispatcher.c,BleHciDispatcher_PullEvent|0
 466409,88,ble_host_if.c,bleHostIf_init|g_bleHostIfCb.to_host_cb != ((void*)0)
 475029,111,ble_host_if.c,NPITask_registerIncomingRXEventAppCB|g_bleHostIfCb.to_ctrl_cb != ((void*)0)
-230841,648,ble.c,llSetupRATChanCompare|0
-230927,689,ble.c,llSetupRATChanCompare|0
 84751,134,ll_adv_end_causes.c,llAdv_TaskConnect|pAdvSet != ((void*)0)
 84863,211,ll_adv_end_causes.c,llAdv_TaskConnect|((aeRf_t *)pAdvSet->pRfCmds)->auxRfParam.pRXQ->pCurEntry->status == 0x03
 84887,214,ll_adv_end_causes.c,llAdv_TaskConnect|((aeRf_t *)pAdvSet->pRfCmds)->comOutput.nRxConnReq == 1
@@ -5249,4 +5319,4 @@ PhyApiMode_e|PHY_API_MODE_NORMAL,0;PHY_API_MODE_RX_ONLY,1;PHY_API_MODE_LISTEN,2;
 DMA_DRIVER_STATUS_e|DMA_DRIVER_SUCCESS,0;DMA_DRIVER_FAILED_INCORRECT_CHANNEL,1;DMA_DRIVER_FAILED_GENERAL_ERROR,2;DMA_DRIVER_FAILED_NULL_PTR,3;DMA_DRIVER_FAILED_TIMEOUT,4
 SCHED_Req_ActivityID_e|SCHED_ACTIVITY_ID_NONE,0;SCHED_ACTIVITY_ID_WLAN_BEACON_TX,1;SCHED_ACTIVITY_ID_WLAN_VOICE_TRAFFIC,2;SCHED_ACTIVITY_ID_WLAN_PRESENCE_REQUEST,3;SCHED_ACTIVITY_ID_WLAN_BEACON_RX,4;SCHED_ACTIVITY_ID_WLAN_MANAGEMENT_SEQUENCE,5;SCHED_ACTIVITY_ID_WLAN_BROADCAST_RX,6;SCHED_ACTIVITY_ID_WLAN_BROADCAST_TX,7;SCHED_ACTIVITY_ID_WLAN_VIDEO_TRAFFIC,8;SCHED_ACTIVITY_ID_WLAN_P2P_CONNECTION,9;SCHED_ACTIVITY_ID_WLAN_BEST_EFFORT_TRAFFIC,10;SCHED_ACTIVITY_ID_WLAN_PROC_SCAN,11;SCHED_ACTIVITY_ID_WLAN_PROC_CALIBRATION,12;SCHED_ACTIVITY_ID_WLAN_PROC_CHANNEL_SWITCH,13;SCHED_ACTIVITY_ID_BT_ACL_A2DP,14;SCHED_ACTIVITY_ID_BT_ACL_HID,15;SCHED_ACTIVITY_ID_BT_PAGE_INQUIRY,16;SCHED_ACTIVITY_ID_BT_PAGE_SCAN_INQUIRY_SCAN,17;SCHED_ACTIVITY_ID_BT_CALIBRATION,18;SCHED_ACTIVITY_ID_BT_ACL_BEST_EFFORT,19;SCHED_ACTIVITY_ID_BT_ACL_CONNECTION_SETUP,20;SCHED_ACTIVITY_ID_BT_LE_DIRECT_ADVERTISE,21;SCHED_ACTIVITY_ID_BT_LE_INDIRECT_ADVERTISE,22;SCHED_ACTIVITY_ID_BT_LE_SCANNER,23;SCHED_ACTIVITY_ID_BT_LE_CONNECT,24;SCHED_ACTIVITY_ID_BACKGROUND_NONE,25;SCHED_ACTIVITY_ID_BACKGROUND_BT,26;SCHED_ACTIVITY_ID_BACKGROUND_AP,27;SCHED_ACTIVITY_ID_BACKGROUND_STA,28;SCHED_ACTIVITY_ID_BACKGROUND_SCAN,29;SCHED_ACTIVITY_ID_TWT,30;SCHED_ACTIVITY_ID_WLAN_ROC_DEVICE_ROLE,31;SCHED_ACTIVITY_NUM_ACTIVITIES,32
 ActiveScanSMState_e|ACTIVE_SCAN_IDLE_STATE,0;ACTIVE_SCAN_CHANNEL_STATE,1;ACTIVE_SCAN_WAIT_TO_TIMEOUT_STATE,2;ACTIVE_SCAN_WAIT_TO_LAST_PROBE_COMPLETE_STATE,3;ACTIVE_SCAN_INVALID_STATE,2147483647
-           
+         

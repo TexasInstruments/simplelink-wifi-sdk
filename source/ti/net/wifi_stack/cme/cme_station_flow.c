@@ -115,7 +115,7 @@ const CmeStationSmEntry_t gCmeStationFlowSM[CME_STA_NUM_OF_EVENTS] =
     /* CME_STA_NETWORK_SEARCH_EVENT         */  {CmeStationSupplicantMng,       (1<<CME_STA_IDLE_STATE)},
     /* CME_STA_FAST_CONNECT_REQ_EVENT       */  {CmeStationFastConnect,         (1<<CME_STA_IDLE_STATE)},
     /* CME_STA_WPA_COMPLETED_EVENT          */  {CmeStationConnected,           (1<<CME_STA_SUPPLICANT_MANAGED_STATE) | (1<<CME_STA_CONFIGURED_STATE)},
-    /* CME_STA_SCAN_DONE                    */  {CmeScanDone,                   (1<<CME_STA_SUPPLICANT_MANAGED_STATE) | (1<<CME_STA_DISCONNECTING_STATE)},
+    /* CME_STA_SCAN_DONE                    */  {CmeScanDone,                   (1<<CME_STA_SUPPLICANT_MANAGED_STATE) | (1<<CME_STA_DISCONNECTING_STATE) | (1<<CME_STA_IDLE_STATE)},
     /* CME_STA_WLAN_ROLE_UP_EVENT           */  {CmeStationConfigured,          (1<<CME_STA_CONNECTED_STATE)},
     /* CME_STA_WLAN_DISCONNECT_REQ_EVENT    */  {CmeStationDisconnectReq,       (1<<CME_STA_DISCONNECTING_STATE) | (1<<CME_STA_DISCONNECT_PEND_DHCP_REL_STATE) | (1<<CME_STA_SUPPLICANT_MANAGED_STATE) |(1<<CME_STA_CONNECTED_STATE) |(1<<CME_STA_CONFIGURED_STATE) },
     /* CME_STA_WLAN_PEER_DISCONNECT_REQ     */  {CmeStationPeerDisconnectReq,   (1<<CME_STA_DISCONNECTING_STATE) | (1<<CME_STA_DISCONNECT_PEND_DHCP_REL_STATE) |(1<<CME_STA_CONNECTED_STATE) |(1<<CME_STA_CONFIGURED_STATE) },
@@ -475,6 +475,8 @@ void CmeStationPeerDisconnectReq(Cme_Users_e __user)
     HOOK(HOOK_IN_CME_STATION_FLOW);
 
     gCmeStationFlowState_ull = CME_STA_DISCONNECTING_STATE;
+
+    cmeReassociationParamsClear();
 }
 
 void CmeStationBssLossDiss(Cme_Users_e __user)

@@ -45,6 +45,10 @@ set(SOURCES_CC35XX
     uart2/UART2WFF3.c
     Watchdog.c
     watchdog/WatchdogWFF3.c
+    CAN.c
+    can/CANWFF3.c
+    can/common/CANDCAN.c
+    ../../third_party/dcan/DCAN.c
 )
 
 set(SOURCES_SEC_ONLY_CC35XX

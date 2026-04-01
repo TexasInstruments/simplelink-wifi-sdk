@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2025-2026 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -219,7 +219,7 @@ function pinmuxRequirements(inst)
     let obi = {
         name              : "obiPin",  /* config script name */
         displayName       : "OBI Pin", /* GUI name */
-        interfaceNames    : ["IRQ"]   /* pinmux tool name */
+        interfaceNames    : ["OOBIRQ"]   /* pinmux tool name */
     };
 
     let dmaRxChannel = {
@@ -267,7 +267,6 @@ function pinmuxRequirements(inst)
 /*
  *  ======== extend ========
  */
- 
 function extend(base)
 {
     /* display which driver implementation can be used */

@@ -117,8 +117,12 @@ struct ieee802_11_elems {
 	const u8 *sae_pk;
 	const u8 *s1g_capab;
 	const u8 *pasn_params;
+	// TI  compilation: RSN override support from upstream - start
     const u8 *rsne_override;
 	const u8 *rsne_override_2;
+	const u8 *rsnxe_override;
+	const u8 *rsn_selection;
+	// TI  compilation: RSN override support from upstream - end
 
 	u8 ssid_len;
 	u8 supp_rates_len;
@@ -173,8 +177,12 @@ struct ieee802_11_elems {
 	u8 short_ssid_list_len;
 	u8 sae_pk_len;
 	u8 pasn_params_len;
+	// TI  compilation: RSN override support from upstream - start
     size_t rsne_override_len;
 	size_t rsne_override_2_len;
+	size_t rsnxe_override_len;
+	size_t rsn_selection_len;
+	// TI  compilation: RSN override support from upstream - end
 
 	struct mb_ies_info mb_ies;
 	struct frag_ies_info frag_ies;

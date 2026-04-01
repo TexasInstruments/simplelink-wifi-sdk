@@ -498,13 +498,12 @@ int tls_get_cipher(void *tls_ctx, struct tls_connection *conn,
 
 int tls_connection_established(void *tls_ctx, struct tls_connection *conn)
 {
-#if 0
+#if  0
     char name[128];
     int i;
     i =tls_get_cipher(tls_ctx, conn, name, sizeof(name));
     {
         int i = 0;
-        Report("\r\nisri!!!!!!!!!:");
         for(i = 0 ; i < sizeof(name) ; i++)
         {
             if(name[i] != 0)
@@ -1012,7 +1011,6 @@ MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
 MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
 MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
 MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CCM,
 MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
@@ -1184,7 +1182,16 @@ static const int suite_HIGH[] = {
     //MBEDTLS_TLS_PSK_WITH_ARIA_128_GCM_SHA256
 };
 
+static int ssl_preset_suiteb192_ciphersuites[] = {
+    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
 
+};
+
+
+static const mbedtls_ecp_group_id grp_suiteb_192[] = {
+        MBEDTLS_ECP_DP_SECP384R1,
+        MBEDTLS_ECP_DP_NONE
+};
 
 __attribute_noinline__
 static int
@@ -1287,7 +1294,7 @@ tls_mbedtls_set_ciphers(struct tls_conf *tls_conf, const char *ciphers)
             continue;
 
         /* special-case a select set of openssl group names for hwsim tests */
-	/* (review; remove excess code if tests are not run for non-OpenSSL?) */
+    /* (review; remove excess code if tests are not run for non-OpenSSL?) */
         if (clen == 9 && os_memcmp(ciphers, "SUITEB192", 9) == 0) {
             static int ssl_preset_suiteb192_ciphersuites[] = {
                 MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
@@ -1858,17 +1865,17 @@ static int tls_mbedtls_set_params(struct tls_conf *tls_conf,
 	int suiteb128 = 0;
 	int suiteb192 = 0;
 
-#if 0
 	if (params->openssl_ciphers) {
 		if (os_strcmp(params->openssl_ciphers, "SUITEB192") == 0) {
 			suiteb192 = 1;
 			tls_conf->flags |= TLS_CONN_SUITEB;
 		}
+	}
+#if 0
 		if (os_strcmp(params->openssl_ciphers, "SUITEB128") == 0) {
 			suiteb128 = 1;
-			tls_conf->flags |= TLS_CONN_SUITEB;
+			//tls_conf->flags |= TLS_CONN_SUITEB;
 		}
-	}
 #endif
 	int ret = mbedtls_ssl_config_defaults(
 	    &tls_conf->conf, tls_ctx_global.tls_conf ? MBEDTLS_SSL_IS_SERVER
@@ -1914,8 +1921,25 @@ static int tls_mbedtls_set_params(struct tls_conf *tls_conf,
 		return -1;
 	}
 
-	tls_mbedtls_set_ciphers(tls_conf, NULL);
+	if(suiteb192)
+	{
+        tls_mbedtls_set_ciphersuites(tls_conf,
+                                     ssl_preset_suiteb192_ciphersuites,
+                                      1);
 
+
+          mbedtls_ssl_conf_curves(&tls_conf->conf,
+		  grp_suiteb_192);
+
+          mbedtls_ssl_conf_sig_hashes(&tls_conf->conf,
+                 (int[]){ MBEDTLS_MD_SHA384, MBEDTLS_MD_NONE });
+
+	}
+	else
+	{
+	    tls_mbedtls_set_ciphers(tls_conf, NULL);
+	}
+#if 0
 	if (params->openssl_ciphers) {
 		if (!tls_mbedtls_set_ciphers(tls_conf, params->openssl_ciphers))
 			return -1;
@@ -1928,7 +1952,7 @@ static int tls_mbedtls_set_params(struct tls_conf *tls_conf,
 		          : "ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384"))
 			return -1;
 	}
-
+#endif
 	return 0;
 }
 

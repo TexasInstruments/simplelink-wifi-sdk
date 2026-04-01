@@ -68,6 +68,7 @@
 #define  PTS_DSC_READ_WRITE                0x000b
 #define  PTS_CHR_NOTIFY                    0x0025
 #define  PTS_CHR_NOTIFY_ALT                0x0026
+#define  PTS_CHR_READ_WRITE_AUTHOR         0x0027
 #define  PTS_LONG_CHR_READ_WRITE           0x0015
 #define  PTS_LONG_CHR_READ_WRITE_ALT       0x0016
 #define  PTS_LONG_DSC_READ_WRITE           0x001b
@@ -82,6 +83,7 @@ static uint8_t indicate_state;
 static uint16_t myconn_handle;
 static struct os_callout notify_tx_timer;
 uint16_t notify_handle;
+uint16_t notify_handle_alt;
 uint8_t notify_value = 90;
 
 struct find_attr_data {
@@ -105,6 +107,11 @@ static int
 gatt_svr_read_write_auth_test(uint16_t conn_handle, uint16_t attr_handle,
                               struct ble_gatt_access_ctxt *ctxt,
                               void *arg);
+
+static int
+gatt_svr_read_write_author_test(uint16_t conn_handle, uint16_t attr_handle,
+                                struct ble_gatt_access_ctxt *ctxt,
+                                void *arg);
 
 static int
 gatt_svr_read_write_enc_test(uint16_t conn_handle, uint16_t attr_handle,
@@ -210,6 +217,13 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                          BLE_GATT_CHR_F_WRITE |
                          BLE_GATT_CHR_F_WRITE_AUTHEN,
             }, {
+                .uuid = PTS_UUID_DECLARE(PTS_CHR_READ_WRITE_AUTHOR),
+                .access_cb = gatt_svr_read_write_author_test,
+                .flags = BLE_GATT_CHR_F_READ_AUTHOR |
+                         BLE_GATT_CHR_F_READ |
+                         BLE_GATT_CHR_F_WRITE_AUTHOR |
+                         BLE_GATT_CHR_F_WRITE
+            }, {
                 .uuid = PTS_UUID_DECLARE(PTS_CHR_RELIABLE_WRITE),
                 .access_cb = gatt_svr_rel_write_test,
                 .flags = BLE_GATT_CHR_F_WRITE |
@@ -243,7 +257,7 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
             }, {
                 .uuid = PTS_UUID_DECLARE(PTS_CHR_NOTIFY_ALT),
                 .access_cb = gatt_svr_read_write_test,
-                .val_handle = &notify_handle,
+                .val_handle = &notify_handle_alt,
                 .flags = BLE_GATT_CHR_F_READ |
                          BLE_GATT_CHR_F_WRITE |
                          BLE_GATT_CHR_F_NOTIFY |
@@ -411,6 +425,29 @@ gatt_svr_read_write_auth_test(uint16_t conn_handle, uint16_t attr_handle,
             rc = os_mbuf_append(ctxt->om, &gatt_svr_pts_static_val,
                                 sizeof gatt_svr_pts_static_val);
             return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+    default:
+        assert(0);
+        return BLE_ATT_ERR_UNLIKELY;
+    }
+}
+
+static int
+gatt_svr_read_write_author_test(uint16_t conn_handle, uint16_t attr_handle,
+                                struct ble_gatt_access_ctxt *ctxt,
+                                void *arg)
+{
+    uint16_t uuid16;
+
+    uuid16 = extract_uuid16_from_pts_uuid128(ctxt->chr->uuid);
+    assert(uuid16 != 0);
+
+    switch (uuid16) {
+    case PTS_CHR_READ_WRITE_AUTHOR:
+        if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
+            return BLE_ATT_ERR_INSUFFICIENT_AUTHOR;
+        } else if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
+            return BLE_ATT_ERR_INSUFFICIENT_AUTHOR;
         }
     default:
         assert(0);

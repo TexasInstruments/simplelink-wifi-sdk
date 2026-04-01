@@ -366,11 +366,15 @@ Bool_e  mx_driver_FilterWpsP2p(uint32_t aRoleId, uint8_t* payloadStart, uint16_t
     return toDrop;
 }
 
-void rsn_findSecurityIEs(uint8_t *payload, uint16_t payloadLen, dot11_RSN_t **pDotRsn, dot11_RSN_t **pDotWpa)
+void rsn_findSecurityIEs(uint8_t *payload, uint16_t payloadLen, dot11_RSN_t **pDotRsn, dot11_RSN_t **pDotWpa, dot11_RSN_t **pDotRsnOverride, dot11_RSN_t **pDotRsnOverride2)
 {
     const uint8_t wpaOui[] = DOT11_WPA_OUI; //OUI_TYPE for WPA is 0x00, 0x50, 0xf2, 1
+    const uint8_t rsnOverrideOui[] = DOT11_RSN_OVERRIDE_OUI;
+    const uint8_t rsnOverride2Oui[] = DOT11_RSN_OVERRIDE_2_OUI;
     *pDotRsn = NULL;
     *pDotWpa = NULL;
+    *pDotRsnOverride = NULL;
+    *pDotRsnOverride2 = NULL;
 
     GTRACE(GRP_DRIVER_CC33, "RSN: Check Security type, IE payload len: %d", payloadLen);
 
@@ -385,12 +389,26 @@ void rsn_findSecurityIEs(uint8_t *payload, uint16_t payloadLen, dot11_RSN_t **pD
                                       payloadLen,     /* payload length */
                                       (uint8_t *)&wpaOui, /* OUI to search for*/
                                       (uint8_t**)pDotWpa);    /* returned pointer to the info element */
+
+        // Search for RSN OVERRIDE IE
+        IEParser_FindVendorSpecificIe(payload,        /* payload start */
+                                      payloadLen,     /* payload length */
+                                      (uint8_t *)&rsnOverrideOui, /* OUI to search for*/
+                                      (uint8_t**)pDotRsnOverride);    /* returned pointer to the info element */
+
+        // Search for RSN OVERRIDE 2 IE
+        IEParser_FindVendorSpecificIe(payload,        /* payload start */
+                                      payloadLen,     /* payload length */
+                                      (uint8_t *)&rsnOverride2Oui, /* OUI to search for*/
+                                      (uint8_t**)pDotRsnOverride2);    /* returned pointer to the info element */
 }
 
-static int getSecurity(scanIEParsingParams_t *params, uint8_t *securityType)
+static int getSecurities(scanIEParsingParams_t *params, uint8_t *securityType, uint8_t *securityTypeOverride, uint8_t *securityTypeOverride2)
 {
     dot11_RSN_t *pDotRsn = NULL;
     dot11_RSN_t *pDotWpa = NULL;
+    dot11_RSN_t *pDotRsnOverride = NULL;
+    dot11_RSN_t *pDotRsnOverride2 = NULL;
 
     if(params->rsnIeLen != 0)
     {
@@ -402,7 +420,17 @@ static int getSecurity(scanIEParsingParams_t *params, uint8_t *securityType)
         pDotWpa = &params->wpaIe;
     }
 
-    return rsn_getSecurityType(params->capabilities, pDotRsn, pDotWpa, securityType);
+    if(params->rsnOverrideIeLen != 0)
+    {
+        pDotRsnOverride = &params->rsnOverrideIe;
+    }
+
+    if(params->rsnOverride2IeLen != 0)
+    {
+        pDotRsnOverride2 = &params->rsnOverride2Ie;
+    }
+
+    return rsn_getSecurityTypes(params->capabilities, pDotRsn, pDotWpa, pDotRsnOverride, pDotRsnOverride2, securityType, securityTypeOverride, securityTypeOverride2);
 }
 
 
@@ -443,7 +471,7 @@ int32_t mx_driver_scan_results_process(uint32_t aRoleId, RxIfDescriptor_t *desc,
     uint8_t*                pFrame;
     uint16_t                pLen;
     Bool32                  continue2check;
-    uint8_t                 securityType;
+    uint8_t                 securityType = 0xff, securityTypeOverride = 0xff, securityTypeOverride2 = 0xff;
     BeaconFrame_t*          pBeaconFrame;
     struct wpa_supplicant   *wpa_s;
     ti_driver_ifData_t      *pDrv = NULL;
@@ -519,14 +547,18 @@ int32_t mx_driver_scan_results_process(uint32_t aRoleId, RxIfDescriptor_t *desc,
          //if ssid is found in this result - check ssid match (if not - drop the result)
         if ((TRUE == continue2check) && (pDot11Ssid->hdr.eleLen <= DOT11_SSID_MAX_LEN))
         {
-            dot11_RSN_t *pDotRsn= NULL, *pDotWpa = NULL;
-            rsn_findSecurityIEs((uint8_t*)pFrame, pLen, &pDotRsn, &pDotWpa);
+            dot11_RSN_t *pDotRsn = NULL, *pDotWpa = NULL, *pDotRsnOverride = NULL, *pDotRsnOverride2 = NULL;
+            rsn_findSecurityIEs((uint8_t*)pFrame, pLen, &pDotRsn, &pDotWpa, &pDotRsnOverride, &pDotRsnOverride2);
             // This is a beacon or a probe response so adjust the address to be at the beginning of the IE.
             // Extract the security type
-            if ((rsn_getSecurityType(pBeaconFrame->capabilityInfo,
+            if ((rsn_getSecurityTypes(pBeaconFrame->capabilityInfo,
                                      pDotRsn,
                                      pDotWpa,
-                                     &securityType)) < 0) /* returned security type */
+                                     pDotRsnOverride,
+                                     pDotRsnOverride2,
+                                     &securityType,
+                                     &securityTypeOverride,
+                                     &securityTypeOverride2)) < 0) /* returned security type */
             {
                 /*GTRACE(GRP_DRIVER_MX, "Error: Security type not extracted");
                 CME_PRINT_SCAN_REPORT_ERROR("\r\nscan_results, Security type not extracted:channel: %d da : "MACSTR" sa: "MACSTR" bssid: "MACSTR"",
@@ -552,15 +584,36 @@ int32_t mx_driver_scan_results_process(uint32_t aRoleId, RxIfDescriptor_t *desc,
                 }
                 else if(numOfSSID > 0)
                 {
-                    foundMatch = scan_result_ssid_match(pDot11Ssid,
+                    if (securityTypeOverride2 != 0xff)
+                    {
+                        foundMatch = scan_result_ssid_match(pDot11Ssid,
+                                                        pBeaconFrame->h.bssid,
+                                                        securityTypeOverride2,
+                                                        numOfSSID,
+                                                        pList,
+                                                        &profileId);
+                    }
+                    if ((foundMatch == FALSE) && (securityTypeOverride != 0xff))
+                    {
+                        foundMatch = scan_result_ssid_match(pDot11Ssid,
+                                                        pBeaconFrame->h.bssid,
+                                                        securityTypeOverride,
+                                                        numOfSSID,
+                                                        pList,
+                                                        &profileId);
+                    }
+                    if (foundMatch == FALSE)
+                    {
+                        foundMatch = scan_result_ssid_match(pDot11Ssid,
                                                         pBeaconFrame->h.bssid,
                                                         securityType,
                                                         numOfSSID,
                                                         pList,
                                                         &profileId);
+                    }
 
-                    GTRACE(GRP_DRIVER_MX, "ENUM(EScanRequestType,%d): foundMatch %d, profile ID 0x%X, Security type ENUM(CMESecType_e, %d), capabilities 0x%X",
-                                                     scanType, foundMatch, profileId, (CMESecType_e) securityType, pBeaconFrame->capabilityInfo);
+                    GTRACE(GRP_DRIVER_MX, "ENUM(EScanRequestType,%d): foundMatch %d, profile ID 0x%X, capabilities 0x%X",
+                                                     scanType, foundMatch, profileId, pBeaconFrame->capabilityInfo);
                 }
                 else
                 {
@@ -637,7 +690,7 @@ int32_t mx_driver_scan_results_process(uint32_t aRoleId, RxIfDescriptor_t *desc,
                 goto out;
             }
 
-            if( getSecurity(&pParsedFrame, &securityType) < 0 )
+            if (getSecurities(&pParsedFrame, &securityType, &securityTypeOverride, &securityTypeOverride2) < 0 )
             {
                 status =-1;
                 goto out;
@@ -645,12 +698,35 @@ int32_t mx_driver_scan_results_process(uint32_t aRoleId, RxIfDescriptor_t *desc,
 
             if(numOfSSID > 0)
             {
-                scan_result_ssid_match(&pParsedFrame.ssid,
-                    pParsedFrame.bssid,
-                    securityType,
-                    numOfSSID,
-                    pList,
-                    &profileId);
+                Bool_e ret = FALSE;
+                if (securityTypeOverride2 != 0xff)
+                {
+                    ret = scan_result_ssid_match(&pParsedFrame.ssid,
+                                            pParsedFrame.bssid,
+                                            securityTypeOverride2,
+                                            numOfSSID,
+                                            pList,
+                                            &profileId);
+
+                }
+                if ((ret == FALSE) && (securityTypeOverride != 0xff))
+                {
+                    ret = scan_result_ssid_match(&pParsedFrame.ssid,
+                                            pParsedFrame.bssid,
+                                            securityTypeOverride,
+                                            numOfSSID,
+                                            pList,
+                                            &profileId);
+                }
+                if (ret == FALSE)
+                {
+                    ret = scan_result_ssid_match(&pParsedFrame.ssid,
+                                            pParsedFrame.bssid,
+                                            securityType,
+                                            numOfSSID,
+                                            pList,
+                                            &profileId);
+                }
             }
 
             /* Compare BSSID of the scan result and make sure it does not apear in the Deny List */
@@ -1405,6 +1481,12 @@ int8_t trnspt_cmd_build_scan_channel_list(ScanParams_t *scanParam,
         sizeOfA = numOfActiveChannels + passiveIdx - SCAN_MAX_CHANNELS_BG;
     }
 
+    if ((sizeOfBG + sizeOfA) == 0)
+    {
+        CME_CC3XX_PORT_PRINT_ERROR("\n\rERROR: No valid channels found for scan!!\n\r");
+        return -1;
+    }
+
     GTRACE(GRP_DRIVER_MX, "Finish build channel list: num of BG channel %d, num of A channel %d",
            sizeOfBG,
            sizeOfA);
@@ -1417,4 +1499,3 @@ int8_t trnspt_cmd_build_scan_channel_list(ScanParams_t *scanParam,
 
     return 0;
 }
-

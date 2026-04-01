@@ -806,7 +806,8 @@ int cmeScanComplete(uint32_t aRoleId, CmeScanDoneInfo_t *apScanInfo)
                 drv_handleOneShotScanStoppedEvent(wpa_s,apScanInfo->scanType);
 
             }
-            //the ret value is 0, there is no need to call wlan_stop
+            /* rc must be >0 here, in order to gracefully stop the scan in supplicant and CME */
+            rc = 1;
         }
 
         // Clear external WPS scanning
@@ -1189,7 +1190,7 @@ void CME_one_shot_scan_timer_stop()
     }
     else
     {
-        CME_PRINT_REPORT_ERROR("\n\rCME: one shot scan timer was not stated");
+        CME_PRINT_REPORT_ERROR("\n\rCME: one shot scan timer was not started");
     }
     gTimerOneShotScanComplete.osTimerHandler = NULL;
 

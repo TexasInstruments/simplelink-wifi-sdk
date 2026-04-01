@@ -78,11 +78,14 @@
 /* Custom entries starting from number 12 in "rom_gConfigChanPatternsTable" */
 #define REG_DOMAIN_CUSTOM_ENTRY_BASE (BASIC_RULES_COUNT)
 
+
 #define REG_DOMAIN_FCC_REGION		0
 #define REG_DOMAIN_TELEC_REGION		1
 #define REG_DOMAIN_WORLDWIDE_REGION	2
-#define REG_DOMAIN_CUSTOM_REGION	3
-#define REG_DOMAIN_NUM_OF_REGIONS	4
+#define REG_DOMAIN_ETSI_REGION		3
+#define REG_DOMAIN_CUSTOM_REGION	4
+
+#define REG_DOMAIN_NUM_OF_REGIONS	5
 
 typedef struct
 {
@@ -135,6 +138,7 @@ const ConfigGroupChanPatterns_t rom_gConfigGroupChanPatternsTable[] = {
     /*    0,    6 */    { 6, 				  {  0,  8,  4,  5,  9,  10 } },
     /*    1,    6 */    { 4, 				  {  7,  8,  4,  5 } },
     /*    2,    6 */    { 6, 				  {  0,  8,  4,  5,  6,  10 } },
+	/*    3,    4 */    { 6, 				  {  7,  8,  4,  5,  9,  10 } },
 	/*    3,    7 */    { CUSTOM_RULES_COUNT, {  12, 13, 14, 15, 16, 17, 18} },
 };
 
@@ -143,7 +147,8 @@ ConfigCountryCompressed_t rom_gConfigCountryCompressedTable[REG_DOMAIN_NUM_OF_RE
     { /* US */ 		'U', 'S', REG_DOMAIN_FCC_REGION }, 		 // FCC - min of FCC/IC/Taiwan
     { /* JP */ 		'J', 'P', REG_DOMAIN_TELEC_REGION }, 	 // ROW (rest of the world) - Min of JP/EU
     { /* WW_SAFE */ '0', '0', REG_DOMAIN_WORLDWIDE_REGION }, // WWS (worldwide safe) - Min of FCC&ROW
-	{ /* CS */ 		'C', 'S', REG_DOMAIN_CUSTOM_REGION }, 	 // CS - Custom regulatory domain, set by API
+	{ /* EU */ 		'E', 'U', REG_DOMAIN_ETSI_REGION },		 // EU
+	{ /* XZ */ 		'X', 'Z', REG_DOMAIN_CUSTOM_REGION }, 	 // XZ - Custom regulatory domain, set by API
 };
 
 int                        gNumCompressedCountries       = sizeof(rom_gConfigCountryCompressedTable)/sizeof(ConfigCountryCompressed_t);
@@ -166,6 +171,9 @@ const uint8_t DefaultABandChannels[A_5G_BAND_NUM_CHANNELS] = {0,0,1,0,0,0,1,0,0,
 	0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // channel 144,165 are now supported
 const uint16_t JapanABandChannels[] = {34, 38, 42, 46, 0};
 const uint8_t p2pSocialChannels[] = { 1, 6, 11 };
+
+uint8_t gCustomRegDomainEntriesCount = 0;
+
 //
 ///*************************** Static Table for Regulatory Class **********************/
 //
@@ -303,7 +311,6 @@ int32_t regulatoryDomain_Init(WlanRole_e roleType, uint8_t *pCountryCode, uint8_
 	ret = regulatoryDomain_SetCountry(pCountryCode);
 	if (ret < 0)
 	{
-		CME_PRINT_REPORT_ERROR("\r\nregulatoryDomain_Init: Faulty country code");
 		return ret;
 	}
 
@@ -855,8 +862,15 @@ int16_t regulatoryDomain_GetCountryRegion(uint8_t *pCountryString)
 					   			REG_DOMAIN_COUNTRY_STR_LEN);
         if (foundMatch)
         {
-            countryIndex = gConfigCountryCompressedTable[i].region;
-            break;
+			/* If the country is not a custom region, use its region index 
+			 * This helps avoiding overwriting the custom region with a new country code
+			 * without a custom region in the DB.
+			 */
+			if (gConfigCountryCompressedTable[i].region != REG_DOMAIN_CUSTOM_REGION)
+			{
+				countryIndex = gConfigCountryCompressedTable[i].region;
+			}
+			break;
         }
     }
 
@@ -866,6 +880,7 @@ int16_t regulatoryDomain_GetCountryRegion(uint8_t *pCountryString)
 int32_t regulatoryDomain_SetCountry(uint8_t *pCountryStr)
 {
 	int16_t countryIndex = 0;
+	uint8_t customCount = 0;
 
 	countryIndex = regulatoryDomain_GetCountryRegion(pCountryStr);
 
@@ -878,10 +893,21 @@ int32_t regulatoryDomain_SetCountry(uint8_t *pCountryStr)
 
 		if (!isCountryCodeValid(pCountryStr))
 		{
-			GTRACE(GRP_GENERAL_ERROR, "regulatoryDomain_SetCountry: "
-							   		  "Country code %c%c not valid.",
-							   		  pCountryStr[0],  pCountryStr[1]);
+			CME_PRINT_REPORT_ERROR("\n\rregulatoryDomain_SetCountry: "
+							   	   "Country code %c%c not valid.",
+							   	   pCountryStr[0], pCountryStr[1]);
 
+			return WlanError(WLAN_ERROR_SEVERITY__LOW,
+							 WLAN_ERROR_MODULE__COMMANDS,
+							 WLAN_ERROR_TYPE__INVALID_PARAM_SET_TYPE);
+		}
+
+		customCount = regulatoryDomain_GetCustomDomainEntriesCount();
+		if (customCount == 0)
+		{
+			CME_PRINT_REPORT_ERROR("\n\rERROR: Choosing a custom country code, "
+								   "but no custom entry is available in the DB.\n\r"
+								   "Please add a custom entry to the DB first.");
 			return WlanError(WLAN_ERROR_SEVERITY__LOW,
 							 WLAN_ERROR_MODULE__COMMANDS,
 							 WLAN_ERROR_TYPE__INVALID_PARAM_SET_TYPE);
@@ -891,7 +917,7 @@ int32_t regulatoryDomain_SetCountry(uint8_t *pCountryStr)
 		countryIndex = REG_DOMAIN_CUSTOM_REGION;
 		os_memcpy(gConfigCountryCompressedTable[countryIndex].countryStr,
 				  pCountryStr,
-				  REG_DOMAIN_COUNTRY_STR_LEN);	
+				  REG_DOMAIN_COUNTRY_STR_LEN);
 	}
 
 	/* Set country code as current country code */
@@ -1802,8 +1828,7 @@ int32_t checkCustomDomainEntryValidity(WlanSetRegDomainCustomEntry_t *entryParam
 
 		default:
 		{
-			GTRACE(GRP_REG_DOMAIN,
-				   "Invalid band used for custom regulatory domain entry");
+			CME_PRINT_REPORT_ERROR("\n\rInvalid band used for custom regulatory domain entry");
 			return WlanError(WLAN_ERROR_SEVERITY__LOW,
 							 WLAN_ERROR_MODULE__COMMANDS,
 							 WLAN_ERROR_TYPE__INVALID_PARAM_SET_TYPE);
@@ -1816,8 +1841,7 @@ int32_t checkCustomDomainEntryValidity(WlanSetRegDomainCustomEntry_t *entryParam
 		(entryParams->maxChannel > maxChannelAllowed) ||
 		(entryParams->minChannel > entryParams->maxChannel))
 	{
-		GTRACE(GRP_REG_DOMAIN,
-			   "Requested invalid channels combination");
+		CME_PRINT_REPORT_ERROR("\n\rRequested invalid channels combination");
 		return WlanError(WLAN_ERROR_SEVERITY__LOW,
 						 WLAN_ERROR_MODULE__COMMANDS,
 						 WLAN_ERROR_TYPE__INVALID_PARAM_SET_TYPE);
@@ -1825,9 +1849,8 @@ int32_t checkCustomDomainEntryValidity(WlanSetRegDomainCustomEntry_t *entryParam
 
 	if (entryParams->numOfChannels > NUM_BITS_IN_WORD)
 	{
-		GTRACE(GRP_REG_DOMAIN,
-			   "Invalid channel amount for reg domain rule. "
-			   "maximum is 32.");
+		CME_PRINT_REPORT_ERROR("\n\rInvalid channel amount for reg domain rule. "
+			   				   "maximum is 32.");
 		return WlanError(WLAN_ERROR_SEVERITY__LOW,
 						 WLAN_ERROR_MODULE__COMMANDS,
 						 WLAN_ERROR_TYPE__INVALID_PARAM_SET_TYPE);
@@ -1836,10 +1859,10 @@ int32_t checkCustomDomainEntryValidity(WlanSetRegDomainCustomEntry_t *entryParam
 	bitsSetCount = popcount32(entryParams->chanBitmap);
 	if (bitsSetCount != entryParams->numOfChannels)
 	{
-		GTRACE(GRP_REG_DOMAIN,
-			   "Incosistency between number of channels set and bitmask. "
-			   "bitmap number of channels: %d, suggested number: %d",
-			   bitsSetCount, entryParams->numOfChannels);
+		CME_PRINT_REPORT_ERROR("Incosistency between number of channels set "
+							   "and bitmask. bitmap number of channels: %d, "
+							   "suggested number: %d",
+			   				   bitsSetCount, entryParams->numOfChannels);
 
 		return WlanError(WLAN_ERROR_SEVERITY__LOW,
 						 WLAN_ERROR_MODULE__COMMANDS,
@@ -1848,9 +1871,9 @@ int32_t checkCustomDomainEntryValidity(WlanSetRegDomainCustomEntry_t *entryParam
 
 	if (entryParams->MaxTxPower > DBM_DIV_10_2_DBM(MAX_TX_POWER))
 	{
-		GTRACE(GRP_REG_DOMAIN,
-			   "Invalid TX power for reg domain rule. "
-			   "max is %d dBm", DBM_DIV_10_2_DBM(MAX_TX_POWER));
+		CME_PRINT_REPORT_ERROR("Invalid TX power for reg domain rule. "
+			   				   "max is %d dBm",
+							   DBM_DIV_10_2_DBM(MAX_TX_POWER));
 		return WlanError(WLAN_ERROR_SEVERITY__LOW,
 						 WLAN_ERROR_MODULE__COMMANDS,
 						 WLAN_ERROR_TYPE__INVALID_PARAM_SET_TYPE);
@@ -1899,6 +1922,11 @@ int32_t regulatoryDomain_SetCustomDomainEntry(WlanSetRegDomainCustomEntry_t *ent
 
 	if (entryParams->resetEntry)
 	{
+		if (pTableEntry->chanBitmap != 0)
+		{
+			gCustomRegDomainEntriesCount--;
+			ASSERT_GENERAL(gCustomRegDomainEntriesCount <= CUSTOM_RULES_COUNT);
+		}
 		os_memset(pTableEntry, 0x0, sizeof(ConfigChanPattern_t));
 		return 0;
 	}
@@ -1906,8 +1934,10 @@ int32_t regulatoryDomain_SetCustomDomainEntry(WlanSetRegDomainCustomEntry_t *ent
 	minChannelBit = FIND_LOWEST_BIT_SET(entryParams->chanBitmap);
 	if (minChannelBit < 0)
 	{
-		GTRACE(GRP_REG_DOMAIN, "No bit is set in custom "
-							   "reg domain entry bitmask!");
+		CME_PRINT_REPORT_ERROR("No bit is set in custom reg domain entry bitmask!");
+		return WlanError(WLAN_ERROR_SEVERITY__LOW,
+						 WLAN_ERROR_MODULE__COMMANDS,
+						 WLAN_ERROR_TYPE__INVALID_PARAM_SET_TYPE);
 	}
 
 	/* We don't care if highest == lowest bit. We only care about the edge 
@@ -1944,6 +1974,9 @@ int32_t regulatoryDomain_SetCustomDomainEntry(WlanSetRegDomainCustomEntry_t *ent
 		   entryParams->MaxTxPower, entryParams->band,
 		   entryParams->chanBitmap, entryParams->minChannel,
 		   entryParams->maxChannel, entryParams->numOfChannels);
+
+	gCustomRegDomainEntriesCount++;
+	ASSERT_GENERAL(gCustomRegDomainEntriesCount <= CUSTOM_RULES_COUNT);
 
     return 0;
 }
@@ -1993,4 +2026,20 @@ int32_t regulatoryDomain_GetCustomDomainEntry(WlanSetRegDomainCustomEntry_t *ent
 	entryParams->chanBitmap = pTableEntry->chanBitmap;
 
 	return 0;
+}
+
+/***********************************************************************
+ *                regulatoryDomain_GetCustomDomainEntriesCount        *
+ ***********************************************************************
+DESCRIPTION: This function returns the number of custom entries that were
+			 added to the "gConfigChanPatternsTable".
+
+INPUT:       N/A
+
+RETURN: 	 Number of custom entries in the table.
+
+************************************************************************/
+uint8_t regulatoryDomain_GetCustomDomainEntriesCount(void)
+{
+	return gCustomRegDomainEntriesCount;
 }

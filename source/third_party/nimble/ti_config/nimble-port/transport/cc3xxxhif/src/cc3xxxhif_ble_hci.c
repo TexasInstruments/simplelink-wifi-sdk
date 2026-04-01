@@ -139,6 +139,7 @@ ble_transport_ll_init(void)
     hci_h4_sm_init(&cc3xxxhif_hci_h4sm, &hci_h4_allocs_from_ll,
                    cc3xxxhif_ble_hci_frame_cb);
 
+    BleIf_VendorSpecificEventFormat(VENDOR_SPECIFIC_FORMAT_NIMBLE);
     BleIf_EventCbRegister(cc3xxxhif_ble_hci_trans_read_cb);
 }
 

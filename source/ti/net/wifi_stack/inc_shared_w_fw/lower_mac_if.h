@@ -35,6 +35,7 @@
 
 #include "public_types.h"
 #include <stdarg.h>
+#include "l2_cfg.h"
 
 // ============================================================================
 //		UPPER MAC VERSION
@@ -149,7 +150,9 @@ struct um_stub_func {
 	uint32 		    (*l2_cfgGetWmmParameters)(const void **pAcCfg);
 	uint32 		    (*l2_cfgGetHtCapabilities)(const void **apHtCapabilities);
 	uint32 	    	(*l2_cfgBuildHtCapabilitiesIe)(uint32 aRoleId, uint8 *apHtCapsIE);
+#ifndef DISABLE_WIFI6
 	uint32 		    (*l2_cfgBuildHeCapabilitiesIe)(uint32 aRoleId, uint8 *apHeCapsIE);
+#endif
 	uint8 		    (*l2_cfgGetApMaxNumStations )(void);
 	void 	    	(*l2_cfgSetApMaxNumStations)(uint8 apMaxNumStations);
 	uint32_t 	    (*l2_cfgGetSupportedBands)();

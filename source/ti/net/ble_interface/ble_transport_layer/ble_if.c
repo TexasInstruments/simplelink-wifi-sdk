@@ -29,8 +29,12 @@
 /*****************************************************************************/
 ble_if_cb_t bleIfCb;
 OsiSyncObj_t bleInitEventSyncObj;
+vsFormat_e vsFormat = VENDOR_SPECIFIC_FORMAT_TI;
+#define HCI_EVENT_HDR_LEN 3
+#define HCI_VE_HDR_LEN 5
 #define HCI_VE_EVENT_CODE 0xFF
-#define HCI_VE_BLE_INIT_DONE 0x042A
+#define HCI_VE_BLE_INIT_DONE 0x2A04
+#define HCI_COMMAND_COMPLETE_EVENT_CODE 0x0E
 
 /*****************************************************************************/
 /* IMPLEMENTATION                                                            */
@@ -106,21 +110,76 @@ int BleIf_EventCbRegister(ble_event_cb_t cb)
     return 0;
 }
 
-int BleIf_VendorEventHandler(uint8_t* data, uint16_t len)
+int BleIf_VendorSpecificEventFormat(vsFormat_e format)
+{
+    if ((format != VENDOR_SPECIFIC_FORMAT_TI) && (format != VENDOR_SPECIFIC_FORMAT_NIMBLE))
+    {
+        return (-1);
+    }
+
+    vsFormat = format;
+    return 0;
+}
+
+int BleIf_VendorSpecificEventHandler(uint8_t* data, uint16_t *len)
 {
     uint8_t eventCode = data[1];
-    uint16_t eventOpcode = (data[3] << 8) | data[4];
+    uint16_t eventOpcode = (data[4] << 8) | data[3];
 
     if (eventCode == HCI_VE_EVENT_CODE)
     {
-        switch(eventOpcode)
+        //handle BLE init done event
+        if (eventOpcode == HCI_VE_BLE_INIT_DONE)
         {
-            case HCI_VE_BLE_INIT_DONE:
-                osi_SyncObjSignal(&bleInitEventSyncObj);
-                return TRUE;
-                break;
-            default:
-                break;
+            osi_SyncObjSignal(&bleInitEventSyncObj);
+            return TRUE;
+        }
+
+        //check the vendor specific format and convert if needed
+        if (vsFormat == VENDOR_SPECIFIC_FORMAT_NIMBLE)
+        {
+            /***********************
+            TI Vendor Specific Event:
+            [0] = 0x04 (packet type)
+            [1] = 0xFF (vendor specific)
+            [2] = param_len (5 + return parameters length)
+            [3] = event opcode LSB
+            [4] = event opcode MSB
+            [5] = status
+            [6] = command opcode LSB
+            [7] = command opcode MSB
+            [8+] = return parameters
+
+            Standard Command Complete Event:
+            [0] = 0x04 (packet type)
+            [1] = 0x0E (command complete)
+            [2] = param_len (4 + return parameters length)
+            [3] = num HCI cmd packets (1)
+            [4] = command opcode LSB
+            [5] = command opcode MSB
+            [6] = status
+            [7+] = return parameters
+            *************************/
+
+            uint8_t origParamLen = data[2];
+            uint8_t status = data[5];
+            uint8_t cmdOpcodeLsb = data[6];
+            uint8_t cmdOpcodeMsb = data[7];
+            uint8_t retParamsLen = origParamLen - HCI_VE_HDR_LEN;
+
+            data[1] = HCI_COMMAND_COMPLETE_EVENT_CODE; //command complete opcode
+            data[2] = origParamLen - 1; //parameters length
+            data[3] = 1; //num of HCI command packets
+            data[4] = cmdOpcodeLsb; //command opcode LSB
+            data[5] = cmdOpcodeMsb; //command opcode MSB
+            data[6] = status; //status
+            if (retParamsLen > 0) //return parameters
+            {
+                os_memmove(&data[7], &data[8], retParamsLen);
+            }
+
+            //update packet length: header (3 bytes) + param_len
+            *len = HCI_EVENT_HDR_LEN + data[2];
         }
     }
 

@@ -496,6 +496,7 @@ typedef struct
     void               *hMicFailureHandle;                             /* MIC failure CB handle */
     TMgmtRxHandler      fMgmtRxCb;                                     /* CB to call for Rx Mgmt packet handling */
     TMgmtRxHandler      fEapolRxCb;                                    /* CB to call for Rx Eapol packet handling */
+    TMgmtRxHandler      fRxFromUnknownCb;                              /* CB to call for Rx data from unknown/disconnected STA */
     TUdataInitParams    udataparams;                                   /* Struct that holds the TUdata parameters */
     //TODO: delete void               *hMgmtRxHandle;                                 /* Rx Mgmt packet CB handle */
 
@@ -508,6 +509,13 @@ typedef struct
  * \param   ctx context for @cb (first argument to pass)
  */
 void udata_RegisterMgmtRxHandler(TMgmtRxHandler mgmtcb , TMgmtRxHandler eapolcb);
+
+/* \brief   register a callback the UData can invoke to dispatch an RX data packet
+ *          from unkown host
+ * \param   cb  the callback to register
+ * \param   ctx context for @cb (first argument to pass)
+ */
+void udata_RegisterRxFromUnknownHandler(TMgmtRxHandler cb);
 
 void udata_RegisterSecuritySeqHandler(TSecuritySeqHandler cb, void *ctx);
 

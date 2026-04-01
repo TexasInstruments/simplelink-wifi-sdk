@@ -97,6 +97,7 @@ int BleTransport_SendCommand(uint8_t* pBleCommand, uint16_t bleCmdLen)
 int BleTransport_BleEventHandler(void *pBleFwEvent)
 {
     EventMailBox_t* pEvent = (EventMailBox_t*)pBleFwEvent;
+    uint16_t dataLen;
 
     if (NULL == pBleFwEvent)
     {
@@ -104,10 +105,14 @@ int BleTransport_BleEventHandler(void *pBleFwEvent)
         return (-1);
     }
 
-    if (BleIf_VendorEventHandler(pEvent->bleEvent.data, pEvent->bleEvent.dataLen))
+    // Use local variable to avoid taking address of potentially packed member
+    dataLen = pEvent->bleEvent.dataLen;
+    if (BleIf_VendorSpecificEventHandler(pEvent->bleEvent.data, &dataLen))
     {
         return (0);
     }
+    // Write back modified length to preserve original behavior
+    pEvent->bleEvent.dataLen = dataLen;
 
     if (NULL == event_cb)
     {

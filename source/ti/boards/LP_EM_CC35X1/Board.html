@@ -34,8 +34,8 @@
 </header>
 <div id="content">
   <h1></h1>
-<h1 id="simplelink-cc3501-launchpad-settings-resources">SimpleLink™ CC3501 LaunchPad™ Settings &amp; Resources</h1>
-<p>The <a href="https://www.ti.com/tool/LP-EM-CC35X1"><strong>SimpleLink™ CC3501 LaunchPad™</strong></a> contains a <a href="https://www.ti.com/product/CC3501E"><strong>CC3501ENJARSHR</strong></a> device.</p>
+<h1 id="simplelink-cc35x1-launchpad-settings-resources">SimpleLink™ CC35X1 LaunchPad™ Settings &amp; Resources</h1>
+<p>The <a href="https://www.ti.com/tool/LP-EM-CC35X1"><strong>SimpleLink™ CC35X1 LaunchPad™</strong></a> contains a <a href="https://www.ti.com/product/CC3551E"><strong>CC3551ENJARSHR</strong></a> device.</p>
 <h2 id="jumper-settings">Jumper Settings</h2>
 <ul>
 <li>Close the <strong><code>LEDs</code></strong> jumpers to enable the on-board LEDs.</li>
@@ -44,6 +44,26 @@
 <p>The <a href="../.meta/LP_EM_CC35X1.syscfg.json">LP_EM_CC35X1.syscfg.json</a> is a handcrafted file used by SysConfig. It describes the physical pin-out and components on the LaunchPad.</p>
 <h2 id="driver-examples-resources">Driver Examples Resources</h2>
 <p>Examples utilize SysConfig to generate software configurations into the <strong>ti_drivers_config.c</strong> and <strong>ti_drivers_config.h</strong> files. The SysConfig user interface can be utilized to determine pins and resources used. Information on pins and resources used is also present in both generated files.</p>
+<h2 id="settings-for-can-peripheral-examples-wff3-sdk">Settings for CAN peripheral examples (WFF3 SDK)</h2>
+<p>When using CAN peripheral examples provided in Simplelink WFF3 SDK along with the LP_EM_CC35X1 launchpad, connect the Tx and Rx pins of the transceiver to the following pins of the LaunchPad.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="center">LaunchPad Pin</th>
+<th align="center">CAN Transceiver Pin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">BP.31 (DIO34)</td>
+<td align="center">RXD</td>
+</tr>
+<tr class="even">
+<td align="center">BP.17 (DIO30)</td>
+<td align="center">TXD</td>
+</tr>
+</tbody>
+</table>
 <h2 id="ti-boosterpacks">TI BoosterPacks™</h2>
 <p>The following BoosterPack is used with some driver examples.</p>
 <h3 id="cc3200-audio-boosterpackcc3200audboost"><a href="https://www.ti.com/tool/CC3200AUDBOOST"><strong>CC3200 Audio BoosterPack</strong></a></h3>

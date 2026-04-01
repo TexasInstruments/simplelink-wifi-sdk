@@ -46,6 +46,7 @@
 #include "conf.h"
 #include "macro_utils.h"
 
+
 #define MSG_QUEUE_SIZE (4)
 #define EVENT_STACK_SIZE (1200)
 #define EVENT_TRANSPORT_THRD_PRIORITY (8)
@@ -199,6 +200,21 @@ typedef struct __attribute__((packed))
     uint8_t csi_extra_params[4]; // Saving room for future configuration
 
 }cmd_csi_enable_t;
+
+typedef struct __attribute__((packed))
+{
+    cmd_header_generic_t cmdHeader;
+    uint8_t csiSolEnable;
+    uint8_t csiSolPeriod;
+    uint8_t csiSolExpiry;
+}cmd_cfg_csi_solicitation_t;
+
+typedef struct __attribute__((packed))
+{
+    cmd_header_generic_t cmdHeader;
+    uint8_t csiSolAddRemoveMac;
+    uint8_t csiSolMacAddress[MAC_ADDR_SIZE];
+}cmd_cfg_csi_sol_edit_mac_t;
 
 typedef struct __attribute__((packed))
 {
@@ -427,6 +443,13 @@ typedef struct __attribute__((packed))
     BeaconRssi_t                BeaconRssi;
 }cmd_interrogate_get_rssi_t;
 
+#ifdef NOISE_FLOOR //not defined on CC3xxx
+typedef struct __attribute__((packed))
+{
+    cmd_interrogate_header_t    cmdInterrogateHeader;
+    NoiseFloor_t                NoiseFloor;
+}cmd_interrogate_get_noise_floor_t;
+#endif
 typedef struct __attribute__((packed))
 {
     cmd_interrogate_header_t    cmdInterrogateHeader;
@@ -603,6 +626,8 @@ int  ctrlCmdFw_pltStop();
 int  ctrlCmdFw_GetCmdSize();
 int  ctrlCmdFw_TriggerFwAssert();
 int  ctrlCmdFw_EnableCsiCmd(uint8_t enable);
+int ctrlCmdFw_CfgCsiSolicitation(uint8_t enable, uint8_t period, uint8_t expiry);
+int ctrlCmdFw_CfgCsiSolSetMac(uint8_t csiSolAddRemoveMac, uint8_t csiSolMacAddress[MAC_ADDR_LEN]);
 int  ctrlCmdFw_GetChannelUtilizationResults(WlanChannel_utilize_res_t* res);
 int  ctrlCmdFw_GetDecryptedPacketCounts(WlanDecrypted_packetsCounters_t * packets_count);
 int  ctrlCmdFw_GetRoleChannelNumber(WlanRole_current_channel_number* currentRoleChannelParam);
@@ -612,6 +637,9 @@ int  ctrlCmdFw_ResetDecryptedPacketsCounter(uint8_t* roleType);
 int  ctrlCmdFw_SetRoleMaxTxPower(RoleID_t roleId, int8_t max_tx_power);
 int  ctrlCmdFw_SetVendorIE(wlanSetVendorInfo_t *beacon_info);
 int  ctrlCmdFw_GetRssi(BeaconRssi_t* rssi);
+#ifdef NOISE_FLOOR //not defined on CC3xxx
+int  ctrlCmdFw_GetNoiseFloor(NoiseFloor_t* noiseFloor);
+#endif
 int  ctrlCmdFw_GetMemMap(MemoryMap_t *mem_map);
 int  ctrlCmdFw_GetFwVersion(FWVersions_t* FwVersion);
 int  ctrlCmdFw_GetSpVersion(SPVersions_t* SpVersion);

@@ -881,6 +881,9 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 #ifdef CONFIG_HE_OVERRIDES
 	INT(disable_he);
 #endif /* CONFIG_HE_OVERRIDES */
+	// TI  compilation: RSN override support from upstream - start
+	INT_DEF(rsn_overriding, RSN_OVERRIDING_NOT_SET);
+	// TI  compilation: RSN override support from upstream - end
 
 #undef STR
 #undef INT

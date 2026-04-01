@@ -118,18 +118,20 @@ enum wpa_sm_conf_params {
 	WPA_PARAM_OCI_FREQ_EAPOL_G2,
 	WPA_PARAM_OCI_FREQ_FT_ASSOC,
 	WPA_PARAM_OCI_FREQ_FILS_ASSOC,
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     WPA_PARAM_RSN_OVERRIDE,
 	WPA_PARAM_RSN_OVERRIDE_SUPPORT,
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 };
 
+// TI  compilation: RSN override support from upstream - start
 enum wpa_rsn_override {
 	RSN_OVERRIDE_NOT_USED,
 	RSN_OVERRIDE_RSNE,
 	RSN_OVERRIDE_RSNE_OVERRIDE,
 	RSN_OVERRIDE_RSNE_OVERRIDE_2,
 };
+// TI  compilation: RSN override support from upstream - end
 
 struct rsn_supp_config {
 	void *network_ctx;
@@ -317,6 +319,26 @@ static inline int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie,
 {
 	return -1;
 }
+
+// TI  compilation: RSN override support from upstream - start
+static inline int wpa_sm_set_ap_rsne_override(struct wpa_sm *sm, const u8 *ie,
+					      size_t len)
+{
+	return -1;
+}
+
+static inline int wpa_sm_set_ap_rsne_override_2(struct wpa_sm *sm, const u8 *ie,
+						size_t len)
+{
+	return -1;
+}
+
+static inline int wpa_sm_set_ap_rsnxe_override(struct wpa_sm *sm, const u8 *ie,
+					       size_t len)
+{
+	return -1;
+}
+// TI  compilation: RSN override support from upstream - end
 
 static inline int wpa_sm_get_mib(struct wpa_sm *sm, char *buf, size_t buflen)
 {

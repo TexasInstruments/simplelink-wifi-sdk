@@ -32,7 +32,8 @@
 #ifndef LWIP_LWIPOPTS_H
 #define LWIP_LWIPOPTS_H
 
-
+//#define SUPPORT_8_STREAMS_CONCURRENTLY
+//#define SUPPORT_4_STREAMS_CONCURRENTLY
 
 #ifdef LWIP_OPTTEST_FILE
 #include "lwipopts_test.h"
@@ -48,6 +49,8 @@
 
 #define LWIP_IGMP                  LWIP_IPV4
 #define LWIP_ICMP                  LWIP_IPV4
+
+#define LWIP_UDP                   1
 
 #define LWIP_SNMP                  LWIP_UDP
 #define MIB2_STATS                 LWIP_SNMP
@@ -128,7 +131,7 @@
 
 /* MEM_SIZE: the size of the heap memory. If the application will send
 a lot of data that needs to be copied, this should be set high. */
-#define MEM_SIZE              40000
+#define MEM_SIZE              60000
 
 /* Debug checks - will impact throughput if enabled */
 #define MEM_OVERFLOW_CHECK       (0)
@@ -137,22 +140,53 @@ a lot of data that needs to be copied, this should be set high. */
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
    sends a lot of data out of ROM (or other static memory), this
    should be set high. */
-#define MEMP_NUM_PBUF           32
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)
+#define MEMP_NUM_PBUF           96
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define MEMP_NUM_PBUF           24  
+#else
+#define MEMP_NUM_PBUF           64  
+#endif
 /* MEMP_NUM_RAW_PCB: the number of UDP protocol control blocks. One
    per active RAW "connection". */
-#define MEMP_NUM_RAW_PCB        5
+#define MEMP_NUM_RAW_PCB        4
 /* MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
-   per active UDP "connection". */
-#define MEMP_NUM_UDP_PCB        12
+   per active UDP "connection". */   
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)   
+#define MEMP_NUM_UDP_PCB        8
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define MEMP_NUM_UDP_PCB        8   
+#else
+#define MEMP_NUM_UDP_PCB        8   
+#endif
+
 /* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
    connections. */
-#define MEMP_NUM_TCP_PCB        12
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)   
+#define MEMP_NUM_TCP_PCB        8
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define MEMP_NUM_TCP_PCB        8 
+#else
+#define MEMP_NUM_TCP_PCB        8 
+#endif
 /* MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP
    connections. */
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)   
 #define MEMP_NUM_TCP_PCB_LISTEN 8
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define MEMP_NUM_TCP_PCB_LISTEN 2
+#else
+#define MEMP_NUM_TCP_PCB_LISTEN 2
+#endif
 /* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
    segments. */
-#define MEMP_NUM_TCP_SEG        900
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)   
+#define MEMP_NUM_TCP_SEG        16
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define MEMP_NUM_TCP_SEG        36  
+#else
+#define MEMP_NUM_TCP_SEG        56  
+#endif
 /* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
    timeouts. */
 #define MEMP_NUM_SYS_TIMEOUT    17
@@ -160,9 +194,21 @@ a lot of data that needs to be copied, this should be set high. */
 /* The following four are used only with the sequential API and can be
    set to 0 if the application only will use the raw API. */
 /* MEMP_NUM_NETBUF: the number of struct netbufs. */
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)   
 #define MEMP_NUM_NETBUF         16
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define MEMP_NUM_NETBUF         32  
+#else
+#define MEMP_NUM_NETBUF         32  
+#endif
 /* MEMP_NUM_NETCONN: the number of struct netconns. */
-#define MEMP_NUM_NETCONN        10
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)   
+#define MEMP_NUM_NETCONN        15
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define MEMP_NUM_NETCONN        16 
+#else
+#define MEMP_NUM_NETCONN        16 
+#endif
 /* MEMP_NUM_TCPIP_MSG_*: the number of struct tcpip_msg, which is used
    for sequential API communication and incoming packets. Used in
    src/api/tcpip.c. */
@@ -175,13 +221,25 @@ a lot of data that needs to be copied, this should be set high. */
 
 /* ---------- Pbuf options ---------- */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
-#define PBUF_POOL_SIZE          900
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)   
+#define PBUF_POOL_SIZE          96
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define PBUF_POOL_SIZE          28  
+#else
+#define PBUF_POOL_SIZE          128  
+#endif
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
 #define ETH_PAD_SIZE                    0
 #define PBUF_LINK_HLEN                  (14 + ETH_PAD_SIZE)
 #define PBUF_LINK_ENCAPSULATION_HLEN    0
-#define PBUF_POOL_BUFSIZE               LWIP_MEM_ALIGN_SIZE(TCP_MSS+40+PBUF_LINK_ENCAPSULATION_HLEN+PBUF_LINK_HLEN)
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)
+#define PBUF_POOL_BUFSIZE               1600
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define PBUF_POOL_BUFSIZE               1600
+#else
+#define PBUF_POOL_BUFSIZE               1600
+#endif
 
 /** SYS_LIGHTWEIGHT_PROT
  * define SYS_LIGHTWEIGHT_PROT in lwipopts.h if you want inter-task protection
@@ -194,6 +252,9 @@ a lot of data that needs to be copied, this should be set high. */
 /* ---------- TCP options ---------- */
 #define LWIP_TCP                1
 #define TCP_TTL                 255
+
+#define TCP_OVERSIZE            TCP_MSS
+
 
 #define LWIP_ALTCP              (LWIP_TCP)
 #ifdef LWIP_HAVE_MBEDTLS
@@ -216,21 +277,57 @@ a lot of data that needs to be copied, this should be set high. */
 #define TCP_MSS                 1460
 
 /* TCP sender buffer space (bytes). */
-#define TCP_SND_BUF             (TCP_MSS * 8)
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)
+#define TCP_SND_BUF             (TCP_MSS * 2)
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define TCP_SND_BUF             (TCP_MSS * 6)
+#else
+#define TCP_SND_BUF             (TCP_MSS * 20)
+#endif
 
 /* TCP sender buffer space (pbufs). This must be at least = 2 *
    TCP_SND_BUF/TCP_MSS for things to work. */
-#define TCP_SND_QUEUELEN       (10 * TCP_SND_BUF/TCP_MSS)
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)
+#define TCP_SND_QUEUELEN       (4*TCP_SND_BUF/TCP_MSS)
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define TCP_SND_QUEUELEN       (4*TCP_SND_BUF/TCP_MSS)   
+#else
+#define TCP_SND_QUEUELEN       (4*TCP_SND_BUF/TCP_MSS)
+#endif
 
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)
+#define TCP_SNDQUEUELOWAT      (TCP_SND_QUEUELEN/2)
+#endif
 /* TCP writable space (bytes). This must be less than or equal
    to TCP_SND_BUF. It is the amount of space which must be
    available in the tcp snd_buf for select to return writable */
 #define TCP_SNDLOWAT           (TCP_SND_BUF/2)
 
 /* TCP receive window. */
-#define TCP_WND                 (32 * TCP_MSS)
-#define LWIP_WND_SCALE          1
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)
+#define TCP_WND                 (1 * TCP_MSS)
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define TCP_WND                 (2 * TCP_MSS)
+#else
+#define TCP_WND                 (20 * TCP_MSS) 
+#endif
+
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)
+#define LWIP_WND_SCALE          0  
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define LWIP_WND_SCALE          0  
+#else
+#define LWIP_WND_SCALE          1  
+#endif
+
+#if defined(SUPPORT_8_STREAMS_CONCURRENTLY)
 #define TCP_RCV_SCALE           4
+#elif defined(SUPPORT_4_STREAMS_CONCURRENTLY)
+#define TCP_RCV_SCALE           4
+#else
+#define TCP_RCV_SCALE           2
+#endif
+
 
 /* Maximum number of retransmissions of data segments. */
 #define TCP_MAXRTX              12
@@ -239,7 +336,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define TCP_SYNMAXRTX           4
 
 #define DEFAULT_THREAD_STACKSIZE    (8 * 1024)
-#define TCPIP_THREAD_STACKSIZE      (16 * 1024) //16 k
+#define TCPIP_THREAD_STACKSIZE      (16 * 1024) 
 
 //#define LWIP_FREERTOS_THREAD_STACKSIZE_IS_STACKWORDS (1)
 
@@ -283,7 +380,6 @@ a lot of data that needs to be copied, this should be set high. */
 
 
 /* ---------- UDP options ---------- */
-#define LWIP_UDP                1
 #define LWIP_UDPLITE            LWIP_UDP
 #define UDP_TTL                 255
 

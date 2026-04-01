@@ -1574,7 +1574,7 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		data->has_group = 1;
 		data->key_mgmt = WPA_KEY_MGMT_OSEN;
 		data->proto = WPA_PROTO_OSEN;
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     } else if (rsn_ie_len >= 2 + 4 + 2 && rsn_ie[1] >= 4 + 2 &&
 		   rsn_ie[1] == rsn_ie_len - 2 &&
 		   (WPA_GET_BE32(&rsn_ie[2]) == RSNE_OVERRIDE_IE_VENDOR_TYPE ||
@@ -1583,7 +1583,7 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		   WPA_GET_LE16(&rsn_ie[2 + 4]) == RSN_VERSION) {
 		pos = rsn_ie + 2 + 4 + 2;
 		left = rsn_ie_len - 2 - 4 - 2;
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 	} else {
 		const struct rsn_ie_hdr *hdr;
 
@@ -3031,7 +3031,7 @@ static void wpa_parse_vendor_specific(const u8 *pos, const u8 *end,
  */
 static int wpa_parse_generic(const u8 *pos, struct wpa_eapol_ie_parse *ie)
 {
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     u8 len = pos[1];
 	size_t dlen = 2 + len;
     u32 selector;
@@ -3048,7 +3048,7 @@ static int wpa_parse_generic(const u8 *pos, struct wpa_eapol_ie_parse *ie)
 	selector = RSN_SELECTOR_GET(p);
 	p += RSN_SELECTOR_LEN;
 	left = len - RSN_SELECTOR_LEN;
-#endif // CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
 	if (pos[1] == 0)
 		return 1;
@@ -3167,7 +3167,7 @@ static int wpa_parse_generic(const u8 *pos, struct wpa_eapol_ie_parse *ie)
 		return 0;
 	}
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     if (selector == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
 		ie->rsne_override = pos;
 		ie->rsne_override_len = dlen;
@@ -3203,7 +3203,7 @@ static int wpa_parse_generic(const u8 *pos, struct wpa_eapol_ie_parse *ie)
 			    ie->rsn_selection, ie->rsn_selection_len);
 		return 0;
 	}
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
 	return 2;
 }
@@ -3805,3 +3805,26 @@ void wpa_pasn_add_rsnxe(struct wpabuf *buf, u16 capab)
 }
 
 #endif /* CONFIG_PASN */
+
+
+// TI  compilation: RSN override support from upstream - start
+void rsn_set_snonce_cookie(u8 *snonce)
+{
+	u8 *pos;
+
+	pos = snonce + WPA_NONCE_LEN - 6;
+	WPA_PUT_BE24(pos, OUI_WFA);
+	pos += 3;
+	WPA_PUT_BE24(pos, 0x000029);
+}
+
+
+bool rsn_is_snonce_cookie(const u8 *snonce)
+{
+	const u8 *pos;
+
+	pos = snonce + WPA_NONCE_LEN - 6;
+	return WPA_GET_BE24(pos) == OUI_WFA &&
+		WPA_GET_BE24(pos + 3) == 0x000029;
+}
+// TI  compilation: RSN override support from upstream - end

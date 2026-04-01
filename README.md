@@ -7,27 +7,25 @@ comprehensive software package for developing 2.4 GHz applications.
 The WIFI SDK delivers components that enable engineers to develop applications
 on the Texas Instruments CC35xx Wi-Fi and BLE combo MCU devices. 
 
-This is version 9.22.00.15 of the SimpleLink Wi-Fi SDK.
+This is version 10.10.00.18 of the SimpleLink Wi-Fi SDK.
 
 ## What's New
 
-  - OTA - incrementing major version will update the related OTP fuse
-    during OTA process thereby preventing rollback to images with lower
-    major-versions
-  - Winbond W25Q12PWxxxM 128Mbit SDR flash support
-  - INI file can now be modified and programed via sysconfig
-  - Support flash map option for 8MB flash with NO OTA
-  - mbedTLS package support for TLS1.3
-  - Crypto drivers support for multiple context usage: AES-CBC driver,
-    AES-CCM driver, Elliptic-Curve (EC) drivers
-  - New sysconfig default:
-      - Default flash size is now defined as 8MB
-      - Default OTA configuration is now enabled
+  - New device support CC35X1ET
+  - SDK New example applications:
+      - CC35XX OTA Example
+      - CC35XX Power measurement
+      - CC35XX BLE DTM
+      - CC35XX BLE controller  
+  - Raw Wi-Fi CSI data available to application
+  - FWU Support for accept/reject API
+  - External coexistence 3-wire PTA Master
+  - WiFi AP Certifications
   - Bug Fixes
 ## About this Repository
 
 Although TI also offers this SDK via [a classic
-installer](https://www.ti.com/tool/download/SIMPLELINK-LOWPOWER-F3-SDK), we made
+installer](https://www.ti.com/tool/download/SIMPLELINK-WIFI-SDK), we made
 it available as a Git repository to cater to various use cases:
 
 * **Smaller download size**: By omitting documentation (in the **docs/**
@@ -43,7 +41,7 @@ it available as a Git repository to cater to various use cases:
 * **Simplified workflow for rebasing**: Git makes it simpler for you to rebase
   your changes to new releases.
 
-One temporary, notable difference in this WIFI 9.22.00.15 SDK GitHub
+One temporary, notable difference in this WIFI 10.10.00.18 SDK GitHub
 distribution when compared to the classic installer above, is the exclusion of
 the **tools/ble/ble_agent/ble_toolbox/** directory. This has been temporarily
 done as the ble_toolbox executable currently exceeds GitHub's file size limit.
@@ -110,8 +108,8 @@ Dependency download locations:
 
 Please consider creating a post on [TI's E2E forum](https://e2e.ti.com).
 
-[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_WIFI_SDK__58mgN04__9.22.00.15
-[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_WIFI_SDK__58mgN04__9.22.00.15
+[sdk release notes]: https://dev.ti.com/tirex/explore/node?isTheia=false&node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_WIFI_SDK__ZlChU-m__LATEST
+[sdk docs]: https://dev.ti.com/tirex/explore/node?isTheia=false&node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_WIFI_SDK__ZlChU-m__LATEST
 [sysconfig download]: https://www.ti.com/tool/SYSCONFIG
 [ticlang download]: https://www.ti.com/tool/download/ARM-CGT-CLANG
 [gcc download]: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads

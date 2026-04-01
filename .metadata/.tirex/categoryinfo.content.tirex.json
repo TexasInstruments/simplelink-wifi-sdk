@@ -17,7 +17,7 @@
         "subCategories": [],
         "resourceType": "categoryInfo",
         "devtools": [
-            "LP-EM-CC35X1"
+            "LP-EM-CC35X1", "LP-EM-CC35X1ET"
         ],
         "description": "<p>TI's SimpleLink Wi-Fi SDK provides a comprehensive set of examples to help developers get started with the SimpleLink Wi-Fi family of wireless microcontrollers.</p>"
     },

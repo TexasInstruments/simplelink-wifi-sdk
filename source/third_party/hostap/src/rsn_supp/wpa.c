@@ -493,11 +493,10 @@ int wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 	size_t mic_len, hdrlen, rlen;
 	struct wpa_eapol_key *reply;
 	u8 *rbuf, *key_mic;
-	u8 *rsn_ie_buf = NULL;
+	// TI  compilation: RSN override support from upstream - start
+	u8 *rsn_ie_buf = NULL, *buf2 = NULL;
+	// TI  compilation: RSN override support from upstream - end
 	u16 key_info;
-#ifdef CONFIG_TI_MRSNO
-    u8 *buf2 = NULL;
-#endif //CONFIG_TI_MRSNO    
 
 	if (wpa_ie == NULL) {
 		wpa_msg(sm->ctx->msg_ctx, MSG_WARNING, "WPA: No wpa_ie set - "
@@ -543,7 +542,7 @@ int wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 	}
 #endif /* CONFIG_IEEE80211R */
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     if (sm->rsn_override != RSN_OVERRIDE_NOT_USED) {
 		u8 *pos;
 
@@ -574,7 +573,7 @@ int wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 		wpa_ie_len += 2 + 4 + 1;
 
 	}
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 	wpa_hexdump(MSG_DEBUG, "WPA: WPA IE for msg 2/4", wpa_ie, wpa_ie_len);
 
 	mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
@@ -584,6 +583,9 @@ int wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 				  &rlen, (void *) &reply);
 	if (rbuf == NULL) {
 		os_free(rsn_ie_buf);
+		// TI  compilation: RSN override support from upstream - start
+		os_free(buf2);
+		// TI  compilation: RSN override support from upstream - end
 		return -1;
 	}
 
@@ -609,6 +611,9 @@ int wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 	WPA_PUT_BE16(key_mic + mic_len, wpa_ie_len); /* Key Data Length */
 	os_memcpy(key_mic + mic_len + 2, wpa_ie, wpa_ie_len); /* Key Data */
 	os_free(rsn_ie_buf);
+	// TI  compilation: RSN override support from upstream - start
+	os_free(buf2);
+	// TI  compilation: RSN override support from upstream - end
 
 	os_memcpy(reply->key_nonce, nonce, WPA_NONCE_LEN);
 
@@ -766,6 +771,10 @@ static void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
 				"WPA: Failed to get random data for SNonce");
 			goto failed;
 		}
+		// TI  compilation: RSN override support from upstream - start
+		if (wpa_sm_rsn_overriding_supported(sm))
+			rsn_set_snonce_cookie(sm->snonce);
+		// TI  compilation: RSN override support from upstream - end
 		sm->renew_snonce = 0;
 		wpa_hexdump(MSG_DEBUG, "WPA: Renewed SNonce",
 			    sm->snonce, WPA_NONCE_LEN);
@@ -1631,7 +1640,7 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
 		return -1;
 	}
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     if (sm->proto == WPA_PROTO_RSN && wpa_sm_rsn_overriding_supported(sm)) {
 		if ((sm->ap_rsne_override && !ie->rsne_override) ||
 		    (!sm->ap_rsne_override && ie->rsne_override) ||
@@ -1693,7 +1702,7 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
 			return -1;
 		}
 	}
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
 #ifdef CONFIG_IEEE80211R
 	if (wpa_key_mgmt_ft(sm->key_mgmt) &&
@@ -3067,11 +3076,11 @@ void wpa_sm_deinit(struct wpa_sm *sm)
 	os_free(sm->ap_wpa_ie);
 	os_free(sm->ap_rsn_ie);
 	os_free(sm->ap_rsnxe);
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     os_free(sm->ap_rsne_override);
 	os_free(sm->ap_rsne_override_2);
 	os_free(sm->ap_rsnxe_override);
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 	wpa_sm_drop_sa(sm);
 	os_free(sm->ctx);
 #ifdef CONFIG_IEEE80211R
@@ -3494,14 +3503,14 @@ int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
 		sm->dpp_pfs = value;
 		break;
 #endif /* CONFIG_DPP2 */
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     case WPA_PARAM_RSN_OVERRIDE:
 		sm->rsn_override = value;
 		break;
 	case WPA_PARAM_RSN_OVERRIDE_SUPPORT:
 		sm->rsn_override_support = value;
 		break;
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 	default:
 		break;
 	}
@@ -3543,12 +3552,12 @@ int wpa_sm_get_status(struct wpa_sm *sm, char *buf, size_t buflen,
 {
 	char *pos = buf, *end = buf + buflen;
 	int ret;
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
 	const u8 *rsne;
 	size_t rsne_len;
 
 	rsne = wpa_sm_get_ap_rsne(sm, &rsne_len); 
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
 	ret = os_snprintf(pos, end - pos,
 			  "pairwise_cipher=%s\n"
@@ -3570,22 +3579,20 @@ int wpa_sm_get_status(struct wpa_sm *sm, char *buf, size_t buflen,
 	}
 #endif /* CONFIG_DPP2 */
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     if (sm->mfp != NO_MGMT_FRAME_PROTECTION && rsne) {
-#else
-	if (sm->mfp != NO_MGMT_FRAME_PROTECTION && sm->ap_rsn_ie) {
-#endif //CONFIG_TI_MRSNO
+	// if (sm->mfp != NO_MGMT_FRAME_PROTECTION && sm->ap_rsn_ie) {
+	// TI  compilation: RSN override support from upstream - end
 		struct wpa_ie_data rsn;
-#ifdef CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
         if (wpa_parse_wpa_ie_rsn(rsne, rsne_len, &rsn) >= 0 &&
             rsn.capabilities & (WPA_CAPABILITY_MFPR |
 					WPA_CAPABILITY_MFPC)) {
-#else
-		if (wpa_parse_wpa_ie_rsn(sm->ap_rsn_ie, sm->ap_rsn_ie_len, &rsn)
-		    >= 0 &&
-            rsn.capabilities & (WPA_CAPABILITY_MFPR |
-					WPA_CAPABILITY_MFPC)) {
-#endif //CONFIG_TI_MRSNO
+		// if (wpa_parse_wpa_ie_rsn(sm->ap_rsn_ie, sm->ap_rsn_ie_len, &rsn)
+		//     >= 0 &&
+        //     rsn.capabilities & (WPA_CAPABILITY_MFPR |
+		// 			WPA_CAPABILITY_MFPC)) {
+		// TI  compilation: RSN override support from upstream - end
 			ret = os_snprintf(pos, end - pos, "pmf=%d\n"
 					  "mgmt_group_cipher=%s\n",
 					  (rsn.capabilities &
@@ -3605,26 +3612,25 @@ int wpa_sm_get_status(struct wpa_sm *sm, char *buf, size_t buflen,
 int wpa_sm_pmf_enabled(struct wpa_sm *sm)
 {
 	struct wpa_ie_data rsn;
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     const u8 *rsne;
 	size_t rsne_len;
 
 	rsne = wpa_sm_get_ap_rsne(sm, &rsne_len);
-#endif  //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     if (sm->mfp == NO_MGMT_FRAME_PROTECTION || !rsne)
-#else
-	if (sm->mfp == NO_MGMT_FRAME_PROTECTION || !sm->ap_rsn_ie)
-#endif //CONFIG_TI_MRSNO
+	// if (sm->mfp == NO_MGMT_FRAME_PROTECTION || !sm->ap_rsn_ie)
+	// TI  compilation: RSN override support from upstream - end
 		return 0;
-#ifdef CONFIG_TI_MRSNO
+	
+	// TI  compilation: RSN override support from upstream - start
     if (wpa_parse_wpa_ie_rsn(rsne, rsne_len, &rsn) >= 0 &&
 	    rsn.capabilities & (WPA_CAPABILITY_MFPR | WPA_CAPABILITY_MFPC))
-#else
-	if (wpa_parse_wpa_ie_rsn(sm->ap_rsn_ie, sm->ap_rsn_ie_len, &rsn) >= 0 &&
-	    rsn.capabilities & (WPA_CAPABILITY_MFPR | WPA_CAPABILITY_MFPC))
-#endif // CONFIG_TI_MRSNO
+	// if (wpa_parse_wpa_ie_rsn(sm->ap_rsn_ie, sm->ap_rsn_ie_len, &rsn) >= 0 &&
+	//     rsn.capabilities & (WPA_CAPABILITY_MFPR | WPA_CAPABILITY_MFPC))
+	// TI  compilation: RSN override support from upstream - end
 		return 1;
 
 	return 0;
@@ -3932,6 +3938,8 @@ int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
 	return 0;
 }
 
+
+// TI  compilation: RSN override support from upstream - start
 int wpa_sm_set_ap_rsne_override(struct wpa_sm *sm, const u8 *ie, size_t len)
 {
 	if (!sm)
@@ -4005,6 +4013,7 @@ int wpa_sm_set_ap_rsnxe_override(struct wpa_sm *sm, const u8 *ie, size_t len)
 
 	return 0;
 }
+// TI  compilation: RSN override support from upstream - end
 
 
 /**

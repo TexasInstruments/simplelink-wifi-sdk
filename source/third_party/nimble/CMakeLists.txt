@@ -9,7 +9,7 @@ message(STATUS "Generating target           ${TARGET_NAME}")
 file(READ nimble-src/RELEASE_NOTES.md nimble_versions)
 #set the version
 string(REGEX MATCH "Apache NimBLE[ \t]+v([0-9|.]+)" _ ${nimble_versions})
-set_global(NIMBLE_VERSION       ${CMAKE_MATCH_1})
+set(NIMBLE_VERSION       ${CMAKE_MATCH_1} CACHE INTERNAL "")
 
 set(${TARGET_NAME}_SOURCES
 

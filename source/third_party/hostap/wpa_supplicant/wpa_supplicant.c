@@ -433,6 +433,11 @@ void wpa_supplicant_set_non_wpa_policy(struct wpa_supplicant *wpa_s,
 	wpa_sm_set_ap_wpa_ie(wpa_s->wpa, NULL, 0);
 	wpa_sm_set_ap_rsn_ie(wpa_s->wpa, NULL, 0);
 	wpa_sm_set_ap_rsnxe(wpa_s->wpa, NULL, 0);
+	// TI  compilation: RSN override support from upstream - start
+	wpa_sm_set_ap_rsne_override(wpa_s->wpa, NULL, 0);
+	wpa_sm_set_ap_rsne_override_2(wpa_s->wpa, NULL, 0);
+	wpa_sm_set_ap_rsnxe_override(wpa_s->wpa, NULL, 0);
+	// TI  compilation: RSN override support from upstream - end
 	wpa_sm_set_assoc_wpa_ie(wpa_s->wpa, NULL, 0);
 	wpa_sm_set_assoc_rsnxe(wpa_s->wpa, NULL, 0);
 	wpa_s->rsnxe_len = 0;
@@ -1380,19 +1385,27 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	struct wpa_ie_data ie;
 	int sel, proto, sae_pwe;
 	const u8 *bss_wpa, *bss_rsn, *bss_rsnx, *bss_osen;
+	/* TI - cc33xx compilation - local FT interoperability workaround - start */
+	const u8 *bss_mdie;
+	/* TI - cc33xx compilation - local FT interoperability workaround - end */
 
 	if (bss) {
 		bss_wpa = wpa_bss_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
-#ifdef CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
 		bss_rsn = wpa_bss_get_rsne(wpa_s, bss, ssid, false);
 		bss_rsnx = wpa_bss_get_rsnxe(wpa_s, bss, ssid, false);
-#else
-        bss_rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
-		bss_rsnx = wpa_bss_get_ie(bss, WLAN_EID_RSNX);
-#endif //CONFIG_TI_MRSNO
+		// bss_rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
+		// bss_rsnx = wpa_bss_get_ie(bss, WLAN_EID_RSNX);
+		// TI  compilation: RSN override support from upstream - end
 		bss_osen = wpa_bss_get_vendor_ie(bss, OSEN_IE_VENDOR_TYPE);
+		/* TI - cc33xx compilation - local FT interoperability workaround - start */
+		bss_mdie = wpa_bss_get_ie(bss, WLAN_EID_MOBILITY_DOMAIN);
+		/* TI - cc33xx compilation - local FT interoperability workaround - end */
 	} else {
 		bss_wpa = bss_rsn = bss_rsnx = bss_osen = NULL;
+		/* TI - cc33xx compilation - local FT interoperability workaround - start */
+		bss_mdie = NULL;
+		/* TI - cc33xx compilation - local FT interoperability workaround - end */
 	}
 
 	if (bss_rsn && (ssid->proto & WPA_PROTO_RSN) &&
@@ -1521,7 +1534,7 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 			 !!(ssid->proto & (WPA_PROTO_RSN | WPA_PROTO_OSEN)));
 
 	if (bss || !wpa_s->ap_ies_from_associnfo) {
-#ifdef CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
         const u8 *rsnoe = NULL, *rsno2e = NULL, *rsnxoe = NULL;
 
 		if (bss) {
@@ -1548,15 +1561,14 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 		    wpa_sm_set_ap_rsnxe_override(wpa_s->wpa, rsnxoe,
 						 rsnxoe ? 2 + rsnxoe[1] : 0))
 			return -1;
-#else
-		if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss_wpa,
-					 bss_wpa ? 2 + bss_wpa[1] : 0) ||
-		    wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
-					 bss_rsn ? 2 + bss_rsn[1] : 0) ||
-		    wpa_sm_set_ap_rsnxe(wpa_s->wpa, bss_rsnx,
-					bss_rsnx ? 2 + bss_rsnx[1] : 0))
-			return -1;
-#endif //CONFIG_TI_MRSNO
+		// if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss_wpa,
+		// 			 bss_wpa ? 2 + bss_wpa[1] : 0) ||
+		//     wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
+		// 			 bss_rsn ? 2 + bss_rsn[1] : 0) ||
+		//     wpa_sm_set_ap_rsnxe(wpa_s->wpa, bss_rsnx,
+		// 			bss_rsnx ? 2 + bss_rsnx[1] : 0))
+		// 	return -1;
+		// TI  compilation: RSN override support from upstream - end
 	}
 
 #ifdef CONFIG_NO_WPA
@@ -1599,6 +1611,16 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	if (!(wpa_s->drv_flags & (WPA_DRIVER_FLAGS_SME |
 				  WPA_DRIVER_FLAGS_UPDATE_FT_IES)))
 		sel &= ~WPA_KEY_MGMT_FT;
+	
+	/* TI - cc33xx compilation - local FT interoperability workaround - start.
+	 * Handle with care when updating supplicant.
+	 * AP advertises FT key management but does not include MDIE as required.
+	 * Filter out FT AKMs since non-FT alternatives are available. */
+	if (wpa_key_mgmt_ft(sel) && !bss_mdie &&
+		!wpa_key_mgmt_only_ft(sel)) {
+		sel &= ~WPA_KEY_MGMT_FT;
+	}
+	/* TI - cc33xx compilation - local FT interoperability workaround - end */
 #endif /* CONFIG_IEEE80211R */
 	wpa_dbg(wpa_s, MSG_DEBUG,
 		"WPA: AP key_mgmt 0x%x network profile key_mgmt 0x%x; available key_mgmt 0x%x",
@@ -3000,11 +3022,10 @@ static u8 * wpas_populate_assoc_ies(
 	}
 
 	if (bss && (wpa_bss_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE) ||
-#ifdef CONFIG_TI_MRSNO
+			// TI  compilation: RSN override support from upstream - start
 		    wpa_bss_get_rsne(wpa_s, bss, ssid, false)) &&
-#else
-            wpa_bss_get_ie(bss, WLAN_EID_RSN)) &&
-#endif //CONFIG_TI_MRSNO 
+			// wpa_bss_get_ie(bss, WLAN_EID_RSN)) &&
+			// TI  compilation: RSN override support from upstream - end
 	    wpa_key_mgmt_wpa(ssid->key_mgmt)) {
 		int try_opportunistic;
 		const u8 *cache_id = NULL;
@@ -3461,64 +3482,12 @@ mscs_end:
 		wpa_ie_len += multi_ap_ie_len;
 	}
 
-#ifdef CONFIG_TI_MRSNO
-#if 0 /*TI remark -previous solution*/
-	if (!wpas_driver_bss_selection(wpa_s) &&
-	    wpas_rsn_overriding(wpa_s) &&
-	    wpas_ap_supports_rsn_overriding(wpa_s, bss) &&
-	    wpa_ie_len + 2 + 4 <= max_wpa_ie_len) {
-		u8 *pos = wpa_ie + wpa_ie_len;
-		u32 type = 0;
-		const u8 *ie;
-
-		ie = wpa_bss_get_rsne(wpa_s, bss, ssid, false);
-		if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4)
-			type = WPA_GET_BE32(&ie[2]);
-
-		if (type) {
-			/* Indicate support for RSN overriding */
-			*pos++ = WLAN_EID_VENDOR_SPECIFIC;
-			*pos++ = 4;
-			WPA_PUT_BE32(pos, type);
-			pos += 4;
-			wpa_hexdump(MSG_MSGDUMP, "RSNE Override", wpa_ie,
-				    pos - wpa_ie);
-			wpa_ie_len += 2 + 4;
-		}
-	}
-
-	if (wpas_driver_bss_selection(wpa_s) &&
-	    wpas_rsn_overriding(wpa_s)) {
-		if (wpa_ie_len + 2 + 4 <= max_wpa_ie_len) {
-			u8 *pos = wpa_ie + wpa_ie_len;
-
-			*pos++ = WLAN_EID_VENDOR_SPECIFIC;
-			*pos++ = 4;
-			WPA_PUT_BE32(pos, RSNE_OVERRIDE_IE_VENDOR_TYPE);
-			pos += 4;
-			wpa_hexdump(MSG_MSGDUMP, "RSNE Override", wpa_ie,
-				    pos - wpa_ie);
-			wpa_ie_len += 2 + 4;
-		}
-
-		if (wpa_ie_len + 2 + 4 <= max_wpa_ie_len) {
-			u8 *pos = wpa_ie + wpa_ie_len;
-
-			*pos++ = WLAN_EID_VENDOR_SPECIFIC;
-			*pos++ = 4;
-			WPA_PUT_BE32(pos, RSNE_OVERRIDE_2_IE_VENDOR_TYPE);
-			pos += 4;
-			wpa_hexdump(MSG_MSGDUMP, "RSNE Override 2",
-				    wpa_ie, pos - wpa_ie);
-			wpa_ie_len += 2 + 4;
-		}
-	}
-#endif
-    wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_RSN_OVERRIDE_SUPPORT,
-			 wpas_rsn_overriding(wpa_s));
+	// TI  compilation: RSN override support from upstream - start
+	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_RSN_OVERRIDE_SUPPORT,
+			 wpas_rsn_overriding(wpa_s, ssid));
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_RSN_OVERRIDE,
 			 RSN_OVERRIDE_NOT_USED);
-	if (wpas_rsn_overriding(wpa_s) &&
+	if (wpas_rsn_overriding(wpa_s, ssid) &&
 	    wpas_ap_supports_rsn_overriding(wpa_s, bss) &&
 	    wpa_ie_len + 2 + 4 + 1 <= max_wpa_ie_len) {
 		u8 *pos = wpa_ie + wpa_ie_len, *start = pos;
@@ -3527,7 +3496,7 @@ mscs_end:
 
 		wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_RSN_OVERRIDE,
 				 RSN_OVERRIDE_RSNE);
-		ie = wpa_bss_get_rsne(wpa_s, bss, ssid, false); //TI compile - unsupported mlo
+		ie = wpa_bss_get_rsne(wpa_s, bss, ssid, false); // TI cc33xx compilation - MLO not supported
 		if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4) {
 			u32 type;
 
@@ -3555,8 +3524,8 @@ mscs_end:
 		wpa_ie_len += pos - start;
 	}
 
-    params->rsn_overriding = wpas_rsn_overriding(wpa_s);
-#endif //CONFIG_TI_MRSNO
+	params->rsn_overriding = wpas_rsn_overriding(wpa_s, ssid);
+	// TI  compilation: RSN override support from upstream - end
 
 	params->wpa_ie = wpa_ie;
 	params->wpa_ie_len = wpa_ie_len;
@@ -4079,11 +4048,10 @@ static void wpas_start_assoc_cb(struct wpa_radio_work *work, int deinit)
 
 	params.mgmt_frame_protection = wpas_get_ssid_pmf(wpa_s, ssid);
 	if (params.mgmt_frame_protection != NO_MGMT_FRAME_PROTECTION && bss) {
-#ifdef CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
         const u8 *rsn = wpa_bss_get_rsne(wpa_s, bss, ssid, false);
-#else        
-		const u8 *rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
-#endif //CONFIG_TI_MRSNO
+		// const u8 *rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
+		// TI  compilation: RSN override support from upstream - end
 		struct wpa_ie_data ie;
 		if (rsn && wpa_parse_wpa_ie(rsn, 2 + rsn[1], &ie) == 0 &&
 		    ie.capabilities &
@@ -6942,9 +6910,9 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 		wpa_s->drv_flags = capa.flags;
 		wpa_s->drv_flags2 = capa.flags2;
 		wpa_s->drv_enc = capa.enc;
-#ifdef CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
         wpa_s->drv_key_mgmt = capa.key_mgmt;
-#endif //CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - end
 		wpa_s->drv_rrm_flags = capa.rrm_flags;
 		wpa_s->probe_resp_offloads = capa.probe_resp_offloads;
 		wpa_s->max_scan_ssids = capa.max_scan_ssids;
@@ -8092,19 +8060,25 @@ int wpas_driver_bss_selection(struct wpa_supplicant *wpa_s)
 		(wpa_s->drv_flags & WPA_DRIVER_FLAGS_BSS_SELECTION);
 }
 
-#ifdef CONFIG_TI_MRSNO
-
+// TI  compilation: RSN override support from upstream - start
 static bool wpas_driver_rsn_override(struct wpa_supplicant *wpa_s)
 {
 	return !!(wpa_s->drv_flags2 & WPA_DRIVER_FLAGS2_RSN_OVERRIDE_STA);
 }
 
-bool wpas_rsn_overriding(struct wpa_supplicant *wpa_s)
+bool wpas_rsn_overriding(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
-	if (wpa_s->conf->rsn_overriding == RSN_OVERRIDING_DISABLED)
+	enum wpas_rsn_overriding rsno;
+
+	if (ssid && ssid->rsn_overriding != RSN_OVERRIDING_NOT_SET)
+		rsno = ssid->rsn_overriding;
+	else
+		rsno = wpa_s->conf->rsn_overriding;
+
+	if (rsno == RSN_OVERRIDING_DISABLED)
 		return false;
 
-	if (wpa_s->conf->rsn_overriding == RSN_OVERRIDING_ENABLED)
+	if (rsno == RSN_OVERRIDING_ENABLED)
 		return true;
 
 	if (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_SME) ||
@@ -8113,7 +8087,7 @@ bool wpas_rsn_overriding(struct wpa_supplicant *wpa_s)
 
 	return true;
 }
-#endif //CONFIG_TI_MRSNO
+// TI  compilation: RSN override support from upstream - end
 
 #if defined(CONFIG_CTRL_IFACE) || defined(CONFIG_CTRL_IFACE_DBUS_NEW)
 int wpa_supplicant_ctrl_iface_ctrl_rsp_handle(struct wpa_supplicant *wpa_s,
@@ -8951,7 +8925,7 @@ wpa_drv_get_scan_results2(struct wpa_supplicant *wpa_s)
 	return scan_res;
 }
 
-#ifdef CONFIG_TI_MRSNO
+// TI  compilation: RSN override support from upstream - start
 bool wpas_ap_supports_rsn_overriding(struct wpa_supplicant *wpa_s,
 				     struct wpa_bss *bss)
 {
@@ -8962,20 +8936,20 @@ bool wpas_ap_supports_rsn_overriding(struct wpa_supplicant *wpa_s,
 	if (wpa_bss_get_vendor_ie(bss, RSNE_OVERRIDE_IE_VENDOR_TYPE) ||
 	    wpa_bss_get_vendor_ie(bss, RSNE_OVERRIDE_2_IE_VENDOR_TYPE))
 		return true;
-    //TI - cc3xxx compile - used for mlo?
-	//if (!wpa_s->valid_links)
-	//	return false;
 
-	//for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
-	//	if (!(wpa_s->valid_links & BIT(i)))
-	//		continue;
-	//	if (wpa_s->current_bss &&
-	//	    (wpa_bss_get_vendor_ie(wpa_s->current_bss,
-	//				   RSNE_OVERRIDE_IE_VENDOR_TYPE) ||
-	//	     wpa_bss_get_vendor_ie(wpa_s->current_bss,
-	//				   RSNE_OVERRIDE_2_IE_VENDOR_TYPE)))
-	//		return true;
-	//}
+	// if (!wpa_s->valid_links)
+	// 	return false;
+
+	// for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
+	// 	if (!(wpa_s->valid_links & BIT(i)))
+	// 		continue;
+	// 	if (wpa_s->links[i].bss &&
+	// 	    (wpa_bss_get_vendor_ie(wpa_s->links[i].bss,
+	// 				   RSNE_OVERRIDE_IE_VENDOR_TYPE) ||
+	// 	     wpa_bss_get_vendor_ie(wpa_s->links[i].bss,
+	// 				   RSNE_OVERRIDE_2_IE_VENDOR_TYPE)))
+	// 		return true;
+	// }
 
 	return false;
 }
@@ -8991,19 +8965,18 @@ bool wpas_ap_supports_rsn_overriding_2(struct wpa_supplicant *wpa_s,
 	if (wpa_bss_get_vendor_ie(bss, RSNE_OVERRIDE_2_IE_VENDOR_TYPE))
 		return true;
 
-    //TI - cc3xxx compile - used for mlo?
-	//if (!wpa_s->valid_links)
-	//	return false;
+	// if (!wpa_s->valid_links)
+	// 	return false;
 
-	//for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
-	//	if (!(wpa_s->valid_links & BIT(i)))
-	//		continue;
-	//	if (wpa_s->links[i].bss &&
-	//	    wpa_bss_get_vendor_ie(wpa_s->links[i].bss,
-	//				  RSNE_OVERRIDE_2_IE_VENDOR_TYPE))
-	//		return true;
-	//}
+	// for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
+	// 	if (!(wpa_s->valid_links & BIT(i)))
+	// 		continue;
+	// 	if (wpa_s->links[i].bss &&
+	// 	    wpa_bss_get_vendor_ie(wpa_s->links[i].bss,
+	// 				  RSNE_OVERRIDE_2_IE_VENDOR_TYPE))
+	// 		return true;
+	// }
 
 	return false;
 }
-#endif //CONFIG_TI_MRSNO
+// TI  compilation: RSN override support from upstream - end

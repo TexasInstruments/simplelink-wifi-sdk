@@ -243,6 +243,7 @@
 //#define CME_WPA_DEFAULT_CIPHER (WPA_CIPHER_CCMP | WPA_CIPHER_TKIP)
 #define CME_AP_WPA_DEFAULT_CIPHER (WPA_CIPHER_CCMP)
 #define CME_STA_WPA_DEFAULT_CIPHER (WPA_CIPHER_CCMP | WPA_CIPHER_TKIP)
+#define CME_STA_WPA2_AES_ONLY_DEFAULT_CIPHER (WPA_CIPHER_CCMP)
 #define CME_AP_WPA_SAE_PWE_H2E_AND_HUNTING_AND_PECKING (2) //both hunting-and-pecking loop and hash-to-element enabled
 
 
@@ -283,6 +284,8 @@ typedef struct
 
 // hold connection policy information:
 typedef struct {
+    /* Note: this structure is used to store information in Flash
+     - Please DO NOT change the legacy fields.*/
     uint8_t shouldConnectToOpenAp; // not suppoted
     uint8_t shouldConnectToAnyP2P; // not supported
     uint8_t shouldUseFastConnect;
@@ -296,6 +299,8 @@ typedef struct {
 
 typedef struct
 {
+    /* Note: this structure is used to store information in Flash
+     - Please DO NOT change the legacy fields.*/
         //EAP parameters
         struct eap_method_type* eap_method;
         uint32_t   num_of_eap_methods;
@@ -325,6 +330,8 @@ typedef struct
 
 typedef struct
 {
+    /* Note: this structure is used to store information in Flash
+     - Please DO NOT change the legacy fields.*/
         int id;
         uint8_t  ssid[SSID_MAX_LEN];
         size_t ssid_len;
@@ -354,7 +361,9 @@ typedef struct
 #endif
         //EAP parameters
         _cme_minimized_wpa_ssid_eap_t eap;
+        //int isSuiteb192; // this variable was moved to eapol flags in order to preserve backward compatibility
 }_cme_minimized_wpa_ssid_t;
+
 // Hold profiles information: profile as received from user application + management information
 
 // WPA3 cache 
@@ -362,6 +371,8 @@ typedef struct
 #define CME_PMK_LEN_MAX    (64)
 typedef struct 
 {
+    /* Note: this structure is used to store information in Flash
+     - Please DO NOT change the legacy fields.*/
     uint8_t pmkid_set;
     uint8_t pmkid [CME_PMKID_LEN];
     uint8_t pmk [CME_PMK_LEN_MAX];
@@ -373,6 +384,8 @@ typedef struct
 
 typedef struct
 {
+    /* Note: this structure is used to store information in Flash
+     - Please DO NOT change the legacy fields.*/
     _cme_minimized_wpa_ssid_t profile;                   // Holds peer information
     //uint8_t                     ssid[SSID_MAX_LEN];
     p2pProfile_e              p2pProfile;                  // Indicates if profile is for P2P;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, Texas Instruments Incorporated
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -601,13 +601,26 @@ void UART2Support_dmaStopRx(UART2_Handle handle)
     uint32_t bytesRemaining;
     uint32_t rxCount;
     uint32_t rxDmaChannel = hwAttrs->rxDmaChannel;
+    uint32_t fsmState;
 
     /* If there is a currently active DMA RX transaction */
     if (object->rxSize > 0)
     {
-        /* Disable the RX DMA channel and stop the transfer. Disable and clear interrupts */
-        DMAWFF3_disableChannel(rxDmaChannel);
+        /* Disable the UART DMA controller and the DMA channel to stop the transfer */
         UARTDisableDma(hwAttrs->baseAddr, UART_DMA_RX);
+
+        /* Make sure the DMA transfer is finished before disabling. Check the
+         * DMA channel FSM State.
+         */
+        fsmState = DMAGetChannelFSMState(rxDmaChannel);
+        while ((fsmState == DMA_FSMSTATE_DRAIN) || (fsmState == DMA_FSMSTATE_COPY) || (fsmState == DMA_FSMSTATE_LAST))
+        {
+            fsmState = DMAGetChannelFSMState(rxDmaChannel);
+        }
+
+        DMAWFF3_disableChannel(rxDmaChannel);
+
+        /* Disable and clear interrupts */
         DMAWFF3_clearInterrupt(1 << rxDmaChannel);
         UARTDisableInt(hwAttrs->baseAddr, UART_INT_RXDMADONE);
         UARTClearInt(hwAttrs->baseAddr, UART_INT_RXDMADONE);
@@ -1017,10 +1030,14 @@ static void UART2WFF3_hwiIntFxn(uintptr_t arg)
         UART2WFF3_hwiIntWrite(arg);
     }
 
-    if (status & (UART_INT_EOT))
+    /* Make sure the UART is not busy before handling the End of Transmission.
+     * This could happen if a prior EOT is invalidated due to transmit being
+     * rearmed during course of the interrupt handler. The extra busy check
+     * will catch if this is the case, and allow the ISR to return, pending the
+     * next EOT interrupt, which will re-enter this handler.
+     */
+    if ((status & (UART_INT_EOT)) && !UARTBusy(hwAttrs->baseAddr))
     {
-        /* End of Transmission occurred. Make sure TX FIFO is truly empty before disabling TX */
-        while (HWREG(hwAttrs->baseAddr + UARTLIN_O_FR) & UARTLIN_FR_BUSY) {}
         /* Disable TX */
         HWREG(hwAttrs->baseAddr + UARTLIN_O_CTL) &= ~UARTLIN_CTL_TXE;
 
@@ -1084,8 +1101,10 @@ static void UART2WFF3_initHw(UART2_Handle handle)
                  UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE | UART_INT_RT | UART_INT_TX | UART_INT_RX |
                      UART_INT_CTS | UART_INT_TXDMADONE | UART_INT_RXDMADONE);
 
-    /* Set TX interrupt FIFO level and RX interrupt FIFO level */
-    UARTSetFifoLevel(hwAttrs->baseAddr, UART_FIFO_TX4_8, UART_FIFO_RX6_8);
+    /* Set TX interrupt FIFO level and RX interrupt FIFO level.
+     * For best performance in RX, the FIFO level should be kept at 2/8.
+     */
+    UARTSetFifoLevel(hwAttrs->baseAddr, UART_FIFO_TX4_8, UART_FIFO_RX2_8);
 
     /* If Flow Control is enabled, configure hardware flow control for CTS and/or RTS. */
     if (UART2WFF3_isFlowControlEnabled(hwAttrs) && (hwAttrs->ctsPin != GPIO_INVALID_INDEX))

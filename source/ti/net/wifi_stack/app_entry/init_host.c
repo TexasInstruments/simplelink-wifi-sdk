@@ -501,5 +501,10 @@ void InitIniParamsHost(cmd_ini_params_download_t *cmd)
         gpL2CommonCfg->heSupport = conf->mac.he_enable;
     }
 
+    //SetAP max number of stations
+    CME_PRINT_REPORT("\n\rMax num of STA for AP:%d\n\r",conf->mac.ApMaxNumStations );
+    cfgSetApMaxNumStations(conf->mac.ApMaxNumStations);//this can be overwrite by ap role up
+    cfgSetApMaxNumStationsFromConfIni(conf->mac.ApMaxNumStations);
+
     // CMD is freed in caller function
 }

@@ -1,7 +1,7 @@
-# SimpleLink&trade; CC3501 LaunchPad&trade; Settings & Resources
+# SimpleLink&trade; CC35X1 LaunchPad&trade; Settings & Resources
 
-The [__SimpleLink&trade; CC3501 LaunchPad&trade;__][board] contains a
-[__CC3501ENJARSHR__][device] device.
+The [__SimpleLink&trade; CC35X1 LaunchPad&trade;__][board] contains a
+[__CC3551ENJARSHR__][device] device.
 
 ## Jumper Settings
 
@@ -19,6 +19,17 @@ Examples utilize SysConfig to generate software configurations into
 the __ti_drivers_config.c__ and __ti_drivers_config.h__ files. The SysConfig
 user interface can be utilized to determine pins and resources used.
 Information on pins and resources used is also present in both generated files.
+
+## Settings for CAN peripheral examples (WFF3 SDK)
+
+When using CAN peripheral examples provided in Simplelink WFF3 SDK along with
+the LP_EM_CC35X1 launchpad, connect the Tx and Rx pins of the transceiver
+to the following pins of the LaunchPad.
+
+| LaunchPad Pin | CAN Transceiver Pin |
+|:-------------:|:-------------------:|
+| BP.31 (DIO34) |         RXD         |
+| BP.17 (DIO30) |         TXD         |
 
 ## TI BoosterPacks&trade;
 
@@ -51,7 +62,7 @@ below, for information on where these pins are located.
 
 ![CC3200 Audio BoosterPack Jumper Wire Diagram](images/cc3200audboost_jumpers_annotated.png)
 
-[device]: https://www.ti.com/product/CC3501E
+[device]: https://www.ti.com/product/CC3551E
 [board]: https://www.ti.com/tool/LP-EM-CC35X1
 [cc3200audboost]: https://www.ti.com/tool/CC3200AUDBOOST
 [cc3200audboost-user-guide]: https://www.ti.com/lit/pdf/swru383

@@ -119,6 +119,7 @@ typedef struct
     uint32_t eapIdentityLen;
     uint8_t  eapAnonymous[MAX_ANON_LEN + 1];
     uint32_t eapAnonUserLen;
+    uint32_t TLSKeyLength;
     CMEWlanConnectCommon_t EapCommonConnect;//CMEWlanConnectCommon_t must be located at the need of the structure!!!
 }CMEEapWlanConnect_t;
 
@@ -173,10 +174,11 @@ typedef enum
     CME_SEC_TYPE_WPS_PIN,
     CME_SEC_TYPE_WPA2_PLUS  = 11,
     CME_SEC_TYPE_WPA3       = 12,
-
+    CME_SEC_TYPE_WPA2_AES_ONLY_PMF = 13,
+    CME_SEC_TYPE_WPA2_AES_ONLY_NO_PMF = 14,
     CME_SEC_TYPE_WPA2_WPA3 = 16,
     CME_SEC_TYPE_WPA_ENT = 17,
-
+    CME_SEC_TYPE_WPA = 18,
     CME_SEC_TYPE_WEP_SHARED
 
 } CMESecType_e;

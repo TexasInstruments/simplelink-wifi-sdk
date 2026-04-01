@@ -7,7 +7,7 @@ message(STATUS "Generating target           ${TARGET_NAME}")
 file(READ inc_adapt/upper_mac_versions.h uppermac_versions)
 #set the version
 string(REGEX MATCH "version_upper_mac[ \t]+\"upper_mac_([0-9|.]+)\"" _ ${uppermac_versions})
-set_global(UPPERMAC_VERSION       ${CMAKE_MATCH_1})
+set(UPPERMAC_VERSION       ${CMAKE_MATCH_1} CACHE INTERNAL "")
 
 set(${TARGET_NAME}_SOURCES
 

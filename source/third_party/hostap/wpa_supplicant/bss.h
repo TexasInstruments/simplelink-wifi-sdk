@@ -197,13 +197,13 @@ void calculate_update_time(const struct os_reltime *fetch_time,
 			   unsigned int age_ms,
 			   struct os_reltime *update_time);
 
-#ifdef CONFIG_TI_MRSNO
+// TI  compilation: RSN override support from upstream - start
 const u8 * wpa_bss_get_rsne(struct wpa_supplicant *wpa_s,
 			    const struct wpa_bss *bss, struct wpa_ssid *ssid,
 			    bool mlo);
 const u8 * wpa_bss_get_rsnxe(struct wpa_supplicant *wpa_s,
 			     const struct wpa_bss *bss, struct wpa_ssid *ssid,
 			     bool mlo);
-#endif  //CONFIG_TI_MRSNO
+// TI  compilation: RSN override support from upstream - end
 
 #endif /* BSS_H */

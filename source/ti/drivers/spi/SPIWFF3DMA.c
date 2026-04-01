@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,6 +67,9 @@
 #define SPI_RX_DMA_CONTROL_OPTS (DMAWFF3_CONFIG_SRC_PTR_FIFO | DMAWFF3_CONFIG_CLEAR_AT_JOB_START | DMAWFF3_CONFIG_RX)
 
 #define MAX_DMA_TRANSFER_AMOUNT 0x00003FFFU
+
+#define SPI_TX_DMA_BLOCK_SIZE (1)
+#define SPI_RX_DMA_BLOCK_SIZE (1)
 
 #define SPI_DATASIZE_8      (8)
 #define SPI_DATASIZE_16     (16)
@@ -343,11 +346,13 @@ int_fast16_t SPIWFF3DMA_control(SPI_Handle handle, uint_fast16_t cmd, void *arg)
 static void startDmaTransaction(SPIWFF3DMA_Object *object, SPIWFF3DMA_HWAttrs const *hwAttrs)
 {
     enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+
     DMAWFF3_startTransaction(hwAttrs->rxDmaChannel,
                              object->dmaRxSrcAddr,
                              object->dmaRxDstAddr,
                              object->dmaRxTransferSize,
                              true);
+
     DMAWFF3_startTransaction(hwAttrs->txDmaChannel,
                              object->dmaTxSrcAddr,
                              object->dmaTxDstAddr,
@@ -391,6 +396,7 @@ static void SPIWFF3DMA_hwiFxn(uintptr_t arg)
             DMAWFF3_disableChannel(hwAttrs->rxDmaChannel);
             DMAWFF3_disableChannel(hwAttrs->txDmaChannel);
             DMAWFF3_clearInterrupt(1 << hwAttrs->txDmaChannel | 1 << hwAttrs->rxDmaChannel);
+
             disableInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
             clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
 
@@ -427,6 +433,7 @@ static void SPIWFF3DMA_hwiFxn(uintptr_t arg)
                  * continue queueing frames for the current transfer and
                  * start the next transaction.
                  */
+
                 configNextTransfer(object, hwAttrs);
                 startDmaTransaction(object, hwAttrs);
             }
@@ -821,6 +828,7 @@ bool SPIWFF3DMA_transfer(SPI_Handle handle, SPI_Transaction *transaction)
             }
         }
     }
+
     return (true);
 }
 
@@ -917,7 +925,22 @@ void SPIWFF3DMA_transferCancel(SPI_Handle handle)
         initHw(handle);
 
         HwiP_clearInterrupt(hwAttrs->intNum);
+
+        /* Synchronize the instruction pipeline before enabling SPI interrupt
+         * to ensure that interrupts are properly cleared.
+         */
+        __DMB();
+        __DSB();
+        __ISB();
+
         HwiP_enableInterrupt(hwAttrs->intNum);
+
+        /* Synchronize the instruction pipeline after enabling SPI interrupt
+         * to ensure that interrupts are properly enabled.
+         * */
+        __DMB();
+        __DSB();
+        __ISB();
 
         /*
          * Go through all queued transfers; set status CANCELED (if we did
@@ -987,7 +1010,6 @@ void SPIWFF3DMA_transferCancel(SPI_Handle handle)
 static void blockingTransferCallback(SPI_Handle handle, SPI_Transaction *msg)
 {
     SPIWFF3DMA_Object *object = handle->object;
-
     SemaphoreP_post(&(object->transferComplete));
 }
 
@@ -1323,6 +1345,7 @@ static inline void primeTransfer(SPI_Handle handle)
         DMAWFF3_connectChannel(hwAttrs->txDmaChannel, hwAttrs->txChannelEvtMux);
 
         HwiP_clearInterrupt(hwAttrs->intNum);
+
         HwiP_enableInterrupt(hwAttrs->intNum);
 
         /* Configure RX & TX DMA transfers */
@@ -1464,21 +1487,42 @@ static inline void spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transa
  */
 static int spiPostNotify(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg)
 {
-    SPI_Handle handle         = (SPI_Handle)clientArg;
-    SPIWFF3DMA_Object *object = handle->object;
+    SPI_Handle handle                 = (SPI_Handle)clientArg;
+    SPIWFF3DMA_Object *object         = handle->object;
+    const SPIWFF3DMA_HWAttrs *hwAttrs = handle->hwAttrs;
 
-    if (eventType == PowerWFF3_ENTERING_SLEEP)
+    DMAWFF3_WordSize dmaWordSize = DMAWFF3_WORD_SIZE_1B;
+
+    if (eventType == PowerWFF3_AWAKE_SLEEP)
     {
-        /* Set the SPI IO back to default state before entering STDBY */
-        setIOSleepState(handle);
-    }
-    else
-    {
+        if (object->dataSize <= SPI_DATASIZE_8)
+        {
+            dmaWordSize = DMAWFF3_WORD_SIZE_1B;
+        }
+        else
+        {
+            dmaWordSize = DMAWFF3_WORD_SIZE_2B;
+        }
+
+        /* Configure SPI DMA Rx channel. */
+        DMAWFF3_configureChannel(hwAttrs->rxDmaChannel, SPI_RX_DMA_BLOCK_SIZE, dmaWordSize, SPI_RX_DMA_CONTROL_OPTS);
+
+        /* Configure SPI DMA Tx channel. */
+        DMAWFF3_configureChannel(hwAttrs->txDmaChannel, SPI_TX_DMA_BLOCK_SIZE, dmaWordSize, SPI_TX_DMA_CONTROL_OPTS);
+
+        /* Initialize SPI hardware. */
         initHw((SPI_Handle)clientArg);
+
+        /* If SPI hardware in peripheral mode, initialize required GPIOs. */
         if (object->mode == SPI_PERIPHERAL)
         {
             initIO(handle);
         }
+    }
+    else if (eventType == PowerWFF3_ENTERING_SLEEP)
+    {
+        /* Set the SPI IO back to default state before entering STDBY */
+        setIOSleepState(handle);
     }
 
     return (Power_NOTIFYDONE);
@@ -1611,8 +1655,8 @@ static void initDMA(SPI_Handle handle)
         dmaWordSize = DMAWFF3_WORD_SIZE_2B;
     }
 
-    DMAWFF3_configureChannel(hwAttrs->rxDmaChannel, 1, dmaWordSize, SPI_RX_DMA_CONTROL_OPTS);
-    DMAWFF3_configureChannel(hwAttrs->txDmaChannel, 1, dmaWordSize, SPI_TX_DMA_CONTROL_OPTS);
+    DMAWFF3_configureChannel(hwAttrs->rxDmaChannel, SPI_RX_DMA_BLOCK_SIZE, dmaWordSize, SPI_RX_DMA_CONTROL_OPTS);
+    DMAWFF3_configureChannel(hwAttrs->txDmaChannel, SPI_TX_DMA_BLOCK_SIZE, dmaWordSize, SPI_TX_DMA_CONTROL_OPTS);
 }
 
 /*

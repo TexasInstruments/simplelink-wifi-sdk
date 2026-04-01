@@ -164,6 +164,7 @@ uint32_t udata_Init(TUdata *pUdata)
     /* Save modules handles */
     pUdata->uGenericEthertype = ETHERTYPE_EAPOL;
     udata_RegisterMgmtRxHandler((TMgmtRxHandler)CME_NotifyRxMngPack, (TMgmtRxHandler)CME_RxEapol);
+    udata_RegisterRxFromUnknownHandler((TMgmtRxHandler)CME_RxFromUnknownData);
     pUdata->udataparams.TxSendPaceThresh = TX_SEND_PACE_THRESH_DEF;
     pUdata->udataparams.TxSendPaceTimeoutMsec = TX_SEND_PACE_TIMEOUT_MSEC_DEF;
     udata_SetParam(pUdata);
@@ -578,6 +579,15 @@ void udata_RegisterMgmtRxHandler(TMgmtRxHandler mgmtcb , TMgmtRxHandler eapolcb)
 
     pUdata->fMgmtRxCb     = mgmtcb;
     pUdata->fEapolRxCb    = eapolcb;
+}
+
+void udata_RegisterRxFromUnknownHandler(TMgmtRxHandler cb)
+{
+    TUdata *pUdata = gUdataCB;
+
+    HOOK(HOOK_UDATA);
+
+    pUdata->fRxFromUnknownCb = cb;
 }
 
 void udata_RegisterSecuritySeqHandler(TSecuritySeqHandler cb, void *ctx)

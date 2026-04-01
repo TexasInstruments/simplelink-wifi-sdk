@@ -53,6 +53,10 @@
 
 // add struct\define start -----------------------------------------------------------------------------
 #if 1
+
+// Disable WiFi 6 (802.11ax/HE) support at compile time
+//#define DISABLE_WIFI6
+
 /* 802.11n HT Information Element */
 #define DOT11_HT_CAPABILITIES_ELE_LEN    (26)
 #define DOT11_HE_CAPABILITIES_MIN_TOTAL_LEN  (22)   //Total len includes the Extension ID byte! will be the elemnt len field
@@ -531,7 +535,8 @@ typedef struct
 //    uint8_t/*PSScheme_e*/  psMode;             // The desired PS mode of the station, MCP default is UPSD
 //                                    // used for building QOS IE
     uint8_t  maxSpLen;                // (1) used for building QOS IE
-    uint8_t  ApMaxNumStations;        // Maximum number of stations supported on this AP
+    uint8_t  ApMaxNumStations;        //current host configuration of maximum number of stations supported on this AP
+    uint8_t  ApMaxNumStationsFromConfIni;  // Maximum number of stations supported on this AP, for the conf ini
 
     uint8_t selectedBand;             // Selected Band for PHY config
     uint8_t wirelessProtocol;
@@ -679,12 +684,14 @@ uint32_t cfgGetsecondChanceTxTimePeriod (RoleType_e aRoleType);
 uint32_t l2_cfgBuildHtCapabilitiesIe(uint32_t aRoleId, uint8_t *apHtCapsIE);
 
 
-
+#ifndef DISABLE_WIFI6
 uint32_t l2_cfgBuildVhtCapabilitiesIe(uint32_t aRoleId, uint8_t *apVhtCapsIE);
+#endif
 
 uint32_t l2_cfgBuildOperatingModeNotifcationIe(uint32_t aRoleId, uint8_t *operatingModeNotifIE);
 
 
+#ifndef DISABLE_WIFI6
 /* ----------------------------------------------------------------------------
  cfgGetHeCapabilities
       This function fills HE capabilities IE; can be used for constructing
@@ -698,6 +705,7 @@ uint32_t l2_cfgBuildOperatingModeNotifcationIe(uint32_t aRoleId, uint8_t *operat
  return: number of bytes added to the buffer or 0 if HE isn't supported
 ---------------------------------------------------------------------------- */
 uint32_t l2_cfgBuildHeCapabilitiesIe(uint32_t aRoleId, uint8_t *apHeCapsIE);
+#endif
 
 /* ----------------------------------------------------------------------------
  cfgGetApMaxNumStations
@@ -720,6 +728,33 @@ uint8_t cfgGetApMaxNumStations (void);
  return: none
 ---------------------------------------------------------------------------- */
 void cfgSetApMaxNumStations(uint8_t apMaxNumStations);
+
+/* ----------------------------------------------------------------------------
+ cfgGetApMaxNumStationsFromConfIni
+     returns the maximum number of stations supporte by AP
+     as was configured on the conf.ini
+
+ Parameters:
+           none
+
+ return: max number of stations
+---------------------------------------------------------------------------- */
+
+uint8_t cfgGetApMaxNumStationsFromConfIni (void);
+
+/* ----------------------------------------------------------------------------
+ cfgSetApMaxNumStationsFromConfIni
+     Set the maximum number of stations supporte by AP
+     as was configured on the conf.ini
+
+ Parameters:    max number of stations
+
+
+ return: none
+---------------------------------------------------------------------------- */
+
+void cfgSetApMaxNumStationsFromConfIni(uint8_t apMaxNumStationsFromConfIni);
+
 
 /* ----------------------------------------------------------------------------
  cfgSetFragThreshold
@@ -830,6 +865,17 @@ Bool32 cfgIsStaPbacEnabled();
  return: TRUE - WME enabled, FALSE not enabled
 ---------------------------------------------------------------------------- */
 const AcCfg_t * cfgGetDefaultAcCfg(uint8_t ac);
+
+/* ----------------------------------------------------------------------------
+ cfgGetStaDefaultSchedScanPlans
+      This function returns the default scan plans for scheduled scan.
+
+ Parameters:
+     none
+
+ return: default sched scan plans
+ ---------------------------------------------------------------------------- */
+const char* cfgGetStaDefaultSchedScanPlans();
 
 /* ----------------------------------------------------------------------------
  cfgIsStaShortPreambleEnabled

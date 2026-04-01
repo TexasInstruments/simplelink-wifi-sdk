@@ -137,6 +137,8 @@ ScanResultTable_t    ScanResultTable = {
 OsiSyncObj_t         ScanResultTableSyncObj_ull = NULL; //1 byte
 
 
+extern cmeProfileInfo_t gAdHocProfile_ull;
+
 
 //void    scanCandidateTable_UpdateLowestScore();
 //void    scanCandidateTable_SaveResult(TScanFrameInfo*           pFrame,
@@ -896,7 +898,7 @@ void scanDigestTable_SaveResult(TScanFrameInfo*            pFrame,
         // WPA / WPA2 /WPA3
 
         //rsn_rsnWpaIe2SecurityInfo() function just or's bits on secType according to the information in the info element.
-        //It is called first on thwe RSN IE (if exists) and then on WPS IE (if exists)
+        //It is called first on the RSN IE (if exists), then on the WPA IE (if exists), and finally on the RSN override IEs (if exists).
         if (pFrame->pParsedIEs->rsnIeLen > 0)
         {
             DRV_PRINT_REPORT("\n\r RSN analyze");
@@ -907,6 +909,18 @@ void scanDigestTable_SaveResult(TScanFrameInfo*            pFrame,
         {
             DRV_PRINT_REPORT("\n\r WPA analyze");
             rsn_rsnWpaIe2SecurityInfo(&pFrame->pParsedIEs->wpaIe, pFrame->pParsedIEs->wpaIeLen, &secType);
+        }
+
+        if (pFrame->pParsedIEs->rsnOverrideIeLen > 0)
+        {
+            DRV_PRINT_REPORT("\n\r RSN override analyze");
+            rsn_rsnWpaIe2SecurityInfo(&pFrame->pParsedIEs->rsnOverrideIe, pFrame->pParsedIEs->rsnOverrideIeLen, &secType);
+        }
+
+        if (pFrame->pParsedIEs->rsnOverride2IeLen > 0)
+        {
+            DRV_PRINT_REPORT("\n\r RSN override 2 analyze");
+            rsn_rsnWpaIe2SecurityInfo(&pFrame->pParsedIEs->rsnOverride2Ie, pFrame->pParsedIEs->rsnOverride2IeLen, &secType);
         }
     }
 
@@ -970,7 +984,7 @@ void scanDigestTable_SaveExtendedResult(TScanFrameInfo*            pFrame,
            // WPA / WPA2 /WPA3
 
            //rsn_rsnWpaIe2SecurityInfo() function just or's bits on secType according to the information in the info element.
-           //It is called first on thwe RSN IE (if exists) and then on WPS IE (if exists)
+           //It is called first on the RSN IE (if exists), then on the WPA IE (if exists), and finally on the RSN override IEs (if exists).
            if (pFrame->pParsedIEs->rsnIeLen > 0)
            {
                DRV_PRINT_REPORT("\n\r RSN analyze");
@@ -981,6 +995,18 @@ void scanDigestTable_SaveExtendedResult(TScanFrameInfo*            pFrame,
            {
                DRV_PRINT_REPORT("\n\r WPA analyze");
                rsn_rsnWpaIe2SecurityInfo(&pFrame->pParsedIEs->wpaIe, pFrame->pParsedIEs->wpaIeLen, &secType);
+           }
+
+           if (pFrame->pParsedIEs->rsnOverrideIeLen > 0)
+           {
+               DRV_PRINT_REPORT("\n\r RSN override analyze");
+               rsn_rsnWpaIe2SecurityInfo(&pFrame->pParsedIEs->rsnOverrideIe, pFrame->pParsedIEs->rsnOverrideIeLen, &secType);
+           }
+
+           if (pFrame->pParsedIEs->rsnOverride2IeLen > 0)
+           {
+               DRV_PRINT_REPORT("\n\r RSN override 2 analyze");
+               rsn_rsnWpaIe2SecurityInfo(&pFrame->pParsedIEs->rsnOverride2Ie, pFrame->pParsedIEs->rsnOverride2IeLen, &secType);
            }
        }
 
@@ -2836,7 +2862,7 @@ Bool_e scan_result_ssid_match(dot11_SSID_t*        apSsidIe,
                               uint8_t              securityType,
                               uint8_t              numOfSSID,
                               cmeScanProfiles_t*   pList,
-                              int8_t*              profileId)
+                              int8_t*              profileId)    
 {
     int     ssidIndex;
     int     foundMatch = FALSE;
@@ -2849,8 +2875,14 @@ Bool_e scan_result_ssid_match(dot11_SSID_t*        apSsidIe,
    for (ssidIndex = 0; ssidIndex < numOfSSID; ssidIndex++)
    {
        Bool_e isWep = FALSE; //Match in WEP security
+       Bool_e isWPA = FALSE; //Match WPA-only AP with WPA_WPA2
        Bool_e isWPA2 = FALSE; // Match in WPA2 and WPA2 PLUS
        Bool_e isENT = FALSE;
+       Bool_e isWPA2_PMF_REQ = FALSE; // Match in WPA2 and WPA2 PLUS WITH PMF REQ
+       Bool_e isWPA2_NO_PMF = FALSE; // Match in WPA2 and WPA2 PLUS WITHOUT PMF
+       Bool_e isWPA2AESOnly = FALSE; // Match in WPA2 AES only with PMF
+       Bool_e isWPA2AESOnly_NO_PMF = FALSE; // Match in WPA2 AES only without PMF
+       Bool_e isWPA2WPA3 = FALSE; // Match in WPA2 WPA3
        GTRACE(GRP_DRIVER_MX, "verify scan_result_ssid_match : index (%d) rcv ssid_len %d, list ssid len %d, security type ENUM(CMESecType_e, %d) ssid:" MACSTR " Bssid:" MACSTR ,
                                 ssidIndex,
                                 //apSsidIe->serviceSetId,
@@ -2860,27 +2892,53 @@ Bool_e scan_result_ssid_match(dot11_SSID_t*        apSsidIe,
                                 MAC2STR(pList[ssidIndex].mSSID),
                                 MAC2STR(pList[ssidIndex].mBssid));
 
-       //In case of wep - since can not know at this stage if the remote AP uses open or shared, we pass in either case.
-       isWep = (((securityType == CME_SEC_TYPE_WEP) || (securityType == CME_SEC_TYPE_WEP_SHARED)) &&
+        //In case of wep - since can not know at this stage if the remote AP uses open or shared, we pass in either case.
+        isWep = (((securityType == CME_SEC_TYPE_WEP) || (securityType == CME_SEC_TYPE_WEP_SHARED)) &&
                ((pList[ssidIndex].secType == CME_SEC_TYPE_WEP) || (pList[ssidIndex].secType == CME_SEC_TYPE_WEP_SHARED))); //We have a match in WEP
 
        HOOK(HOOK_IN_SCAN_RESULT_TABLE);
 
-       //In case the AP is support PMF and we try to connect with WPA2 it is a match
-       isWPA2 = (((securityType == CME_SEC_TYPE_WPA_WPA2) || (securityType == CME_SEC_TYPE_WPA2_PLUS) || (securityType == CME_SEC_TYPE_WPA2_WPA3)) &&
-                  ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA_WPA2) || (pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_PLUS) || (pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_WPA3)));
+       isWPA = ((securityType == CME_SEC_TYPE_WPA) && (pList[ssidIndex].secType == CME_SEC_TYPE_WPA_WPA2));
 
-       Bool_e isWPA2WPA3 = (((securityType == CME_SEC_TYPE_WPA2_WPA3) || (securityType == CME_SEC_TYPE_WPA3)) &&
-                  ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_WPA3 || pList[ssidIndex].secType == CME_SEC_TYPE_WPA3)));
+        //In case the AP is support PMF and we try to connect with WPA2 it is a match
+       isWPA2 = (((securityType == CME_SEC_TYPE_WPA_WPA2) || (securityType == CME_SEC_TYPE_WPA2_PLUS) || (securityType == CME_SEC_TYPE_WPA2_WPA3) ||
+                  (securityType == CME_SEC_TYPE_WPA2_AES_ONLY_PMF) || (securityType == CME_SEC_TYPE_WPA2_AES_ONLY_NO_PMF)) &&
+                 ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA_WPA2) || (pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_PLUS) || (pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_WPA3)));
+
+       isWPA2_PMF_REQ = (((securityType == CME_SEC_TYPE_WPA2_PLUS) || (securityType == CME_SEC_TYPE_WPA2_WPA3) || (securityType == CME_SEC_TYPE_WPA2_AES_ONLY_PMF)) &&
+                         ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_PLUS) || (pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_WPA3)));
+
+       isWPA2_NO_PMF = (((securityType == CME_SEC_TYPE_WPA_WPA2) || (securityType == CME_SEC_TYPE_WPA2_WPA3) || (securityType == CME_SEC_TYPE_WPA2_AES_ONLY_NO_PMF)) &&
+                        ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA_WPA2) || (pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_PLUS) || (pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_WPA3)));
+
+       isWPA2AESOnly = (((securityType == CME_SEC_TYPE_WPA2_AES_ONLY_PMF) || (securityType == CME_SEC_TYPE_WPA2_AES_ONLY_NO_PMF) || (securityType == CME_SEC_TYPE_WPA2_WPA3)) &&
+                        ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_AES_ONLY_PMF)));
+
+       isWPA2AESOnly_NO_PMF = (((securityType == CME_SEC_TYPE_WPA2_WPA3)) &&
+                               ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_AES_ONLY_NO_PMF)));
+
+       isWPA2WPA3 = (((securityType == CME_SEC_TYPE_WPA2_WPA3) || (securityType == CME_SEC_TYPE_WPA3)) &&
+                     ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_WPA3 || pList[ssidIndex].secType == CME_SEC_TYPE_WPA3)));
+
+       // If profile security type is WPA2WPA3 but SAE is not supported then it should not be considered WPA2WPA3.
+       // This is to cover the case where the chosen profile security type is WPA2WPA3 but a 64 length psk was used which is valid only for WPA2.
+       if ((pList[ssidIndex].secType == CME_SEC_TYPE_WPA2_WPA3) &&
+           (gAdHocProfile_ull.uniqueProfileId != CME_INVALID_PROFILE_ID) &&
+           ((gAdHocProfile_ull.profile.key_mgmt & WPA_KEY_MGMT_SAE) == 0) &&
+           ((gAdHocProfile_ull.profile.key_mgmt & WPA_KEY_MGMT_FT_SAE) == 0))
+       {
+           isWPA2WPA3 = FALSE;
+       }
 
        // if scan is part of p2p_find() we check that ssid starts with "DIREDT-"
-        if (strncmp(apSsidIe->serviceSetId, p2pSSIDPattern, strlen(p2pSSIDPattern)) == 0)
-        {
-            GTRACE(GRP_DRIVER_MX,"scan_result_ssid_match: Found \"DIRECT-\" ");
-            foundMatch = TRUE;
-            *profileId = pList[ssidIndex].mProfileId;
-                break;
-        }
+       if (strncmp(apSsidIe->serviceSetId, p2pSSIDPattern, strlen(p2pSSIDPattern)) == 0)
+       {
+           GTRACE(GRP_DRIVER_MX, "scan_result_ssid_match: Found \"DIRECT-\" ");
+           //CME_PRINT_REPORT("scan_result_ssid_match: Found \"DIRECT-\" ");
+           foundMatch = TRUE;
+           *profileId = pList[ssidIndex].mProfileId;
+           break;
+       }
 
         isENT = (securityType == CME_SEC_TYPE_WPA_ENT);
        // compare security type
@@ -2895,13 +2953,13 @@ Bool_e scan_result_ssid_match(dot11_SSID_t*        apSsidIe,
 
           continue;
       }
-       if ((securityType != pList[ssidIndex].secType) && (!isWep) && (!isWPA2) && (!isWPA2WPA3) && (!isENT))
-       {
-           GTRACE(GRP_DRIVER_MX, "filter scan results: AP security type: ENUM(CMESecType_e, %d), profile security type: ENUM(CMESecType_e, %d), dropping this one",
+      if ((securityType != pList[ssidIndex].secType) && (!isWep) && (!isWPA) && (!isWPA2) && (!isWPA2WPA3) && (!isENT) && (!isWPA2_PMF_REQ) && (!isWPA2_NO_PMF) && (!isWPA2AESOnly) && (!isWPA2AESOnly_NO_PMF))
+      {
+          GTRACE(GRP_DRIVER_MX, "Drop filter scan results: AP security type: ENUM(CMESecType_e, %d), profile security type: ENUM(CMESecType_e, %d), dropping this one",
                                     (CMESecType_e) securityType, (CMESecType_e) pList[ssidIndex].secType);
 
            continue;
-       }
+      }
 
        //if ssid length is the same
        if (apSsidIe->hdr.eleLen == pList[ssidIndex].ssid.mSsidLen)

@@ -59,6 +59,7 @@
 #include "cme_supplicant_api.h"
 #include "cme_dispatcher_api.h"
 #include "init_host_if.h"
+#include "cme_internal_api.h"
 
 /*this is the NAB address for MX cmd APP2NAB_ADDR, it is not used on MX, because the SDIO wrapper is not there
  * so for passing the validation on twIf_Transact function, it is set the same as in LX */
@@ -74,6 +75,8 @@ extern int wlanDispatcherSendEvent(uint16_t opcode, uint8_t * args, uint16_t arg
 
 void eventEntryThread(void *params);
 
+
+#define IS_WLAN_EVENT_MESSAGE_STOP_RUN(eventMessage)    ((*((uint8_t *)(eventMessage)) == 0xFF) && (*(((uint8_t *)(eventMessage)) + 1) == 0xFF))
 
 #define CMD_UPPER_MAC_COMMANDS 35 //this can be any number, only rx and tx goes to specific location
 #define CMD_CONTAINER_COMMANDS 36 //this can be any number, only rx and tx goes to specific location
@@ -1159,13 +1162,14 @@ int ctrlCmdFw_DownloadIniParams()
         osi_fclose(iniFileHandle);
     }
 
+    InitIniParamsHost(cmd);
+
     ctrlCmdFw_LockHostDriver();
 
     WLSendFW_Command(CMD_DOWNLOAD_INI_PARAMS, CMD_DOWNLOAD_INI_PARAMS, cmd, cmdIniSize, NULL, 0);
 
     ctrlCmdFw_UnlockHostDriver();
 
-    InitIniParamsHost(cmd);
 
     os_free(cmd);
 
@@ -1295,9 +1299,6 @@ int ctrlCmdFw_EnableCsiCmd(uint8_t enable)
 {
     int ret = 0;
     cmd_csi_enable_t cmdCsiEnable;
-
-
-
     cmdCsiEnable.csi_Enable = enable;
 
     ret = WLSendFW_Command(CMD_CSI_ENABLE,
@@ -1310,6 +1311,42 @@ int ctrlCmdFw_EnableCsiCmd(uint8_t enable)
     return ret;
 }
 
+int ctrlCmdFw_CfgCsiSolicitation(uint8_t enable, uint8_t period, uint8_t expiry)
+{
+    int ret = 0;
+    cmd_cfg_csi_solicitation_t cmd;
+
+    cmd.csiSolEnable = enable;
+    cmd.csiSolPeriod = period;
+    cmd.csiSolExpiry = expiry;
+
+    ret = WLSendFW_Command(CMD_CSI_SOL_ENABLE,
+                           CMD_CSI_SOL_ENABLE,
+                           (void *)&cmd,
+                           sizeof(cmd_cfg_csi_solicitation_t),
+                           NULL,
+                           0);
+
+    return ret;
+}  
+
+int ctrlCmdFw_CfgCsiSolSetMac(uint8_t csiSolAddRemoveMac, uint8_t csiSolMacAddress[MAC_ADDR_LEN])
+{
+    int ret = 0;
+    cmd_cfg_csi_sol_edit_mac_t cmd;
+    
+    cmd.csiSolAddRemoveMac = csiSolAddRemoveMac;
+    os_memcpy(cmd.csiSolMacAddress, csiSolMacAddress, sizeof(uint8_t) * MAC_ADDR_LEN);
+
+    ret = WLSendFW_Command(CMD_CSI_SOL_MAC_EDIT,
+                           CMD_CSI_SOL_MAC_EDIT,
+                           (void *)&cmd,
+                           sizeof(cmd_cfg_csi_sol_edit_mac_t),
+                           NULL,
+                           0);
+
+    return ret;
+}  
 
 int ctrlCmdFw_SetBdAddrCmd(const unsigned char *pBdAddr)
 {
@@ -1425,6 +1462,48 @@ int ctrlCmdFw_GetRssi(BeaconRssi_t* rssi)
     os_memcpy(rssi, cmdComplete.info.param, sizeof(BeaconRssi_t));
     return ret;
 }
+
+#ifdef NOISE_FLOOR //not defined on CC3xxx
+int ctrlCmdFw_GetNoiseFloor(NoiseFloor_t* noiseFloor)
+{
+    cmd_interrogate_get_noise_floor_t cmdGetNoiseFloor;
+    CommandComplete_t cmdComplete;
+    int ret;
+
+    uint32_t roleId;
+    roleId = drv_getRoleIdFromType(gpSupplicantGlobals, ROLE_STA);
+
+    if (roleId == ROLE_ID_NONE)
+    {
+        Report("\n\rError: Role Does Not Exist!!, Role Type %d\n\r", ROLE_STA);
+        return -1;
+    }
+
+    int is_sta_connected = CmeStationFlow_GetCurrentState() == CME_STA_CONFIGURED_STATE;
+
+    if (is_sta_connected)
+    {
+        cmdGetNoiseFloor.NoiseFloor.role_id = roleId;
+    }
+    else
+    {
+        Report("\n\rError: STA is not connected!!\n\r");
+        return -1;
+    }
+    cmdGetNoiseFloor.NoiseFloor.noise_floor_avg = 0;
+
+    ret = WLSendFW_InterrogateCommand(NOISE_FLOOR_INTR,
+                                      &cmdGetNoiseFloor,
+                                      sizeof(cmdGetNoiseFloor),
+                                      &cmdComplete,
+                                      sizeof(uint16_t)/*sizeof(Command_e)*/ + \
+                                      sizeof(uint16_t)/*sizeof(CommandStatus_e)*/ + \
+                                      sizeof(NoiseFloor_t));
+
+    os_memcpy(noiseFloor, cmdComplete.info.param, sizeof(NoiseFloor_t));
+    return ret;
+}
+#endif
 
 int ctrlCmdFw_GetChannelUtilizationResults(WlanChannel_utilize_res_t* res)
 {
@@ -1875,7 +1954,7 @@ void eventEntryThread(void *params)
         {
             if(OSI_OK == osi_MsgQRead(&eventMsgQueue, event, OSI_WAIT_FOREVER))
             {
-                if ((event->len == 2) && (*((uint8_t *)(event->message)) =0xFF) && (*(((uint8_t *)(event->message))+1)= 0xFF))
+                if ((event->len == 2) && (IS_WLAN_EVENT_MESSAGE_STOP_RUN(event->message)))
                 {
                     Report("\n\r receive event to deinit event thread\r\n");
                     //this message means that the thread is requested to stop run

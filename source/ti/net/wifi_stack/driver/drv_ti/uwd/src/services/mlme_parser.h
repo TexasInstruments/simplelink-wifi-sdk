@@ -267,6 +267,8 @@ typedef struct
     Bool_e                    pbacApEnabled;
     uint8_t                   rsnIeLen;//the len includes the header
     uint8_t                   wpaIeLen;
+    uint8_t                   rsnOverrideIeLen;
+    uint8_t                   rsnOverride2IeLen;
     uint16_t                  wpsLen;
 
     dot11_COUNTRY_t         country;
@@ -276,6 +278,8 @@ typedef struct
     dot11_DS_PARAMS_t       dsParams;
     dot11_RSN_t             rsnIe;
     dot11_RSN_t             wpaIe; //It is wrong to use dot11_WPA_IE_t since it assumes only one pairwaise suite and one auth key suite
+    dot11_RSN_t             rsnOverrideIe;
+    dot11_RSN_t             rsnOverride2Ie;
     dot11_wps_t             wpsIe;
     dot11HtCapabilitiesUnparse_t htCapabilities;
     dot11HtInformationUnparse_t  htInformation;

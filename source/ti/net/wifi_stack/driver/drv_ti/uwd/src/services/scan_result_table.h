@@ -259,7 +259,7 @@ Bool_e scan_result_ssid_match(dot11_SSID_t*      apSsidIe,
                           uint8_t              securityType,
                           uint8_t              numOfSSID,
                           cmeScanProfiles_t* pList,
-                          int8_t*              profileId);
+                          int8_t*              profileId);    
 
 uint32_t scan_result_calc_highest_score_for_profile_priority(int profile_priority,int secured_profile);
 

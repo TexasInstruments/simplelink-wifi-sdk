@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -385,6 +385,39 @@ function getDisabledHWOptions(inst, comps)
 }
 
 /*
+ *  ======== _pinmuxFilterCache ========
+ *  Cache for filter functions used in GPIO pinmuxRequirements.
+ *  This is used to ensure the same function reference is returned
+ *  for identical configurations (prevents re-creation on each call).
+ */
+let _pinmuxFilterCache = {
+    pinFilter: {},
+    peripheralFilter: {}
+};
+
+/*
+ * Create or retrieve cached pin filter function
+ */
+function _getPinFilterFunction(alternativeMux)
+{
+    if (!_pinmuxFilterCache.pinFilter[alternativeMux]) {
+        _pinmuxFilterCache.pinFilter[alternativeMux] = (devicePin, peripheralPin) => peripheralPin.name == alternativeMux;
+    }
+    return _pinmuxFilterCache.pinFilter[alternativeMux];
+}
+
+/*
+ * Create or retrieve cached peripheral filter function
+ */
+function _getPeripheralFilterFunction(peripheralName)
+{
+    if (!_pinmuxFilterCache.peripheralFilter[peripheralName]) {
+        _pinmuxFilterCache.peripheralFilter[peripheralName] = (peripheral) => peripheral.name == peripheralName;
+    }
+    return _pinmuxFilterCache.peripheralFilter[peripheralName];
+}
+
+/*
  *  ======== pinmuxRequirements ========
  *  Return peripheral pin requirements as a function of config
  */
@@ -464,11 +497,11 @@ This is just here to inform you which peripheral is used for the selected altern
 supporting the selected alternative mux option (${inst.alternativeMux}) are
 available.`,
                     interfaceNames: [peripheralPinObject.interfacePin.name],
-                    filter: (devicePin, peripheralPin) => peripheralPin.name == inst.alternativeMux
+                    filter: _getPinFilterFunction(inst.alternativeMux)
                 }
             ],
             signalTypes: {"gpioPin": ["DIN", "DOUT"]},
-            filter: (peripheral) => peripheral.name == peripheralObject.name
+            filter: _getPeripheralFilterFunction(peripheralObject.name)
         };
         return ([peripheralPinRequirement]);
     }
@@ -835,6 +868,14 @@ function getAttrs(inst)
         if ("outputStrength" in inst)
         {
             listOfDefines.push(strengthMapping[inst.outputStrength]);
+        }
+
+        /* If the pull option exists, and output type is open drain
+         * add the define for selected pull option to the list of defines
+         */
+        if ("pull" in inst && inst.outputType == "Open Drain")
+        {
+            listOfDefines.push(pullMapping[inst.pull]);
         }
 
         /* If the outputType option exists and is not "Standard",

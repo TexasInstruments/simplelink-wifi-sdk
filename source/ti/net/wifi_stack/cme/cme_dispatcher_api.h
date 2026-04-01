@@ -353,6 +353,17 @@ int16_t CME_SetScanDwellTime(WlanScanDwellTime_t* dwellTimes);
 
 
 /* ----------------------------------------------------------------------------
+ CME_SetSchedScanPlans
+      This function pushes a message with new scheduled scan plans configuration into
+      CME message queue.
+
+ Parameters:    Pointer to the scheduled scan plans
+
+ Return code:   0 - push succeeded, -1 failed.
+---------------------------------------------------------------------------- */
+int16_t CME_SetSchedScanPlans(char *sched_scan_plans);
+
+/* ----------------------------------------------------------------------------
  CME_WlanExtP2pProcessProvDiscActionMsg
       This function send P2P prov-disc-reaponse message from external app
        it pushes the command to the message queue

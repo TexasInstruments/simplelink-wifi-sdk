@@ -18,8 +18,8 @@
 # will build using each non-empty *_ARMCOMPILER cgtool.
 #
 
-SYSCONFIG_TOOL         ?= /home/username/ti/ccs2010/ccs/utils/sysconfig_1.26.0/sysconfig_cli.sh
-SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR ?= /home/username/ti/simplelink_wifi_toolbox_4_0_2
+SYSCONFIG_TOOL         ?= /home/username/ti/ccs2010/ccs/utils/sysconfig_1.26.3/sysconfig_cli.sh
+SIMPLELINK_WIFI_TOOLBOX_INSTALL_DIR ?= /home/username/ti/simplelink_wifi_toolbox_4_1_13
 
 CMAKE                  ?= /home/username/cmake-3.21.3/bin/cmake
 PYTHON                 ?= python3

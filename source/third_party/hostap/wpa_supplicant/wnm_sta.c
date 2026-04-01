@@ -1201,6 +1201,13 @@ static int cand_pref_compar(const void *a, const void *b)
 	const struct neighbor_report *aa = a;
 	const struct neighbor_report *bb = b;
 
+	// TI cc33xx compilation: BTM issue fix: Lower rankings of current AP if disassociation imminent bit set - start
+	if (aa->disassoc_imminent && !bb->disassoc_imminent)
+		return 1;
+	if (bb->disassoc_imminent && !aa->disassoc_imminent)
+		return -1;
+	// TI cc33xx compilation: BTM issue fix: Lower rankings of current AP if disassociation imminent bit set - end
+
 	if (!aa->preference_present && !bb->preference_present)
 		return 0;
 	if (!aa->preference_present)
@@ -1472,8 +1479,6 @@ static void ieee802_11_rx_bss_trans_mgmt_req(struct wpa_supplicant *wpa_s,
 		wpa_msg(wpa_s, MSG_INFO, "WNM: Disassociation Imminent - "
 			"Disassociation Timer %u", wpa_s->wnm_dissoc_timer);
 		if (wpa_s->wnm_dissoc_timer && !wpa_s->scanning) {
-			/* TODO: mark current BSS less preferred for
-			 * selection */
 			wpa_printf(MSG_DEBUG, "Trying to find another BSS");
 			wpa_supplicant_req_scan(wpa_s, 0, 0);
 		}
@@ -1513,6 +1518,14 @@ static void ieee802_11_rx_bss_trans_mgmt_req(struct wpa_supplicant *wpa_s,
 				rep = &wpa_s->wnm_neighbor_report_elements[
 					wpa_s->wnm_num_neighbor_report];
 				wnm_parse_neighbor_report(wpa_s, pos, len, rep);
+				// TI cc33xx compilation: BTM issue fix: Lower rankings of current AP if disassociation imminent bit set - start
+				if ((wpa_s->wnm_mode &
+				     WNM_BSS_TM_REQ_DISASSOC_IMMINENT) &&
+				    os_memcmp(rep->bssid, wpa_s->bssid,
+					      ETH_ALEN) == 0)
+					rep->disassoc_imminent = 1;
+				// TI cc33xx compilation: BTM issue fix: Lower rankings of current AP if disassociation imminent bit set - end
+
 				wpa_s->wnm_num_neighbor_report++;
 #ifdef CONFIG_MBO
 				if (wpa_s->wnm_mbo_trans_reason_present &&

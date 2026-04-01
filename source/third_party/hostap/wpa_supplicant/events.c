@@ -579,11 +579,10 @@ static int wpa_supplicant_ssid_bss_match(struct wpa_supplicant *wpa_s,
 		 (ssid->key_mgmt & WPA_KEY_MGMT_IEEE8021X_NO_WPA));
 #endif /* CONFIG_WEP */
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     rsn_ie = wpa_bss_get_rsne(wpa_s, bss, ssid, false);
-#else
-	rsn_ie = wpa_bss_get_ie(bss, WLAN_EID_RSN);
-#endif //CONFIG_TI_MRSNO
+	// rsn_ie = wpa_bss_get_ie(bss, WLAN_EID_RSN);
+	// TI  compilation: RSN override support from upstream - end
 	while ((ssid->proto & (WPA_PROTO_RSN | WPA_PROTO_OSEN)) && rsn_ie) {
 		proto_match++;
 
@@ -1155,11 +1154,10 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 
 	ie = wpa_bss_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
 	wpa = ie && ie[1];
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     ie = wpa_bss_get_rsne(wpa_s, bss, ssid, false);
-#else
-	ie = wpa_bss_get_ie(bss, WLAN_EID_RSN);
-#endif
+	// ie = wpa_bss_get_ie(bss, WLAN_EID_RSN);
+	// TI  compilation: RSN override support from upstream - end
 	wpa |= ie && ie[1];
 	if (ie && wpa_parse_wpa_ie_rsn(ie, 2 + ie[1], &data) == 0 &&
 	    (data.key_mgmt & WPA_KEY_MGMT_OSEN))
@@ -1168,17 +1166,16 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 	osen = ie != NULL;
 
 #ifdef CONFIG_SAE
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     ie = wpa_bss_get_rsnxe(wpa_s, bss, ssid, false);
 	if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4 + 1)
 		rsnxe_capa = ie[4 + 2];
 	else if (ie && ie[1] >= 1)
 		rsnxe_capa = ie[2];
-#else
-	ie = wpa_bss_get_ie(bss, WLAN_EID_RSNX);
-	if (ie && ie[1] >= 1)
-		rsnxe_capa = ie[2];
-#endif //CONFIG_TI_MRSNO
+	// ie = wpa_bss_get_ie(bss, WLAN_EID_RSNX);
+	// if (ie && ie[1] >= 1)
+	// 	rsnxe_capa = ie[2];
+	// TI  compilation: RSN override support from upstream - end
 #endif /* CONFIG_SAE */
 
 	check_ssid = wpa || ssid->ssid_len > 0;
@@ -1502,11 +1499,10 @@ struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 
 	ie = wpa_bss_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
 	wpa_ie_len = ie ? ie[1] : 0;
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     ie = wpa_bss_get_rsne(wpa_s, bss, NULL, false);
-#else
-	ie = wpa_bss_get_ie(bss, WLAN_EID_RSN);
-#endif //CONFIG_TI_MRSNO
+	// ie = wpa_bss_get_ie(bss, WLAN_EID_RSN);
+	// TI  compilation: RSN override support from upstream - end
 	rsn_ie_len = ie ? ie[1] : 0;
 
 	ie = wpa_bss_get_vendor_ie(bss, OSEN_IE_VENDOR_TYPE);
@@ -1870,11 +1866,10 @@ static void wpa_supplicant_rsn_preauth_scan_results(
 		ssid = wpa_bss_get_ie(bss, WLAN_EID_SSID);
 		if (ssid == NULL)
 			continue;
-#ifdef CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
         rsn = wpa_bss_get_rsne(wpa_s, bss, NULL, false);
-#else
-		rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
-#endif //CONFIG_TI_MRSNO
+		// rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
+		// TI  compilation: RSN override support from upstream - end
 		if (rsn == NULL)
 			continue;
 
@@ -2836,11 +2831,10 @@ static int wpa_supplicant_use_own_rsne_params(struct wpa_supplicant *wpa_s,
 	if (wpa_s->wpa_proto & (WPA_PROTO_RSN | WPA_PROTO_OSEN)) {
 		const u8 *bss_rsn;
 
-#ifdef CONFIG_TI_MRSNO
-	    bss_rsn = wpa_bss_get_rsne(wpa_s, bss, ssid, false);
-#else
-		bss_rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
-#endif //CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
+	    bss_rsn = wpa_bss_get_rsne(wpa_s, bss, ssid, false); // TI cc33xx compilation - MLO not supported
+		// bss_rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
+		// TI  compilation: RSN override support from upstream - end
 		if (bss_rsn) {
 			p = bss_rsn;
 			len = 2 + bss_rsn[1];
@@ -2943,10 +2937,10 @@ static int wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 	const u8 *p;
 	u8 bssid[ETH_ALEN];
 	bool bssid_known;
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     const u8 *ie;
     enum wpa_rsn_override rsn_override;
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
 	wpa_dbg(wpa_s, MSG_DEBUG, "Association info event");
 	bssid_known = wpa_drv_get_bssid(wpa_s, bssid) == 0;
@@ -3045,7 +3039,7 @@ static int wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 	if (!found_x && data->assoc_info.req_ies)
 		wpa_sm_set_assoc_rsnxe(wpa_s->wpa, NULL, 0);
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     rsn_override = RSN_OVERRIDE_NOT_USED;
 	ie = get_vendor_ie(data->assoc_info.req_ies,
 			   data->assoc_info.req_ies_len,
@@ -3064,7 +3058,7 @@ static int wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 		}
 	}
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_RSN_OVERRIDE, rsn_override);
-#endif //CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
 #ifdef CONFIG_FILS
 #ifdef CONFIG_SME
@@ -3232,21 +3226,7 @@ no_pfs:
 			wpa_sm_set_ap_rsn_ie(wpa_s->wpa, p, len);
 		}
 
-#ifdef CONFIG_TI_MRSNO
-        //if (wpas_rsn_overriding(wpa_s) &&
-		//    p[0] == WLAN_EID_VENDOR_SPECIFIC && p[1] >= 6 &&
-		//    WPA_GET_BE32(&p[2]) == RSNE_OVERRIDE_2_IE_VENDOR_TYPE) {
-		//	rsn_found = 1;
-		//	wpa_sm_set_ap_rsn_ie(wpa_s->wpa, p, len);
-		//}
-
-		//if (!rsn_found &&
-		//    wpas_rsn_overriding(wpa_s) &&
-		//    p[0] == WLAN_EID_VENDOR_SPECIFIC && p[1] >= 6 &&
-		//    WPA_GET_BE32(&p[2]) == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
-		//	rsn_found = 1;
-		//	wpa_sm_set_ap_rsn_ie(wpa_s->wpa, p, len);
-		//}
+		// TI  compilation: RSN override support from upstream - start
         if (p[0] == WLAN_EID_VENDOR_SPECIFIC && p[1] >= 6 &&
 		    WPA_GET_BE32(&p[2]) == RSNE_OVERRIDE_2_IE_VENDOR_TYPE)
 			wpa_sm_set_ap_rsne_override_2(wpa_s->wpa, p, len);
@@ -3254,21 +3234,16 @@ no_pfs:
 		if (p[0] == WLAN_EID_VENDOR_SPECIFIC && p[1] >= 6 &&
 		    WPA_GET_BE32(&p[2]) == RSNE_OVERRIDE_IE_VENDOR_TYPE)
 			wpa_sm_set_ap_rsne_override(wpa_s->wpa, p, len);
-
-#endif //CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - end
 
 		if (p[0] == WLAN_EID_RSNX && p[1] >= 1)
 			wpa_sm_set_ap_rsnxe(wpa_s->wpa, p, len);
 
-#ifdef CONFIG_TI_MRSNO
-        //if (wpas_rsn_overriding(wpa_s) &&
-		//    p[0] == WLAN_EID_VENDOR_SPECIFIC && p[1] >= 6 &&
-		//    WPA_GET_BE32(&p[2]) == RSNXE_OVERRIDE_IE_VENDOR_TYPE)
-		//	wpa_sm_set_ap_rsnxe(wpa_s->wpa, p, len);
+		// TI  compilation: RSN override support from upstream - start
         if (p[0] == WLAN_EID_VENDOR_SPECIFIC && p[1] >= 6 &&
 		    WPA_GET_BE32(&p[2]) == RSNXE_OVERRIDE_IE_VENDOR_TYPE)
 			wpa_sm_set_ap_rsnxe_override(wpa_s->wpa, p, len);
-#endif //CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - end
 
 		l -= len;
 		p += len;
@@ -3279,11 +3254,11 @@ no_pfs:
 	if (!rsn_found && data->assoc_info.beacon_ies) {
 		wpa_sm_set_ap_rsn_ie(wpa_s->wpa, NULL, 0);
 		wpa_sm_set_ap_rsnxe(wpa_s->wpa, NULL, 0);
-#ifdef CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - start
         wpa_sm_set_ap_rsne_override(wpa_s->wpa, NULL, 0);
 		wpa_sm_set_ap_rsne_override_2(wpa_s->wpa, NULL, 0);
 		wpa_sm_set_ap_rsnxe_override(wpa_s->wpa, NULL, 0);
-#endif //CONFIG_TI_MRSNO
+		// TI  compilation: RSN override support from upstream - end
 	}
 	if (wpa_found || rsn_found)
 		wpa_s->ap_ies_from_associnfo = 1;
@@ -3308,9 +3283,9 @@ no_pfs:
 static int wpa_supplicant_assoc_update_ie(struct wpa_supplicant *wpa_s)
 {
 	const u8 *bss_wpa = NULL, *bss_rsn = NULL, *bss_rsnx = NULL;
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     const u8 *rsnoe, *rsno2e, *rsnxoe;
-#endif // CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
 	if (!wpa_s->current_bss || !wpa_s->current_ssid)
 		return -1;
@@ -3322,16 +3297,16 @@ static int wpa_supplicant_assoc_update_ie(struct wpa_supplicant *wpa_s)
 					WPA_IE_VENDOR_TYPE);
 	bss_rsn = wpa_bss_get_ie(wpa_s->current_bss, WLAN_EID_RSN);
 	bss_rsnx = wpa_bss_get_ie(wpa_s->current_bss, WLAN_EID_RSNX);
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     rsnoe = wpa_bss_get_vendor_ie(wpa_s->current_bss,
 				      RSNE_OVERRIDE_IE_VENDOR_TYPE);
 	rsno2e = wpa_bss_get_vendor_ie(wpa_s->current_bss,
 				       RSNE_OVERRIDE_2_IE_VENDOR_TYPE);
 	rsnxoe = wpa_bss_get_vendor_ie(wpa_s->current_bss,
 				       RSNXE_OVERRIDE_IE_VENDOR_TYPE);
-#endif // CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - end
 
-#ifdef CONFIG_TI_MRSNO
+	// TI  compilation: RSN override support from upstream - start
     if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss_wpa,
 				 bss_wpa ? 2 + bss_wpa[1] : 0) ||
 	    wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
@@ -3344,14 +3319,13 @@ static int wpa_supplicant_assoc_update_ie(struct wpa_supplicant *wpa_s)
 					  rsno2e ? 2 + rsno2e[1] : 0) ||
 	    wpa_sm_set_ap_rsnxe_override(wpa_s->wpa, rsnxoe,
 					 rsnxoe ? 2 + rsnxoe[1] : 0))
-#else
-	if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss_wpa,
-				 bss_wpa ? 2 + bss_wpa[1] : 0) ||
-	    wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
-				 bss_rsn ? 2 + bss_rsn[1] : 0) ||
-	    wpa_sm_set_ap_rsnxe(wpa_s->wpa, bss_rsnx,
-				 bss_rsnx ? 2 + bss_rsnx[1] : 0))
-#endif // CONFIG_TI_MRSNO
+	// if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss_wpa,
+	// 			 bss_wpa ? 2 + bss_wpa[1] : 0) ||
+	//     wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
+	// 			 bss_rsn ? 2 + bss_rsn[1] : 0) ||
+	//     wpa_sm_set_ap_rsnxe(wpa_s->wpa, bss_rsnx,
+	// 			 bss_rsnx ? 2 + bss_rsnx[1] : 0))
+	// TI  compilation: RSN override support from upstream - end
 		return -1;
 
 	return 0;

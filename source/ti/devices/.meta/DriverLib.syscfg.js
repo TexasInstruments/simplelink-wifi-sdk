@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -129,6 +129,11 @@ function getAttrs(deviceId, part) {
         result.deviceDir = "cc23x0r5";
         result.deviceDefine = "DeviceFamily_CC23X0R5";
         result.libName = "cc23x0r5";
+    }
+    else if (deviceId.match(/CC23.1R10/)) {
+        result.deviceDir = "cc23x1r10";
+        result.deviceDefine = "DeviceFamily_CC23X1R10";
+        result.libName = "cc23x1r10";
     }
     else if (deviceId.match(/CC27..(R|P)(10|7)/)) {
         result.deviceDir = "cc27xxx10";
@@ -270,6 +275,14 @@ function getLinkerDefs() {
             { name: "FLASH0_SIZE", value: 0x00080000 },
             { name: "RAM0_SIZE",   value: 0x00010000 }
         ].concat(s2rram, ccfg, flashBase, ramBase),
+        "CC2341R10RKP": [
+            { name: "FLASH0_SIZE", value: 0x00100000 },
+            { name: "RAM0_SIZE",   value: 0x00018000 }
+        ].concat(s2rram, ccfg, scfg, flashBase, ramBase),
+        "CC2341R73RHBQ1": [
+            { name: "FLASH0_SIZE", value: 0x000C0000 },
+            { name: "RAM0_SIZE",   value: 0x00010000 }
+        ].concat(s2rram, ccfg, scfg, flashBase, ramBase),
         "CC2745R7RHAQ1": [
             { name: "FLASH0_SIZE", value: 0x000C0000 },
             { name: "RAM0_SIZE",   value: 0x00020000 },
@@ -300,8 +313,8 @@ function getLinkerDefs() {
     dev2mem["CC2340R5MODA"] = dev2mem["CC2340R53YBG"] = dev2mem["CC2340R53RHBQ1"] = dev2mem["CC2340R53RKP"];
     dev2mem["CC2744R7RHAQ1"] = dev2mem["CC2745R7RHAQ1"];
     dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
-    dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105YCJ"] = dev2mem["CC2755R105RHA"];
-    dev2mem["CC2755P207RSL"] = dev2mem["CC2755P207RHA"];
+    dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105YCJ"] = dev2mem["CC2765R10RTQ"] = dev2mem["CC2755R105RHA"];
+    dev2mem["CC2755P207RSL"] = dev2mem["CC2755R207YCJ"] = dev2mem["CC2755R207RSL"] = dev2mem["CC2755P207RHA"];
 
     /* Override FLASH, RAM and S2RRAM base/size if TFM is enabled */
     if (system.modules["/ti/utils/TrustZone"]) {

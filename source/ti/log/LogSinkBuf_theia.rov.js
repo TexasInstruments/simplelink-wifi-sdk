@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2025-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,12 +75,12 @@ class LogSinkBuf {
 
         /* Look up all symbols in SRAM region to find all elements of type
          * LogSinkBuf_Instance. We currently cannot look up all section lengths
-         * to search SRAM sections exactly. So we'll read out all symbols in the
-         * first 4 MB of theoretical SRAM.
+         * to search SRAM sections exactly. So we'll read out all symbols in a
+         * large range that should cover possible log module locations.
          * lookupSymbols gracefully handles asking for symbols in non-existent
          * memory ranges.
          */
-        let symbolLookupRange = {address: 0x20000000, length: 4000000};
+        let symbolLookupRange = {address: 0x20000000, length: 0x9000000};
         /* Returns an array of SymbolLookupResult objects in the specified range
          */
         let sramSymbols = await this.Program.task.symbols.lookupSymbols(symbolLookupRange);
@@ -116,9 +116,9 @@ class LogSinkBuf {
     async getRecordView()
     {
         /* Look up all symbols in SRAM region to find all elements of type
-         * LogSinkBuf_Instance.
+         * LogSinkBuf_Rec.
          */
-        var symbolLookupRange = {address: 0x20000000, length: 10000000};
+        var symbolLookupRange = {address: 0x20000000, length: 0x9000000};
         /* Returns an array of SymbolLookupResult objects in the specified range
          */
         var sramSymbols = await this.Program.task.symbols.lookupSymbols(symbolLookupRange);

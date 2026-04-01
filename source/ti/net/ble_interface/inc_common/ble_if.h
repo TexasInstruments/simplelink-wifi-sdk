@@ -50,11 +50,18 @@ typedef struct
     ble_event_cb_reg_t event_cb_reg;
 } ble_if_cb_t;
 
+typedef enum
+{
+    VENDOR_SPECIFIC_FORMAT_TI,
+    VENDOR_SPECIFIC_FORMAT_NIMBLE
+} vsFormat_e;
+
 int BleIf_OpenTransport();
 int BleIf_CloseTransport();
 int BleIf_SendCommand(uint8_t* cmd, uint16_t cmdLen);
 int BleIf_EventCbRegister(ble_event_cb_t cb);
-int BleIf_VendorEventHandler(uint8_t* data, uint16_t len);
+int BleIf_VendorSpecificEventFormat(vsFormat_e vsFormat);
+int BleIf_VendorSpecificEventHandler(uint8_t* data, uint16_t *len);
 int BleIf_EnableBLE();
 int BleIf_SetBdAddr(const unsigned char *pBdAddr);
 int BleIf_SetSeed(uint8_t size);
