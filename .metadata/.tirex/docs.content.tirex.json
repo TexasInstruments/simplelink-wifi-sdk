@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_wifi_sdk_10_10_00_18.html",
+        "location": "../../release_notes_simplelink_wifi_sdk_10_10_01_08.html",
         "devices": [
             "CC3500E",
             "CC3501E",
@@ -365,7 +365,7 @@
     {
         "name": "WiFi Toolbox User's Guide",
         "resourceType": "file",
-        "location": "../../docs/WiFi-toolbox/CC33XX-WiFi-toolbox-User-Guide.html",
+        "location": "../../docs/WiFi-toolbox/WiFi-toolbox-User-Guide.html",
         "devices": [
             "CC3500E",
             "CC3501E",
@@ -394,7 +394,7 @@
     {
         "name": "CoreSDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_wff3_9_21_00_18.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_wff3_9_21_01_05.html",
         "devices": [
             "CC3500E",
             "CC3501E",

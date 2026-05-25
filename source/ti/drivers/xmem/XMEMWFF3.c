@@ -1016,7 +1016,7 @@ static int_fast16_t doErase(XMEM_Handle handle, size_t offset, size_t size)
  */
 static void flashTypeSelection(void)
 {
-    const FlashType IS25WJ032F = {
+    const FlashType IS25WJ032F_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1066,7 +1066,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType IS25WJ064F = {
+    const FlashType IS25WJ064F_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1116,7 +1116,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType W25Q32JW = {
+    const FlashType W25Q32JW_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1166,7 +1166,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType W25Q64JW = {
+    const FlashType W25Q64JW_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1216,7 +1216,107 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType W25Q12PW = {
+    const FlashType W25Q33PW_TYPE = {
+
+        /* Operations */
+        .writeStigCfg.preStigCfg  = 1,
+        .writeStigCfg.postStigCfg = 0,
+        .readStigCfg.preStigCfg   = 0,
+        .readStigCfg.postStigCfg  = 0,
+        .eraseStigCfg.preStigCfg  = 1,
+        .eraseStigCfg.postStigCfg = 0,
+        .eraseStigCfg.StigCfg     = 1,
+
+        /* Enter STIG mode */
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0602220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
+
+        /* EXIT STIG mode */
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0602220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
+
+        /* Pre STIG configuration */
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .writeStigCfg.preStigOperation[0].data    = 0x06000001,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
+
+        /* Execute STIG operation */
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .readStigCfg.stigOperation[0].data     = 0x0bba0300,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .writeStigCfg.stigOperation[0].data    = 0x020ab000,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
+
+        /* Polling operation */
+        .pollingCfg.command        = 0x05900000,
+        .pollingCfg.timeOut        = 200,
+        .pollingCfg.NumOfIteration = 4,
+
+        /* General */
+        .sectorSize    = 0x1000,
+        .verifyBufSize = 256};
+
+    const FlashType W25Q64PW_TYPE = {
+
+        /* Operations */
+        .writeStigCfg.preStigCfg  = 1,
+        .writeStigCfg.postStigCfg = 0,
+        .readStigCfg.preStigCfg   = 0,
+        .readStigCfg.postStigCfg  = 0,
+        .eraseStigCfg.preStigCfg  = 1,
+        .eraseStigCfg.postStigCfg = 0,
+        .eraseStigCfg.StigCfg     = 1,
+
+        /* Enter STIG mode */
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x0602220b,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
+
+        /* EXIT STIG mode */
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x0602220b,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
+
+        /* Pre STIG configuration */
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .writeStigCfg.preStigOperation[0].data    = 0x06000001,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
+
+        /* Execute STIG operation */
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .readStigCfg.stigOperation[0].data     = 0x0bba0300,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .writeStigCfg.stigOperation[0].data    = 0x020ab000,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
+
+        /* Polling operation */
+        .pollingCfg.command        = 0x05900000,
+        .pollingCfg.timeOut        = 200,
+        .pollingCfg.NumOfIteration = 4,
+
+        /* General */
+        .sectorSize    = 0x1000,
+        .verifyBufSize = 256};
+
+    const FlashType W25Q12PW_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1266,7 +1366,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType GD25LF32ETJGY = {
+    const FlashType GD25LF32E_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1316,7 +1416,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType GD25LF64ETJGY = {
+    const FlashType GD25LF64E_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1366,7 +1466,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType PY25Q32LB = {
+    const FlashType PY25Q32LB_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1416,7 +1516,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType PY25Q64LB = {
+    const FlashType PY25Q64LB_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1466,7 +1566,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType PY25Q128LA = {
+    const FlashType PY25Q128LA_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1516,7 +1616,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType PY25Q256LC = {
+    const FlashType PY25Q256LC_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1566,7 +1666,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType MX25U3235F = {
+    const FlashType MX25U3235F_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1616,7 +1716,7 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType MX25U6435F = {
+    const FlashType MX25U6435F_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1666,7 +1766,57 @@ static void flashTypeSelection(void)
         .sectorSize    = 0x1000,
         .verifyBufSize = 256};
 
-    const FlashType IS25WJ128F = {
+    const FlashType MX25U12843G_TYPE = {
+
+        /* Operations */
+        .writeStigCfg.preStigCfg  = 1,
+        .writeStigCfg.postStigCfg = 0,
+        .readStigCfg.preStigCfg   = 0,
+        .readStigCfg.postStigCfg  = 0,
+        .eraseStigCfg.preStigCfg  = 1,
+        .eraseStigCfg.postStigCfg = 0,
+        .eraseStigCfg.StigCfg     = 1,
+
+        /* Enter STIG mode */
+        .enterStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .enterStigCfg[0].data    = 0x82080089,
+        .enterStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .enterStigCfg[1].data    = 0x060222eb,
+        .enterStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .enterStigCfg[2].data    = 0x00022002,
+
+        /* EXIT STIG mode */
+        .exitStigCfg[0].address = OSPI_REGS_BASE + OSPI_O_CONFIG,
+        .exitStigCfg[0].data    = 0x82080089,
+        .exitStigCfg[1].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_RD_CONFIG,
+        .exitStigCfg[1].data    = 0x060222eb,
+        .exitStigCfg[2].address = OSPI_REGS_BASE + OSPI_O_DEV_INSTR_WR_CONFIG,
+        .exitStigCfg[2].data    = 0x00022002,
+
+        /* Pre STIG configuration */
+        .writeStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .writeStigCfg.preStigOperation[0].data    = 0x06000001,
+        .eraseStigCfg.preStigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .eraseStigCfg.preStigOperation[0].data    = 0x06000001,
+
+        /* Execute STIG operation */
+        .readStigCfg.stigOperation[0].address  = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .readStigCfg.stigOperation[0].data     = 0xebba0300,
+        .writeStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .writeStigCfg.stigOperation[0].data    = 0x020ab000,
+        .eraseStigCfg.stigOperation[0].address = OSPI_REGS_BASE + OSPI_O_FLASH_CMD_CTRL,
+        .eraseStigCfg.stigOperation[0].data    = 0x200a0000,
+
+        /* Polling operation */
+        .pollingCfg.command        = 0x05900000,
+        .pollingCfg.timeOut        = 200,
+        .pollingCfg.NumOfIteration = 4,
+
+        /* General */
+        .sectorSize    = 0x1000,
+        .verifyBufSize = 256};
+
+    const FlashType IS25WJ128F_TYPE = {
 
         /* Operations */
         .writeStigCfg.preStigCfg  = 1,
@@ -1725,87 +1875,102 @@ static void flashTypeSelection(void)
 
         switch (flashTypeIdx)
         {
-            case IS25WJ032F_IDX:
+            case IS25WJ032F:
                 {
-                    XMEMWFF3_hwAttrs.flashType = IS25WJ032F;
+                    XMEMWFF3_hwAttrs.flashType = IS25WJ032F_TYPE;
                 }
                 break;
 
-            case IS25WJ064F_IDX:
+            case IS25WJ064F:
                 {
-                    XMEMWFF3_hwAttrs.flashType = IS25WJ064F;
+                    XMEMWFF3_hwAttrs.flashType = IS25WJ064F_TYPE;
                 }
                 break;
 
-            case W25Q32JW_IDX:
+            case W25Q32JW:
                 {
-                    XMEMWFF3_hwAttrs.flashType = W25Q32JW;
+                    XMEMWFF3_hwAttrs.flashType = W25Q32JW_TYPE;
                 }
                 break;
 
-            case W25Q64JW_IDX:
+            case W25Q64JW:
                 {
-                    XMEMWFF3_hwAttrs.flashType = W25Q64JW;
+                    XMEMWFF3_hwAttrs.flashType = W25Q64JW_TYPE;
                 }
                 break;
 
-            case GD25LF32ETJGY_IDX:
+            case GD25LF32E:
                 {
-                    XMEMWFF3_hwAttrs.flashType = GD25LF32ETJGY;
+                    XMEMWFF3_hwAttrs.flashType = GD25LF32E_TYPE;
                 }
                 break;
 
-            case GD25LF64ETJGY_IDX:
+            case GD25LF64E:
                 {
-                    XMEMWFF3_hwAttrs.flashType = GD25LF64ETJGY;
+                    XMEMWFF3_hwAttrs.flashType = GD25LF64E_TYPE;
                 }
                 break;
 
-            case PY25Q32LB_IDX:
+            case PY25Q32LB:
                 {
-                    XMEMWFF3_hwAttrs.flashType = PY25Q32LB;
+                    XMEMWFF3_hwAttrs.flashType = PY25Q32LB_TYPE;
                 }
                 break;
 
-            case PY25Q64LB_IDX:
+            case PY25Q64LB:
                 {
-                    XMEMWFF3_hwAttrs.flashType = PY25Q64LB;
+                    XMEMWFF3_hwAttrs.flashType = PY25Q64LB_TYPE;
                 }
                 break;
-            case PY25Q128LA_IDX:
+            case PY25Q128LA:
                 {
-                    XMEMWFF3_hwAttrs.flashType = PY25Q128LA;
+                    XMEMWFF3_hwAttrs.flashType = PY25Q128LA_TYPE;
                 }
                 break;
-            case PY25Q256LC_IDX:
+            case PY25Q256LC:
                 {
-                    XMEMWFF3_hwAttrs.flashType = PY25Q256LC;
+                    XMEMWFF3_hwAttrs.flashType = PY25Q256LC_TYPE;
                 }
                 break;
-            case MX25U3235F_IDX:
+            case MX25U3235F:
                 {
-                    XMEMWFF3_hwAttrs.flashType = MX25U3235F;
+                    XMEMWFF3_hwAttrs.flashType = MX25U3235F_TYPE;
                 }
                 break;
-            case MX25U6435F_IDX:
+            case MX25U6435F:
                 {
-                    XMEMWFF3_hwAttrs.flashType = MX25U6435F;
+                    XMEMWFF3_hwAttrs.flashType = MX25U6435F_TYPE;
                 }
                 break;
-            case IS25WJ128F_IDX:
+            case MX25U12843G:
                 {
-                    XMEMWFF3_hwAttrs.flashType = IS25WJ128F;
+                    XMEMWFF3_hwAttrs.flashType = MX25U12843G_TYPE;
                 }
                 break;
-            case W25Q12PW_IDX:
+            case IS25WJ128F:
                 {
-                    XMEMWFF3_hwAttrs.flashType = W25Q12PW;
+                    XMEMWFF3_hwAttrs.flashType = IS25WJ128F_TYPE;
+                }
+                break;
+            case W25Q33PW:
+                {
+                    XMEMWFF3_hwAttrs.flashType = W25Q33PW_TYPE;
+                }
+                break;
+            case W25Q64PW:
+                {
+                    XMEMWFF3_hwAttrs.flashType = W25Q64PW_TYPE;
+                }
+                break;
+            case W25Q12PW:
+                {
+                    XMEMWFF3_hwAttrs.flashType = W25Q12PW_TYPE;
                 }
                 break;
 
             default:
                 /* Default to a safe configuration */
-                XMEMWFF3_hwAttrs.flashType = IS25WJ032F;
+                XMEMWFF3_hwAttrs.flashType = IS25WJ032F_TYPE;
                 break;
         }
     }

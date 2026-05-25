@@ -785,6 +785,12 @@ typedef struct GPTimerWFF3_Object
     bool intPhaseLate;
     /*! Prescaler division factor */
     uint8_t prescalerDiv;
+    /*! Bitmask of channels opened via GPTimerWFF3_openChannel(). Bit N is set
+     *  while channel N is active. The peripheral is de-initialized only when
+     *  all bits are cleared. Zero when the peripheral was opened exclusively
+     *  via GPTimerWFF3_open() or has not been opened.
+     */
+    uint8_t openChannelMask;
     /*! Timer debug stall mode */
     GPTimerWFF3_DebugMode debugStallMode;
     /*! Counter direction required for triggering a channel compare */
@@ -871,6 +877,41 @@ extern GPTimerWFF3_Handle GPTimerWFF3_open(uint_least8_t index, const GPTimerWFF
  *  @sa     #GPTimerWFF3_stop()
  */
 extern void GPTimerWFF3_close(GPTimerWFF3_Handle handle);
+
+/*!
+ *  @brief  Open a single channel on a GPTimer peripheral, allowing other channels
+ *          on the same peripheral to be opened independently by other callers.
+ *          The first channel open performs full hardware initialization; subsequent
+ *          channels configure only their own channel without disturbing others.
+ *
+ *  @param[in]  index   Index in the GPTimerWFF3_config table.
+ *  @param[in]  chNo    Channel to claim (#GPTimerWFF3_CH_NO_0 .. #GPTimerWFF3_CH_NO_3).
+ *  @param[in]  params  Pointer to parameters. For a subsequent (non-first) channel
+ *                      open, only params->channelProperty[chNo] is applied; all
+ *                      other fields are ignored.
+ *
+ *  @return A #GPTimerWFF3_Handle on success, NULL if the channel is already open
+ *          or the peripheral was opened via #GPTimerWFF3_open().
+ *
+ *  @sa     #GPTimerWFF3_closeChannel()
+ *
+ */
+extern GPTimerWFF3_Handle GPTimerWFF3_openChannel(uint_least8_t index,
+                                                  GPTimerWFF3_ChannelNo chNo,
+                                                  const GPTimerWFF3_Params *params);
+
+/*!
+ *  @brief  Release a single channel previously opened with #GPTimerWFF3_openChannel().
+ *          The peripheral is de-initialized when all allocated channels have been released.
+ *
+ *  @pre    #GPTimerWFF3_openChannel() has to be called first successfully.
+ *
+ *  @param[in]  handle  A #GPTimerWFF3_Handle returned from #GPTimerWFF3_openChannel().
+ *  @param[in]  chNo    Channel to release.
+ *
+ *  @sa     #GPTimerWFF3_openChannel()
+ */
+extern void GPTimerWFF3_closeChannel(GPTimerWFF3_Handle handle, GPTimerWFF3_ChannelNo chNo);
 
 /*!
  *  @brief  Function that starts the timer counter of the specified GPTimer

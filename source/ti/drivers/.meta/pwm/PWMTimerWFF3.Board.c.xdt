@@ -84,8 +84,9 @@ const PWMTimerWFF3_HwAttrs PWMTimerWFF3_hwAttrs[`countDef`] = {
     %    }
     % }
     {
-        .gpTimerInstance = `inst.timerObject.$name`,
-        .preScalerDivision = `inst.prescalerDivider`
+        .gpTimerInstance   = `inst.timerObject.$name`,
+        .preScalerDivision = `inst.prescalerDivider`,
+        .gpTimerChannelNo  = `inst.timerChannelNo`
     },
 % }
 };

@@ -769,6 +769,126 @@ static int GPTimerWFF3_postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 }
 
 /*
+ *  ======== GPTimerWFF3_openChannel ========
+ *  Allows multiple drivers to share one GPTimer peripheral by claiming
+ *  individual channels. The first channel caller performs full peripheral
+ *  initialization; subsequent callers configure only their own channel.
+ */
+GPTimerWFF3_Handle GPTimerWFF3_openChannel(uint_least8_t index,
+                                           GPTimerWFF3_ChannelNo chNo,
+                                           const GPTimerWFF3_Params *params)
+{
+    GPTimerWFF3_Handle handle;
+    GPTimerWFF3_Object *object;
+    GPTimerWFF3_HWAttrs const *hwAttrs;
+    uintptr_t key;
+
+    if (index >= GPTimerWFF3_count)
+    {
+        return NULL;
+    }
+
+    handle  = (GPTimerWFF3_Handle)&GPTimerWFF3_config[index];
+    hwAttrs = handle->hwAttrs;
+    object  = handle->object;
+
+    key = HwiP_disable();
+
+    /* Fail if the peripheral was opened exclusively via GPTimerWFF3_open(),
+     * or if the specified channel is already allocated.
+     */
+    if (object->isOpen && (object->openChannelMask == 0))
+    {
+        HwiP_restore(key);
+        return NULL;
+    }
+    if (object->openChannelMask & (1u << chNo))
+    {
+        HwiP_restore(key);
+        return NULL;
+    }
+
+    bool firstChannel = (object->openChannelMask == 0);
+    object->openChannelMask |= (1u << chNo);
+    object->isOpen = true;
+
+    HwiP_restore(key);
+
+    if (firstChannel)
+    {
+        /* First channel: full peripheral initialization */
+        object->intPhaseLate        = params->intPhaseLate;
+        object->prescalerDiv        = params->prescalerDiv;
+        object->debugStallMode      = params->debugStallMode;
+        object->counterDirChCompare = params->counterDirChCompare;
+        object->channelProperty[0]  = params->channelProperty[0];
+        object->channelProperty[1]  = params->channelProperty[1];
+        object->channelProperty[2]  = params->channelProperty[2];
+        object->channelProperty[3]  = params->channelProperty[3];
+        object->hwiCallbackFxn      = params->hwiCallbackFxn;
+
+        Power_setDependency(hwAttrs->powerID);
+        GPTimerWFF3_initIO(handle);
+        GPTimerWFF3_initHw(handle);
+        Power_registerNotify(&object->postNotify, PowerWFF3_AWAKE_SLEEP, GPTimerWFF3_postNotifyFxn, (uintptr_t)handle);
+
+        HwiP_Params hwiParams;
+        HwiP_Params_init(&hwiParams);
+        hwiParams.arg       = (uintptr_t)handle;
+        hwiParams.enableInt = true;
+        hwiParams.priority  = hwAttrs->intPriority;
+        HwiP_construct(&object->hwi, hwAttrs->intNum, GPTimerWFF3HwiFxn, &hwiParams);
+    }
+    else
+    {
+        /* Peripheral already running: configure only the new channel */
+        object->channelProperty[chNo] = params->channelProperty[chNo];
+        GPTimerWFF3_configureChannels(handle);
+    }
+
+    return handle;
+}
+
+/*
+ *  ======== GPTimerWFF3_closeChannel ========
+ *  Releases one channel previously allocated by GPTimerWFF3_openChannel().
+ *  The peripheral is de-initialized only when all allocated channels are released.
+ */
+void GPTimerWFF3_closeChannel(GPTimerWFF3_Handle handle, GPTimerWFF3_ChannelNo chNo)
+{
+    GPTimerWFF3_Object *object         = handle->object;
+    GPTimerWFF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+
+    /* Disable the channel in hardware */
+    uint32_t regOffset                                              = GPTIMER_O_C1CFG - GPTIMER_O_C0CFG;
+    HWREG(hwAttrs->baseAddr + GPTIMER_O_C0CFG + (chNo * regOffset)) = 0;
+
+    /* Reset the GPIO pin(s) associated with the specified channel */
+    GPIO_resetConfig(hwAttrs->channelConfig[chNo].pin);
+    GPIO_resetConfig(hwAttrs->channelConfig[chNo].nPin);
+
+    uintptr_t key                        = HwiP_disable();
+    object->channelProperty[chNo].action = GPTimerWFF3_CH_DISABLE;
+    object->openChannelMask &= ~(1u << chNo);
+    bool lastChannel = (object->openChannelMask == 0);
+    HwiP_restore(key);
+
+    if (lastChannel)
+    {
+        /* Last channel: full peripheral teardown */
+        GPTimerWFF3_resetHw(handle);
+        GPTimerWFF3_resetIO(handle);
+        HwiP_destruct(&object->hwi);
+        Power_unregisterNotify(&object->postNotify);
+        Power_releaseDependency(hwAttrs->powerID);
+
+        key            = HwiP_disable();
+        object->isOpen = false;
+        HwiP_restore(key);
+    }
+}
+
+/*
  *  ======== GPTimerWFF3_getCounterMask ========
  *  Get counter field mask value based on the counter width.
  */

@@ -343,8 +343,6 @@ int32_t DeHwInit(void)
     int ret = 0;
 
     wlan_IRQDeinit();
-    /* to be coded when need deinit hw functions */
-    //deinit_hif
 
     return ret;
 }

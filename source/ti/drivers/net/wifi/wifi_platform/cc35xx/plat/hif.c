@@ -119,6 +119,18 @@ int32_t HIFInit(uint32_t dmaChannel)
 
 //*****************************************************************************
 //
+// HIFDeinit
+// 1.  Unregister from power save module
+//
+//*****************************************************************************
+int32_t HIFDeinit(void)
+{
+    Power_unregisterNotify(&(HIFHandle.HIFpostNotify));
+    return HIF_STATUS_SUCCESS; // success
+}
+
+//*****************************************************************************
+//
 // HIF configure
 // 1.  INIT DMA Channel
 // 2.  INIT HIF

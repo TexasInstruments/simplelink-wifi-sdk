@@ -125,6 +125,19 @@ extern int32_t HIFInit(uint32_t dmaChannel);
 
 //*****************************************************************************
 //
+//! \brief Deinitialize HIF and unregister power notification.
+//!
+//! Must be called symmetrically with \ref HIFInit() to prevent double
+//! registration of the power notify object on the next \ref HIFInit() call.
+//!
+//! \return
+//! - \ref HIF_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern int32_t HIFDeinit(void);
+
+//*****************************************************************************
+//
 //! \brief Read data from HIF module.
 //!
 //! This function must be called after \ref HIFInit().

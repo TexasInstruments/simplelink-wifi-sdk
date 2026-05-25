@@ -286,8 +286,8 @@ The [__CAN driver__][1] provides APIs to control a single external or onboard Co
     modules: (inst) => {
         let forcedModules = ["Board", "Power"];
 
-        /* Due to errata SYS_211, add DMA module for CC2745 768k/1M flash devices */
-        if (deviceId.match(/CC2745[A-Z](7|10)/)) {
+        /* Due to errata SYS_211, add DMA module for CC27XXX7/CC27XXX10 flash devices */
+        if (deviceId.match(/CC274[4-5][A-Z](7|10)/)) {
             forcedModules.push("DMA");
         }
         return Common.autoForceModules(forcedModules)();

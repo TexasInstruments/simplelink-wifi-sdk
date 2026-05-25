@@ -129,23 +129,24 @@ PWM_Handle PWMTimerWFF3_open(PWM_Handle handle, PWM_Params *params)
     object->isOpen = true;
     HwiP_restore(key);
 
-    /* Get the channel number in the GPTimer that has been assigned as the PWM output pin
-     * in the configuration.
-     * The PWMTimer driver allows only one channel to be assigned as output pin.
-     */
-    pwmChannelNo = PWMTimerWFF3_getPwmChannelNo(hwAttrs->gpTimerInstance);
+    /* Channel is taken directly from hwAttrs, set by the board configuration. */
+    pwmChannelNo = (GPTimerWFF3_ChannelNo)hwAttrs->gpTimerChannelNo;
 
-    /* Open timer resource */
+    /* Allocate only the required channel so that multiple PWMTimerWFF3 instances
+     * can share one GPTimer peripheral, each assigned to an independent channel.
+     */
     GPTimerWFF3_Params timerParams;
     GPTimerWFF3_Params_init(&timerParams);
     timerParams.channelProperty[pwmChannelNo].action = GPTimerWFF3_CH_SET_ON_0_TOGGLE_ON_CMP_PERIODIC;
     timerParams.prescalerDiv                         = hwAttrs->preScalerDivision - 1;
-    GPTimerWFF3_Handle hTimer                        = GPTimerWFF3_open(hwAttrs->gpTimerInstance, &timerParams);
+    GPTimerWFF3_Handle hTimer = GPTimerWFF3_openChannel(hwAttrs->gpTimerInstance, pwmChannelNo, &timerParams);
 
-    /* Fail if cannot open timer */
+    /* Fail if cannot open timer channel */
     if (hTimer == NULL)
     {
-        DebugP_log2("PWM_open(%x): Timer unit (%d) already in use.", (uintptr_t)handle, hwAttrs->gpTimerInstance);
+        DebugP_log2("PWM_open(%x): Timer unit (%d) channel already in use.",
+                    (uintptr_t)handle,
+                    hwAttrs->gpTimerInstance);
         object->isOpen = false;
         return NULL;
     }
@@ -171,7 +172,10 @@ PWM_Handle PWMTimerWFF3_open(PWM_Handle handle, PWM_Params *params)
     if (PWMTimerWFF3_setPeriod(handle, object->periodValue) != PWM_STATUS_SUCCESS)
     {
         DebugP_log1("PWM_open(%x): Failed setting period", (uintptr_t)handle);
-        GPTimerWFF3_close(hTimer);
+        /* Release only the designated channel so that other PWM instances
+         * allocated to the same GPTimer peripheral are not affected.
+         */
+        GPTimerWFF3_closeChannel(hTimer, pwmChannelNo);
         object->isOpen = false;
         return NULL;
     }
@@ -180,7 +184,10 @@ PWM_Handle PWMTimerWFF3_open(PWM_Handle handle, PWM_Params *params)
     if (PWMTimerWFF3_setDuty(handle, object->dutyValue) != PWM_STATUS_SUCCESS)
     {
         DebugP_log1("PWM_open(%x): Failed setting duty", (uintptr_t)handle);
-        GPTimerWFF3_close(hTimer);
+        /* Release only the designated channel so that other PWM instances
+         * allocated to the same GPTimer peripheral are not affected.
+         */
+        GPTimerWFF3_closeChannel(hTimer, pwmChannelNo);
         object->isOpen = false;
         return NULL;
     }
@@ -407,8 +414,10 @@ void PWMTimerWFF3_close(PWM_Handle handle)
 {
     PWMTimerWFF3_Object *object = handle->object;
 
-    /* Close and delete timer handle */
-    GPTimerWFF3_close(object->hTimer);
+    /* Release the channel allocated to this instance. The underlying GPTimer
+     * peripheral is de-initialized only when all associated instances are closed.
+     */
+    GPTimerWFF3_closeChannel(object->hTimer, object->chNumber);
     object->hTimer = NULL;
 
     /* Clear isOpen flag */

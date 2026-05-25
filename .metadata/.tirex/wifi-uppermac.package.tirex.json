@@ -3,19 +3,21 @@
         "metadataVersion": "3.1.0",
         "id": "com.ti.SIMPLELINK_WIFI_SDK_WIFI-UPPERMAC_MODULE",
         "name": "TI WiFi Stack",
-        "version": "10.10.00.18",
+        "version": "10.10.01.08",
         "type": "software",
         "devices": [
             "CC3500E",
             "CC3501E",
             "CC3550E",
-            "CC3551E"
+            "CC3551E",
+            "CC3501ET",
+            "CC3551ET"
         ],
         "image": "./wff3-tirex.png",
         "description": "TI WiFi Stack",
         "moduleOf": {
             "packageId": "com.ti.SIMPLELINK_WIFI_SDK",
-            "semver": "10.10.0"
+            "semver": "10.10.1"
         }
     }
 ]

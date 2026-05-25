@@ -58,11 +58,25 @@ let devSpecific = {
                 + "1. Division factor = value. Min. value is 1. Max. "
                 + "value is 256.",
             default     : 1
+        },
+        {
+            name        : "timerChannelNo",
+            displayName : "Timer Channel Number",
+            description : "GPTimer channel (0-3) used as the PWM output pin",
+            longDescription : "Each GPTimer peripheral has four independent "
+                + "capture/compare channels. Multiple PWM instances may share "
+                + "the same GPTimer provided each selects a unique channel.",
+            default     : 0,
+            options     : [
+                { name: 0, displayName: "Channel 0" },
+                { name: 1, displayName: "Channel 1" },
+                { name: 2, displayName: "Channel 2" },
+                { name: 3, displayName: "Channel 3" }
+            ]
         }
     ],
 
-    /* referenced GPTimer module instances */
-    moduleInstances: moduleInstances,
+    sharedModuleInstances: sharedModuleInstances,
 
     filterHardware: filterHardware,
 
@@ -96,22 +110,24 @@ function filterHardware(component)
 }
 
 /*
- *  ======== moduleInstances ========
- *  returns a shared GPTimer instance
+ *  ======== sharedModuleInstances ========
+ *  Returns the GPTimer instance shared across PWM instances. Declaring this
+ *  as a shared sub-instance allows multiple PWM instances to reference the
+ *  same hardware timer peripheral, each assigned to a distinct channel.
  */
-function moduleInstances(inst)
+function sharedModuleInstances(inst)
 {
-    let timer = new Array();
+    let sharedInstances = new Array();
 
-    timer.push({
-        name: "timerObject",
-        displayName: "GPTimer Instance",
-        moduleName: "/ti/drivers/GPTimer",
-        hidden: false,
-        collapsed: true
+    sharedInstances.push({
+        name        : "timerObject",
+        displayName : "GPTimer Instance",
+        moduleName  : "/ti/drivers/GPTimer",
+        hidden      : false,
+        collapsed   : true
     });
 
-    return timer;
+    return sharedInstances;
 }
 
 function validate(inst, validation, $super)
@@ -126,6 +142,22 @@ function validate(inst, validation, $super)
     if ((prescalerDiv <= 0) || (prescalerDiv > 256)) {
         message = 'Prescaler divider must be at least 1 and not above 256';
         logError(validation, inst, "prescalerDivider", message);
+    }
+
+    /* Flag duplicate channel assignments on the same GPTimer instance */
+    let PWM = system.modules["/ti/drivers/PWM"];
+    if (PWM) {
+        for (let other of PWM.$instances) {
+            if (other === inst) continue;
+            if (other.timerObject.$name === inst.timerObject.$name &&
+                other.timerChannelNo   === inst.timerChannelNo) {
+                message = 'Channel ' + inst.timerChannelNo +
+                    ' is already used by ' + other.$name +
+                    ' on the same GPTimer instance';
+                logError(validation, inst, "timerChannelNo", message);
+                break;
+            }
+        }
     }
 }
 

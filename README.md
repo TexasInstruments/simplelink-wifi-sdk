@@ -7,20 +7,16 @@ comprehensive software package for developing 2.4 GHz applications.
 The WIFI SDK delivers components that enable engineers to develop applications
 on the Texas Instruments CC35xx Wi-Fi and BLE combo MCU devices. 
 
-This is version 10.10.00.18 of the SimpleLink Wi-Fi SDK.
+This is version 10.10.01.08 of the SimpleLink Wi-Fi SDK.
 
 ## What's New
 
-  - New device support CC35X1ET
-  - SDK New example applications:
-      - CC35XX OTA Example
-      - CC35XX Power measurement
-      - CC35XX BLE DTM
-      - CC35XX BLE controller  
-  - Raw Wi-Fi CSI data available to application
-  - FWU Support for accept/reject API
-  - External coexistence 3-wire PTA Master
-  - WiFi AP Certifications
+  - New Flash support
+
+  - \[SCCM\] Add support for CBC encryption for protected storage
+
+  - Correct flash enum definition for Auto Detection to match v9.22 SDK
+
   - Bug Fixes
 ## About this Repository
 
@@ -41,7 +37,7 @@ it available as a Git repository to cater to various use cases:
 * **Simplified workflow for rebasing**: Git makes it simpler for you to rebase
   your changes to new releases.
 
-One temporary, notable difference in this WIFI 10.10.00.18 SDK GitHub
+One temporary, notable difference in this WIFI 10.10.01.08 SDK GitHub
 distribution when compared to the classic installer above, is the exclusion of
 the **tools/ble/ble_agent/ble_toolbox/** directory. This has been temporarily
 done as the ble_toolbox executable currently exceeds GitHub's file size limit.
@@ -108,8 +104,8 @@ Dependency download locations:
 
 Please consider creating a post on [TI's E2E forum](https://e2e.ti.com).
 
-[sdk release notes]: https://dev.ti.com/tirex/explore/node?isTheia=false&node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_WIFI_SDK__ZlChU-m__LATEST
-[sdk docs]: https://dev.ti.com/tirex/explore/node?isTheia=false&node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_WIFI_SDK__ZlChU-m__LATEST
+[sdk release notes]: https://dev.ti.com/tirex/explore/node?a=ZlChU-m__10.10.01.08&isTheia=false&node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_WIFI_SDK__ZlChU-m__10.10.01.08
+[sdk docs]: https://dev.ti.com/tirex/explore/node?a=ZlChU-m__10.10.01.08&isTheia=false&node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_WIFI_SDK__ZlChU-m__10.10.01.08
 [sysconfig download]: https://www.ti.com/tool/SYSCONFIG
 [ticlang download]: https://www.ti.com/tool/download/ARM-CGT-CLANG
 [gcc download]: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads

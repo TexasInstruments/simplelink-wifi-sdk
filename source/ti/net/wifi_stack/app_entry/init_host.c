@@ -283,6 +283,7 @@ void DeInitHostDriverInternal(void * hCbHndl)
     }
 
     tmr_Destroy();
+    bus_sendDeInitCommand();
     DeHwInit();
     fwEvent_Destroy();
     rx_Deinit();

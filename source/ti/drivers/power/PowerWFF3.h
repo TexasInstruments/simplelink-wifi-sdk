@@ -242,7 +242,8 @@ typedef enum
     PowerWFF3_RESET_M33WD = PRCM_SCRATCHPAD_RSTCAUS_RSTLINE_M | PRCM_SCRATCHPAD_RSTCAUS_POR_M |
                             PRCM_SCRATCHPAD_RSTCAUS_M33WD_M,
     /*! Device reset due to CPU reset event (for example triggered during OTA operation) */
-    PowerWFF3_RESET_CPU     = PRCM_SCRATCHPAD_RSTCAUS_SOCAONH_M,
+    PowerWFF3_RESET_CPU = PRCM_SCRATCHPAD_RSTCAUS_SOCAONH_M | PRCM_SCRATCHPAD_RSTCAUS_OOFSLP_M |
+                          PRCM_SCRATCHPAD_RSTCAUS_M33CRSLSTA_M,
     /*! RF core reset */
     PowerWFF3_RESET_RFCORE  = PRCM_SCRATCHPAD_RSTCAUS_M33CRSLSTA_M,
     /*! Unknown reset reason */

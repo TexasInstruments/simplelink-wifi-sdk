@@ -398,20 +398,39 @@ typedef struct
  */
 typedef enum
 {
-    IS25WJ032F_IDX    = 0,
-    IS25WJ064F_IDX    = 1,
-    W25Q32JW_IDX      = 2,
-    W25Q64JW_IDX      = 3,
-    GD25LF32ETJGY_IDX = 4,
-    GD25LF64ETJGY_IDX = 5,
-    PY25Q32LB_IDX     = 6,
-    PY25Q64LB_IDX     = 7,
-    PY25Q128LA_IDX    = 8,
-    PY25Q256LC_IDX    = 9,
-    MX25U3235F_IDX    = 10,
-    MX25U6435F_IDX    = 11,
-    IS25WJ128F_IDX    = 12,
-    W25Q12PW_IDX      = 13,
+    IS25WJ032F  = 0x00, /* SUPPORTED */
+    IS25WJ064F  = 0x01, /* SUPPORTED */
+    W25Q32JW    = 0x02, /* SUPPORTED */
+    W25Q64JW    = 0x03, /* SUPPORTED */
+    GD25LF32E   = 0x04, /* SUPPORTED */
+    GD25LF64E   = 0x05, /* SUPPORTED */
+    PY25Q32LB   = 0x06, /* SUPPORTED */
+    PY25Q64LB   = 0x07, /* SUPPORTED */
+    PY25Q128LA  = 0x08, /* SUPPORTED */
+    PY25Q256LC  = 0x09, /* SUPPORTED */
+    MX25U3235F  = 0x0A, /* SUPPORTED */
+    MX25U6435F  = 0x0B, /* SUPPORTED */
+    IS25WJ128F  = 0x0C, /* SUPPORTED */
+    W25Q12PW    = 0x0D, /* SUPPORTED */
+    W25Q33PW    = 0x0E, /* SUPPORTED */
+    W25Q64PW    = 0x0F, /* SUPPORTED */
+    W25Q25PW    = 0x10,
+    IS25WP256D  = 0x11,
+    GD25LE32E   = 0x12,
+    GD25LE64E   = 0x13,
+    MX25U3232F  = 0x14,
+    MX25U6432F  = 0x15,
+    MX25U12843G = 0x16, /* SUPPORTED */
+    BY25FQ256EL = 0x17,
+    XM25LU32C   = 0x18,
+    XM25LU64C   = 0x19,
+
+    CUSTOM1 = 0xF0,
+    CUSTOM2 = 0xF1,
+    CUSTOM3 = 0xF2,
+    CUSTOM4 = 0xF3,
+
+    FLASH_NOT_DETECTED = 0xFF
 } XMEM_Flash_Idx;
 
 /*!

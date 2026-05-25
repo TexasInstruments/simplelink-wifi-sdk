@@ -359,8 +359,8 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "displayName": "Serial Interfaces",
                     "description": "Data Transmission on a Wire",
                     "modules": [
-                        /* Only CC2745 devices have CAN peripheral */
-                        ...(deviceId.match(/CC2745/) ? ["/ti/drivers/CAN"] : []),
+                        /* Only CC2745 & CC2744 devices have CAN peripheral */
+                        ...(deviceId.match(/CC274[4-5]/) ? ["/ti/drivers/CAN"] : []),
                         "/ti/drivers/I2C",
                         "/ti/drivers/I2CTarget",
                         "/ti/drivers/I2S",

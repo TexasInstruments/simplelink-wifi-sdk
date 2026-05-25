@@ -46,7 +46,7 @@ int bus_sendReadCommand(uint32_t address, uint8_t *data, uint32_t length, uint8_
 // Sends a  Write command
 int bus_sendWriteCommand(uint32_t address, uint8_t *data, uint32_t length, uint8_t isFixed);
 
-int bus_Send_deInit();
+int bus_sendDeInitCommand();
 
 // returns the alignment needed for the interface protocol
 uint32_t bus_AlignLength(uint32_t length);

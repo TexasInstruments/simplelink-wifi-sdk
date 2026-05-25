@@ -151,6 +151,11 @@ typedef struct PWMTimerWFF3_HwAttrs
 {
     uint8_t gpTimerInstance;    /*!< GPTimer unit index (0, 1) */
     uint16_t preScalerDivision; /*!< GPTimer prescaler divider */
+    /*! GPTimer channel number (0-3) used as the PWM output. Multiple
+     *  PWMTimerWFF3 instances may share one gpTimerInstance provided each
+     *  uses a distinct gpTimerChannelNo.
+     */
+    uint8_t gpTimerChannelNo;
 } PWMTimerWFF3_HwAttrs;
 
 /*!

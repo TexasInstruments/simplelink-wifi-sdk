@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
 <iarUserArgVars>
-  <group active="true" name="SIMPLELINK_WIFI_SDK_10_10_00_18">
+  <group active="true" name="SIMPLELINK_WIFI_SDK_10_10_01_08">
     <variable>
       <name>SYSCONFIG_ROOT</name>
       <value>c:/ti/sysconfig_1.26.3</value>
     </variable>
     <variable>
       <name>SIMPLELINK_WIFI_SDK_INSTALL_DIR</name>
-      <value>c:/ti/simplelink_wifi_sdk_10_10_00_18</value>
+      <value>c:/ti/simplelink_wifi_sdk_10_10_01_08</value>
     </variable>
     <variable>
       <name>COM_TI_SIMPLELINK_WIFI_SDK_INSTALL_DIR</name>
-      <value>c:/ti/simplelink_wifi_sdk_10_10_00_18</value>
+      <value>c:/ti/simplelink_wifi_sdk_10_10_01_08</value>
     </variable>
     <variable>
       <name>EXAMPLE_ROOT</name>
-      <value>c:/ti/simplelink_wifi_sdk_10_10_00_18/tools/iar</value>
+      <value>c:/ti/simplelink_wifi_sdk_10_10_01_08/tools/iar</value>
     </variable>
   </group>
 </iarUserArgVars>

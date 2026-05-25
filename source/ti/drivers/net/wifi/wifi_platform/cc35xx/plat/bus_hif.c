@@ -192,8 +192,10 @@ int bus_sendWriteCommand(uint32_t address, uint8_t *data, uint32_t length, uint8
     return 0;
 }
 
-int bus_Send_deInit()
+int bus_sendDeInitCommand()
 {
+    HIFDeinit();
+    init_done = 0;
     return(0);
 }
 

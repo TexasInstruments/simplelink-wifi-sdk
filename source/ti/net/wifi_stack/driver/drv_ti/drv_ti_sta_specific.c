@@ -692,6 +692,10 @@ void ti_drv_AuthTimeout(void *apDrv, void *apData2)
         // Clear authentication info before notifying the supplicant
         IRQ_UtilCopyMacAddress(pDrv->pAuthInfo->peerInfo.bssid, bssid);
         MLME_REPORT_PRINT("\n\rti_drv_AuthTimeout:destroyAuthData");
+        ti_drv_txDeauthDisassocPacket(pDrv,
+                                   (uint8_t *)pDrv->pAuthInfo->peerInfo.bssid,
+                                   FRAME_TYPE_DEAUTHENTICATION,
+                                   WLAN_REASON_PREV_AUTH_NOT_VALID); //for possible reasons search :WLAN_REASON_*
         destroyAuthData(apDrv, TRUE);
 
         drv_sendConnectTimeoutEvent(pDrv, EVENT_AUTH_TIMED_OUT, bssid);
